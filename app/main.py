@@ -5,12 +5,12 @@ from app.storage import carregar_clientes, salvar_clientes
 
 #função que irá listar as informações dos clientes
 def listar_clientes():
-    return carregar_clientes
+    return carregar_clientes()
 
 #Função que irá buscar os clientes pelo ID
 def buscar_clientes(cliente_id: int) -> Cliente | None:
     #Função que coloca clientespela função que carrega a lista de clientes.json
-    clientes = carregar_clientes
+    clientes = carregar_clientes()
     #Percorre a lista "criada" pela função carregar_clientes e retorna o nome os dados do cliente
     for c in clientes:
         if c.id == cliente_id:
@@ -20,7 +20,7 @@ def buscar_clientes(cliente_id: int) -> Cliente | None:
 #Nome da função é autoexplicativo
 def criar_cliente(dados: ClienteCreate) -> Cliente:
     #Mesma coisa lá em cima
-    cliente = carregar_clientes()
+    clientes = carregar_clientes()
     #Cria o ID do novo cliente, é default=0 pois não há clientes(Pode causar bugs)
     novo_id = max([c.id for c in clientes], default=0) + 1
 
@@ -48,9 +48,9 @@ def deletar_clientes(cliente_id: int) -> bool:
         return False # Nenhum cliente foi removido (ID não existe)
 
     salvar_clientes(clientes_filtrados)
-    returnTrue
+    return True
 
-def atualizar_cliente(cliente_id: int, dados_novos: ClienteUpdate) -> Cliebnte | None:
+def atualizar_cliente(cliente_id: int, dados_novos: ClienteUpdate) -> Cliente | None:
     clientes = carregar_clientes()
 
     for idx, c in enumerate(clientes):
@@ -59,7 +59,7 @@ def atualizar_cliente(cliente_id: int, dados_novos: ClienteUpdate) -> Cliebnte |
             campos_para_atualizar = dados_novos.model_dump(exclude_unset=True)
 
             # Cria uma cópia do cliente  mantendo o ID e a data intactos
-            cliente_atualizado = c.model_copu(update=campos_para_atualizar)
+            cliente_atualizado = c.model_copy(update=campos_para_atualizar)
 
             clientes[idx] = cliente_atualizado
             salvar_clientes(clientes)
@@ -76,6 +76,8 @@ def menu():
         print("1. Listar Clientes")
         print("2. Buscar Clientes por ID")
         print("3. Cadastrar Cliente")
+        print("4. Atualizar cliente")
+        print("5. Deletar cliente")
         print("0. Sair")
 
         opcao = input("\nEscolha a opção desejada: ").strip()
@@ -92,7 +94,7 @@ def menu():
 
         elif opcao == "2":
             try:
-                c_id = int(input("Digite o ID do cliente"))
+                c_id = int(input("Digite o ID do cliente: "))
                 cliente = buscar_clientes(c_id)
                 if cliente:
                     print(f"\nEncontrado: [{cliente.id}] {cliente.nome} ({cliente.email}) - Plano: {cliente.plano}")
@@ -126,42 +128,46 @@ def menu():
         elif opcao == "4":
             try:
                 c_id = int(input("Digite o ID do cliente que deseja atualizar: "))
-                cliente = buscar_cliente(c_id)
+                cliente = buscar_clientes(c_id)
 
                 if not cliente:
-                    print("\n Cliente não encontrado")
+                    print("\n❌ Cliente não encontrado.")
                 else:
                     print(f"\nAtualizando cliente: {cliente.nome}")
                     print("(Deixe em branco e pressione ENTER para manter o valor atual)")
 
-                    novo_nome = input(f"Novo nome [{cliente.nome}]: ").strip() or None
-                    novo_email = input(f"Novo email [{cliente.email}]: ").strip() or None
+                    # Dicionário dinâmico contendo apenas o que for digitado
+                    dados_dict = {}
+
+                    if novo_nome := input(f"Novo nome [{cliente.nome}]: ").strip():
+                        dados_dict["nome"] = novo_nome
+
+                    if novo_email := input(f"Novo email [{cliente.email}]: ").strip():
+                        dados_dict["email"] = novo_email
 
                     print("Planos disponíveis: bronze, prata, ouro")
-                    novo_plano_str = input(f"Novo plano [{cliente.plano}]: ").strip().lower() or None
-                    novo_plano = PlanoEnum(novo_plano_str) if novo_plano_str else None
+                    if novo_plano_str := input(f"Novo plano [{cliente.plano.value}]: ").strip().lower():
+                        dados_dict["plano"] = PlanoEnum(novo_plano_str)
 
-                    # Instância apenas com os campos informados
-                    dados_atualizacao = ClienteUpdate(
-                        nome=novo_nome,
-                        email=novo_email,
-                        plano=novo_plano
-                    )
-
-                    cliente_atualizado = atualizar_cliente(c_id, dados_atualizacao)
-                    print(f"\n Cliente ID {c_id} atualizado com sucesso!")
+                    # Se nada foi alterado, nem chama a atualização
+                    if not dados_dict:
+                        print("\nNenhuma alteração informada.")
+                    else:
+                        dados_atualizacao = ClienteUpdate(**dados_dict)
+                        cliente_atualizado = atualizar_cliente(c_id, dados_atualizacao)
+                        print(f"\n✅ Cliente ID {c_id} atualizado com sucesso!")
 
             except ValidationError as e:
-                print("\n Erro de validação dos novos dados")
+                print("\n❌ Erro de validação dos novos dados.")
             except ValueError:
-                print("\n ID ou Plano inválido")
+                print("\n❌ ID ou Plano inválido.")
         
         elif opcao == "5":
             try:
                 c_id = int(input("Digite o ID do cliente a ser deletado: "))
-                confirmacao = input(f"Tem certeza qeu deseja apagar o cliente ID {c_id}? (s/n): ").strip().lower()
+                confirmacao = input(f"Tem certeza que deseja apagar o cliente ID {c_id}? (s/n): ").strip().lower()
 
-                if confirmacao == "s" or "sim" or "Sim" or "Yes":
+                if confirmacao in ["s", "sim", "y", "yes"]:
                     if deletar_clientes(c_id):
                         print(f"\n Cliente ID {c_id} removido com sucesso!")
                     else:
