@@ -90,14 +90,14 @@ def menu():
                 print("\n---- Lista de Clientes ----")
                 for c in clientes:
                     status = "Ativo" if c.ativo else "Inativo"
-                    print(f"[{c.id}] {c.nome} | {c.email} - Plano: {c.plano}")
+                    print(f"[{c.id}] {c.nome} | {c.email} - Plano: {c.plano.value}")
 
         elif opcao == "2":
             try:
                 c_id = int(input("Digite o ID do cliente: "))
                 cliente = buscar_clientes(c_id)
                 if cliente:
-                    print(f"\nEncontrado: [{cliente.id}] {cliente.nome} ({cliente.email}) - Plano: {cliente.plano}")
+                    print(f"\nEncontrado: [{cliente.id}] {cliente.nome} ({cliente.email}) - Plano: {cliente.plano.value}")
                 else:
                     print("\n Cliente não encontrado")
             except ValueError:
