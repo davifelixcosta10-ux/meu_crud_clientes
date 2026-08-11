@@ -61,3 +61,45 @@ def menu():
                 for c in clientes:
                     status = "Ativo" if c.ativo else "Inativo"
                     print(f"[{c.id}] {c.nome} | {c.email} - Plano: {c.plano}")
+
+        elif opcao == "2":
+            try:
+                c_id = int(input("Digite o ID do cliente"))
+                cliente = buscar_clientes(c_id)
+                if cliente:
+                    print(f"\nEncontrado: [{cliente.id}] {cliente.nome} ({cliente.email}) - Plano: {cliente.plano}")
+                else:
+                    print("\n Cliente não encontrado")
+            except ValueError:
+                print("\n ID inválido. Digite um número inteiro")
+
+        elif opcao == "3":
+            print("\n--- Novo Cadastro ---")
+            nome = input("Nome: ").strip()
+            email = input("Email: ").strip()
+            print("Planos disponíveis: bronze, prata, ouro")
+            plano_input = input("Plano: ").strip().lower()
+
+            try:
+                novo_dados = ClienteCreate(
+                    nome=nome,
+                    email=email,
+                    plano=PlanoEnum(plano_input)
+                )
+                cliente_criado = criar_cliente(novo_dados)
+                print(f"\n Cliente '{cliente_criado.nome}' cadastrado com sucesso (ID: {cliente_criado.id})!")
+            except ValidationError as e:
+                print("\nErro de validação nos dados:")
+                for erro in e.errors():
+                    print(f" - Campo '{erro['loc'][0]}': {erro['msg']}")
+            except ValueError:
+                print("\n Plano inválido! Escolha uma plano entre: bronze, prata e ouro")
+
+        elif opcao == "0"
+            print("\nSaindo...")
+            break
+        else:
+            print("Opção inválido")
+
+if __name__ == "__main__":
+    menu()
