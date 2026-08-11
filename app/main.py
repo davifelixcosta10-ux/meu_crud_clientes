@@ -1,6 +1,6 @@
 from datetime import date
 from pydantic import ValidationError
-from app.models import ClienteCreate, Cliente, PlanoEnum
+from app.models import ClienteCreate, Cliente, PlanoEnum, ClienteUpdate
 from app.storage import carregar_clientes, salvar_clientes
 
 #função que irá listar as informações dos clientes
@@ -38,6 +38,34 @@ def criar_cliente(dados: ClienteCreate) -> Cliente:
     clientes.append(novo_cliente)
     salvar_clientes(clientes)
     return novo_cliente
+
+def deletar_clientes(cliente_id: int) -> bool:
+    clientes = carregar_clientes()
+    #Peneira para manter apenas quem NÃO tem ID passado
+    clientes_filtrados = [c for c in clientes if c.id != cliente_id]
+
+    if len(clientes_filtrados) == len(clientes):
+        return False # Nenhum cliente foi removido (ID não existe)
+
+    salvar_clientes(clientes_filtrados)
+    returnTrue
+
+def atualizar_cliente(cliente_id: int, dados_novos: ClienteUpdate) -> Cliebnte | None:
+    clientes = carregar_clientes()
+
+    for idx, c in enumerate(clientes):
+        if c.id == cliente_id:
+            #Pega apenas os campos que já foram preenchidos (diferentes de None)
+            campos_para_atualizar = dados_novos.model_dump(exclude_unset=True)
+
+            # Cria uma cópia do cliente  mantendo o ID e a data intactos
+            cliente_atualizado = c.model_copu(update=campos_para_atualizar)
+
+            clientes[idx] = cliente_atualizado
+            salvar_clientes(clientes)
+            return cliente_atualizado
+        
+    return None
 
 #----------- INTERFACE CLI TEMPORÁRIA -----------
 def menu():
@@ -95,7 +123,56 @@ def menu():
             except ValueError:
                 print("\n Plano inválido! Escolha uma plano entre: bronze, prata e ouro")
 
-        elif opcao == "0"
+        elif opcao == "4":
+            try:
+                c_id = int(input("Digite o ID do cliente que deseja atualizar: "))
+                cliente = buscar_cliente(c_id)
+
+                if not cliente:
+                    print("\n Cliente não encontrado")
+                else:
+                    print(f"\nAtualizando cliente: {cliente.nome}")
+                    print("(Deixe em branco e pressione ENTER para manter o valor atual)")
+
+                    novo_nome = input(f"Novo nome [{cliente.nome}]: ").strip() or None
+                    novo_email = input(f"Novo email [{cliente.email}]: ").strip() or None
+
+                    print("Planos disponíveis: bronze, prata, ouro")
+                    novo_plano_str = input(f"Novo plano [{cliente.plano}]: ").strip().lower() or None
+                    novo_plano = PlanoEnum(novo_plano_str) if novo_plano_str else None
+
+                    # Instância apenas com os campos informados
+                    dados_atualizacao = ClienteUpdate(
+                        nome=novo_nome,
+                        email=novo_email,
+                        plano=novo_plano
+                    )
+
+                    cliente_atualizado = atualizar_cliente(c_id, dados_atualizacao)
+                    print(f"\n Cliente ID {c_id} atualizado com sucesso!")
+
+            except ValidationError as e:
+                print("\n Erro de validação dos novos dados")
+            except ValueError:
+                print("\n ID ou Plano inválido")
+        
+        elif opcao == "5":
+            try:
+                c_id = int(input("Digite o ID do cliente a ser deletado: "))
+                confirmacao = input(f"Tem certeza qeu deseja apagar o cliente ID {c_id}? (s/n): ").strip().lower()
+
+                if confirmacao == "s" or "sim" or "Sim" or "Yes":
+                    if deletar_clientes(c_id):
+                        print(f"\n Cliente ID {c_id} removido com sucesso!")
+                    else:
+                        print("\n Cliente não encontrado.")
+                else:
+                    print("\nOperação cancelada pelo usúario")
+            except ValueError:
+                print("\n Digite um número de ID válido")
+
+        
+        elif opcao == "0":
             print("\nSaindo...")
             break
         else:

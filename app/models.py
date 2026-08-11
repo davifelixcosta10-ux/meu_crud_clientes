@@ -21,3 +21,8 @@ class Cliente(ClienteCreate):
     id: int
     data_cadastro: date
 
+class ClienteUpdate(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[EmailStr] = None
+    plano: Optional[PlanoEnum] = None
+    ativo: Optional[bool] = None
