@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Clientes - Gestão Operacional</title>
+    
+    <!-- Google Fonts (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Application Script -->
+    <script src="app.js" defer></script>
+</head>
+<body class="h-full bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 antialiased font-sans flex flex-col min-h-screen transition-colors duration-200">
+
+    <!-- Container Principal -->
+    <div class="flex-1 flex flex-col max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- HEADER -->
+        <header class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
+                    <i data-lucide="users" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-3">
+                        <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Painel de Clientes</h1>
+                        <!-- Indicator de status da API -->
+                        <div id="api-status-badge" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 transition-colors">
+                            <span id="api-status-dot" class="w-2 h-2 mr-1.5 rounded-full bg-slate-400"></span>
+                            <span id="api-status-text">Verificando...</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Gestão interna e controle operacional de cadastros</p>
+                </div>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center space-x-3 self-end sm:self-auto">
+                <!-- Toggle Dark Mode -->
+                <button id="theme-toggle" type="button" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500" title="Alternar Tema">
+                    <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+                    <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+                </button>
+
+                <!-- Reload Button -->
+                <button onclick="carregarClientes()" type="button" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500" title="Atualizar Dados">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- CARDS DE MÉTRICAS -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Total de Clientes -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total de Clientes</span>
+                    <div class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-baseline justify-between">
+                    <span id="metric-total" class="text-3xl font-extrabold text-slate-900 dark:text-white">0</span>
+                    <span class="text-xs text-slate-500 dark:text-slate-400">cadastrados</span>
+                </div>
+            </div>
+
+            <!-- Clientes Ativos -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Clientes Ativos</span>
+                    <div class="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                        <i data-lucide="user-check" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-baseline justify-between">
+                    <span id="metric-ativos" class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">0</span>
+                    <span id="metric-ativos-pct" class="text-xs font-medium text-emerald-600 dark:text-emerald-400">0%</span>
+                </div>
+            </div>
+
+            <!-- Clientes Inativos -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Clientes Inativos</span>
+                    <div class="p-2 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg">
+                        <i data-lucide="user-x" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-baseline justify-between">
+                    <span id="metric-inativos" class="text-3xl font-extrabold text-rose-600 dark:text-rose-400">0</span>
+                    <span id="metric-inativos-pct" class="text-xs font-medium text-rose-600 dark:text-rose-400">0%</span>
+                </div>
+            </div>
+
+            <!-- Distribuição por Plano -->
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Divisão de Planos</span>
+                    <div class="p-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg">
+                        <i data-lucide="award" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="mt-2 grid grid-cols-3 gap-1 text-center">
+                    <div class="bg-amber-50 dark:bg-amber-950/40 p-1.5 rounded-lg border border-amber-200/60 dark:border-amber-800/40">
+                        <span class="block text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">Bronze</span>
+                        <span id="metric-bronze" class="text-base font-bold text-amber-900 dark:text-amber-200">0</span>
+                    </div>
+                    <div class="bg-slate-100 dark:bg-slate-700/50 p-1.5 rounded-lg border border-slate-200/60 dark:border-slate-600/40">
+                        <span class="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">Prata</span>
+                        <span id="metric-prata" class="text-base font-bold text-slate-800 dark:text-slate-100">0</span>
+                    </div>
+                    <div class="bg-yellow-50 dark:bg-yellow-950/40 p-1.5 rounded-lg border border-yellow-200/60 dark:border-yellow-800/40">
+                        <span class="block text-[10px] font-bold uppercase text-yellow-700 dark:text-yellow-400">Ouro</span>
+                        <span id="metric-ouro" class="text-base font-bold text-yellow-900 dark:text-yellow-200">0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BARRA DE CONTROLE & BUSCA -->
+        <section class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            
+            <!-- Campo de Busca -->
+            <div class="flex-1 flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </div>
+                    <input type="text" id="search-input" oninput="filtrarTabela()" placeholder="Buscar por nome, email ou ID..." 
+                           class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all">
+                </div>
+
+                <!-- Filtro por Plano -->
+                <select id="filter-plano" onchange="filtrarTabela()" class="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos os Planos</option>
+                    <option value="bronze">Plano Bronze</option>
+                    <option value="prata">Plano Prata</option>
+                    <option value="ouro">Plano Ouro</option>
+                </select>
+
+                <!-- Filtro por Status -->
+                <select id="filter-status" onchange="filtrarTabela()" class="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos os Status</option>
+                    <option value="ativo">Ativos</option>
+                    <option value="inativo">Inativos</option>
+                </select>
+            </div>
+
+            <!-- Botão Novo Cliente -->
+            <button onclick="abrirModalCriar()" type="button" class="inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium text-sm rounded-xl shadow-sm hover:shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 whitespace-nowrap">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Novo Cliente
+            </button>
+        </section>
+
+        <!-- TABELA DE CLIENTES -->
+        <main class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm overflow-hidden flex-1 flex flex-col">
+            <div class="overflow-x-auto flex-1">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/80 dark:bg-slate-700/40 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            <th class="py-3.5 px-4 sm:px-6">ID</th>
+                            <th class="py-3.5 px-4 sm:px-6">Nome</th>
+                            <th class="py-3.5 px-4 sm:px-6">E-mail</th>
+                            <th class="py-3.5 px-4 sm:px-6">Plano</th>
+                            <th class="py-3.5 px-4 sm:px-6">Status</th>
+                            <th class="py-3.5 px-4 sm:px-6">Data Cadastro</th>
+                            <th class="py-3.5 px-4 sm:px-6 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-clientes-body" class="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
+                        <!-- Conteúdo preenchido dinamicamente via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Estado Vazio (Empty State) -->
+            <div id="empty-state" class="hidden p-12 text-center flex-1 flex flex-col items-center justify-center">
+                <div class="w-16 h-16 bg-slate-100 dark:bg-slate-700/50 text-slate-400 rounded-full flex items-center justify-center mb-4">
+                    <i data-lucide="users" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-800 dark:text-slate-200">Nenhum cliente encontrado</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
+                    Tente ajustar seus termos de busca/filtros ou cadastre um novo cliente no sistema.
+                </p>
+                <button onclick="abrirModalCriar()" class="mt-4 px-4 py-2 text-xs font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-100 transition-colors">
+                    + Cadastrar Novo Cliente
+                </button>
+            </div>
+
+            <!-- State de Carregamento -->
+            <div id="loading-state" class="p-12 text-center flex-1 flex flex-col items-center justify-center">
+                <div class="inline-block animate-spin text-blue-600 dark:text-blue-400 mb-3">
+                    <i data-lucide="loader-2" class="w-8 h-8"></i>
+                </div>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Carregando lista de clientes...</p>
+            </div>
+        </main>
+        
+        <!-- Rodapé simples de controle -->
+        <footer class="text-center text-xs text-slate-400 dark:text-slate-500 py-2">
+            Painel Interno de Gestão de Clientes &bull; Conectado a <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">http://localhost:8000</code>
+        </footer>
+    </div>
+
+    <!-- MODAL: NOVO CLIENTE -->
+    <div id="modal-criar" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-all scale-95 opacity-0 modal-box">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
+                <div class="flex items-center space-x-2.5">
+                    <div class="p-2 bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg">
+                        <i data-lucide="user-plus" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Novo Cliente</h3>
+                </div>
+                <button onclick="fecharModalCriar()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="form-criar" onsubmit="salvarNovoCliente(event)" class="mt-4 space-y-4">
+                <div>
+                    <label for="criar-nome" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Nome Completo *</label>
+                    <input type="text" id="criar-nome" required placeholder="Ex: Maria Silva" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label for="criar-email" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">E-mail *</label>
+                    <input type="email" id="criar-email" required placeholder="Ex: maria@empresa.com" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label for="criar-plano" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Plano Assinado *</label>
+                    <select id="criar-plano" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="bronze">Bronze</option>
+                        <option value="prata">Prata</option>
+                        <option value="ouro">Ouro</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-700/50">
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Status Ativo</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="criar-ativo" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-emerald-500"></div>
+                    </label>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" onclick="fecharModalCriar()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm font-medium transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btn-submit-criar" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm transition-colors flex items-center">
+                        <span>Cadastrar Cliente</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR CLIENTE -->
+    <div id="modal-editar" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-all scale-95 opacity-0 modal-box">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
+                <div class="flex items-center space-x-2.5">
+                    <div class="p-2 bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 rounded-lg">
+                        <i data-lucide="edit-3" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Editar Cliente</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">ID: #<span id="editar-id-label"></span></p>
+                    </div>
+                </div>
+                <button onclick="fecharModalEditar()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="form-editar" onsubmit="salvarEdicaoCliente(event)" class="mt-4 space-y-4">
+                <input type="hidden" id="editar-id">
+
+                <div>
+                    <label for="editar-nome" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Nome Completo</label>
+                    <input type="text" id="editar-nome" required 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label for="editar-email" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">E-mail</label>
+                    <input type="email" id="editar-email" required 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label for="editar-plano" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Plano Assinado</label>
+                    <select id="editar-plano" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="bronze">Bronze</option>
+                        <option value="prata">Prata</option>
+                        <option value="ouro">Ouro</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-700/50">
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Status Ativo</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="editar-ativo" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-emerald-500"></div>
+                    </label>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" onclick="fecharModalEditar()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm font-medium transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btn-submit-editar" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium shadow-sm transition-colors flex items-center">
+                        <span>Salvar Alterações</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EXCLUIR CLIENTE -->
+    <div id="modal-deletar" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-all scale-95 opacity-0 modal-box">
+            <div class="flex items-center space-x-3 text-rose-600 dark:text-rose-400 mb-3">
+                <div class="p-2.5 bg-rose-50 dark:bg-rose-900/40 rounded-xl">
+                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Confirmar Exclusão</h3>
+            </div>
+            
+            <p class="text-sm text-slate-600 dark:text-slate-300">
+                Tem certeza que deseja apagar permanentemente o cliente <strong id="deletar-nome-label" class="text-slate-900 dark:text-white"></strong> (ID: #<span id="deletar-id-label"></span>)?
+            </p>
+            <p class="text-xs text-rose-500 dark:text-rose-400 mt-2 font-medium">
+                Esta ação não poderá ser desfeita.
+            </p>
+
+            <div class="flex justify-end space-x-3 pt-5 mt-4 border-t border-slate-100 dark:border-slate-700">
+                <button type="button" onclick="fecharModalDeletar()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm font-medium transition-colors">
+                    Cancelar
+                </button>
+                <button type="button" onclick="confirmarExclusao()" id="btn-submit-deletar" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium shadow-sm transition-colors flex items-center">
+                    <span>Excluir Cliente</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS CONTAINER -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 max-w-sm w-full pointer-events-none"></div>
+
+</body>
+</html>
