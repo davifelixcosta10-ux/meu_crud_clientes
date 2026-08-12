@@ -1,9 +1,9 @@
-// Painel Administrativo de Clientes - Script Principal
+// Painel Administrativo de Clientes - Script Principal (Desktop & Mobile)
 
 // CONFIGURAÇÕES E ESTADO DA APLICAÇÃO
-const API_BASE_URL = 'http://localhost:8000';
-let clientesCache = [];
-let clienteParaDeletarId = null;
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:8000' 
+    : window.location.origin; // Usa a própria URL da Vercel quando estiver em produção
 
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', () => {
@@ -35,34 +35,43 @@ function configurarTema() {
 
     const themeToggleBtn = document.getElementById('theme-toggle');
     if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', () => {
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        });
+        themeToggleBtn.addEventListener('click', toggleTemaManual);
     }
 }
 
-// 2. VERIFICAÇÃO DE STATUS DA API
-async function verificarStatusAPI() {
-    const statusBadge = document.getElementById('api-status-badge');
-    const statusDot = document.getElementById('api-status-dot');
-    const statusText = document.getElementById('api-status-text');
+function toggleTemaManual() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+}
 
-    if (!statusBadge || !statusDot || !statusText) return;
+// 2. VERIFICAÇÃO DE STATUS DA API (DESKTOP & MOBILE)
+async function verificarStatusAPI() {
+    const badges = [
+        { badge: document.getElementById('api-status-badge'), dot: document.getElementById('api-status-dot'), text: document.getElementById('api-status-text') },
+        { badge: document.getElementById('api-status-badge-mobile'), dot: document.getElementById('api-status-dot-mobile'), text: document.getElementById('api-status-text-mobile') }
+    ];
 
     try {
         const res = await fetch(`${API_BASE_URL}/clientes`, { method: 'GET' });
-        if (res.ok || res.status === 200) {
-            statusDot.className = 'w-2 h-2 mr-1.5 rounded-full bg-emerald-500 animate-pulse';
-            statusBadge.className = 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
-            statusText.textContent = 'Conectado';
-        } else {
-            throw new Error('API respondeu com status de erro');
-        }
+        const ok = res.ok || res.status === 200;
+
+        badges.forEach(({ badge, dot, text }) => {
+            if (!badge || !dot || !text) return;
+            if (ok) {
+                dot.className = 'w-2 h-2 mr-1.5 rounded-full bg-emerald-500 animate-pulse';
+                badge.className = 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
+                text.textContent = 'Conectado';
+            } else {
+                throw new Error('Status erro');
+            }
+        });
     } catch (err) {
-        statusDot.className = 'w-2 h-2 mr-1.5 rounded-full bg-rose-500';
-        statusBadge.className = 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800';
-        statusText.textContent = 'Desconectado';
+        badges.forEach(({ badge, dot, text }) => {
+            if (!badge || !dot || !text) return;
+            dot.className = 'w-2 h-2 mr-1.5 rounded-full bg-rose-500';
+            badge.className = 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800';
+            text.textContent = 'Desconectado';
+        });
     }
 }
 
@@ -105,15 +114,15 @@ function atualizarMetricas(clientes) {
     const ativosPct = total > 0 ? Math.round((ativos / total) * 100) : 0;
     const inativosPct = total > 0 ? Math.round((inativos / total) * 100) : 0;
 
-    document.getElementById('metric-ativos-pct').textContent = `${ativosPct}% do total`;
-    document.getElementById('metric-inativos-pct').textContent = `${inativosPct}% do total`;
+    document.getElementById('metric-ativos-pct').textContent = `${ativosPct}%`;
+    document.getElementById('metric-inativos-pct').textContent = `${inativosPct}%`;
 
     document.getElementById('metric-bronze').textContent = bronze;
     document.getElementById('metric-prata').textContent = prata;
     document.getElementById('metric-ouro').textContent = ouro;
 }
 
-// 5. RENDERING E FILTRAGEM DA TABELA
+// 5. RENDERING E FILTRAGEM DA TABELA & CARDS MOBILE
 function filtrarTabela() {
     const termo = document.getElementById('search-input').value.toLowerCase().trim();
     const planoFiltro = document.getElementById('filter-plano').value;
@@ -130,14 +139,16 @@ function filtrarTabela() {
         return matchBusca && matchPlano && matchStatus;
     });
 
-    renderizarTabela(clientesFiltrados);
+    renderizarClientes(clientesFiltrados);
 }
 
-function renderizarTabela(clientes) {
+function renderizarClientes(clientes) {
     const tbody = document.getElementById('tabela-clientes-body');
+    const mobileCardsContainer = document.getElementById('mobile-cards-container');
     const emptyState = document.getElementById('empty-state');
     
     tbody.innerHTML = '';
+    mobileCardsContainer.innerHTML = '';
 
     if (clientes.length === 0) {
         emptyState.classList.remove('hidden');
@@ -147,9 +158,6 @@ function renderizarTabela(clientes) {
     emptyState.classList.add('hidden');
 
     clientes.forEach(cliente => {
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors group';
-
         // Formatar Data
         let dataFormatada = cliente.data_cadastro || '-';
         if (cliente.data_cadastro && cliente.data_cadastro.includes('-')) {
@@ -157,45 +165,29 @@ function renderizarTabela(clientes) {
             dataFormatada = `${dia}/${mes}/${ano}`;
         }
 
-        // Renderizar Badges de Plano
-        let planoBadge = '';
-        switch (cliente.plano) {
-            case 'bronze':
-                planoBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/50">
-                                <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-amber-500"></span>Bronze
-                              </span>`;
-                break;
-            case 'prata':
-                planoBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600">
-                                <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-slate-400"></span>Prata
-                              </span>`;
-                break;
-            case 'ouro':
-                planoBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 border border-yellow-300/80 dark:border-yellow-700/50">
-                                <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-yellow-500"></span>Ouro
-                              </span>`;
-                break;
-            default:
-                planoBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 capitalize">${cliente.plano}</span>`;
-        }
+        // Renderizar Badge de Plano
+        let planoBadgeHTML = getPlanoBadgeHTML(cliente.plano);
 
         // Renderizar Status Badge
-        const statusBadge = cliente.ativo
-            ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60">
-                 <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-500"></span>Ativo
+        const statusBadgeHTML = cliente.ativo
+            ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60">
+                 <span class="w-1.5 h-1.5 mr-1 rounded-full bg-emerald-500"></span>Ativo
                </span>`
-            : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/60">
-                 <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-rose-500"></span>Inativo
+            : `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/60">
+                 <span class="w-1.5 h-1.5 mr-1 rounded-full bg-rose-500"></span>Inativo
                </span>`;
 
+        // 1. DESKTOP ROW (TABLE)
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors group';
         tr.innerHTML = `
-            <td class="py-3.5 px-4 sm:px-6 font-mono text-xs font-medium text-slate-500 dark:text-slate-400">#${cliente.id}</td>
-            <td class="py-3.5 px-4 sm:px-6 font-semibold text-slate-900 dark:text-white">${escaparHTML(cliente.nome)}</td>
-            <td class="py-3.5 px-4 sm:px-6 text-slate-600 dark:text-slate-300">${escaparHTML(cliente.email)}</td>
-            <td class="py-3.5 px-4 sm:px-6">${planoBadge}</td>
-            <td class="py-3.5 px-4 sm:px-6">${statusBadge}</td>
-            <td class="py-3.5 px-4 sm:px-6 text-slate-500 dark:text-slate-400 text-xs">${dataFormatada}</td>
-            <td class="py-3.5 px-4 sm:px-6 text-right">
+            <td class="py-3.5 px-6 font-mono text-xs font-medium text-slate-500 dark:text-slate-400">#${cliente.id}</td>
+            <td class="py-3.5 px-6 font-semibold text-slate-900 dark:text-white">${escaparHTML(cliente.nome)}</td>
+            <td class="py-3.5 px-6 text-slate-600 dark:text-slate-300">${escaparHTML(cliente.email)}</td>
+            <td class="py-3.5 px-6">${planoBadgeHTML}</td>
+            <td class="py-3.5 px-6">${statusBadgeHTML}</td>
+            <td class="py-3.5 px-6 text-slate-500 dark:text-slate-400 text-xs">${dataFormatada}</td>
+            <td class="py-3.5 px-6 text-right">
                 <div class="inline-flex items-center space-x-2">
                     <button onclick="abrirModalEditar(${cliente.id})" class="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors" title="Editar Cliente">
                         <i data-lucide="edit" class="w-4 h-4"></i>
@@ -207,10 +199,59 @@ function renderizarTabela(clientes) {
             </td>
         `;
         tbody.appendChild(tr);
+
+        // 2. MOBILE CARD
+        const card = document.createElement('div');
+        card.className = 'p-4 rounded-xl border border-slate-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-800 shadow-sm space-y-3';
+        card.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md">#${cliente.id}</span>
+                <div>${statusBadgeHTML}</div>
+            </div>
+
+            <div>
+                <h4 class="font-bold text-slate-900 dark:text-white text-base leading-snug">${escaparHTML(cliente.nome)}</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${escaparHTML(cliente.email)}</p>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60 text-xs">
+                <div>${planoBadgeHTML}</div>
+                <span class="text-slate-400 text-[11px]">Cadastrado: ${dataFormatada}</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                <button onclick="abrirModalEditar(${cliente.id})" class="flex items-center justify-center py-2 px-3 rounded-lg border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/30 text-xs font-medium active:bg-amber-100">
+                    <i data-lucide="edit" class="w-3.5 h-3.5 mr-1.5"></i> Editar
+                </button>
+                <button onclick="abrirModalDeletar(${cliente.id})" class="flex items-center justify-center py-2 px-3 rounded-lg border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/30 text-xs font-medium active:bg-rose-100">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1.5"></i> Excluir
+                </button>
+            </div>
+        `;
+        mobileCardsContainer.appendChild(card);
     });
 
     if (window.lucide) {
         lucide.createIcons();
+    }
+}
+
+function getPlanoBadgeHTML(plano) {
+    switch (plano) {
+        case 'bronze':
+            return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/50">
+                        <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-amber-500"></span>Bronze
+                    </span>`;
+        case 'prata':
+            return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600">
+                        <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-slate-400"></span>Prata
+                    </span>`;
+        case 'ouro':
+            return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 border border-yellow-300/80 dark:border-yellow-700/50">
+                        <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-yellow-500"></span>Ouro
+                    </span>`;
+        default:
+            return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 capitalize">${plano}</span>`;
     }
 }
 
@@ -420,10 +461,10 @@ function exibirToast(mensagem, tipo = 'sucesso') {
     const bgClass = isSucesso ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-rose-600 text-white';
     const iconName = isSucesso ? 'check-circle' : 'alert-circle';
 
-    toast.className = `flex items-center space-x-3 p-4 rounded-xl shadow-xl ${bgClass} pointer-events-auto transform transition-all duration-300 translate-y-4 opacity-0`;
+    toast.className = `flex items-center space-x-3 p-3.5 sm:p-4 rounded-xl shadow-xl ${bgClass} pointer-events-auto transform transition-all duration-300 translate-y-4 opacity-0`;
     toast.innerHTML = `
         <i data-lucide="${iconName}" class="w-5 h-5 flex-shrink-0"></i>
-        <span class="text-sm font-medium flex-1">${escaparHTML(mensagem)}</span>
+        <span class="text-xs sm:text-sm font-medium flex-1">${escaparHTML(mensagem)}</span>
         <button onclick="this.parentElement.remove()" class="p-1 opacity-70 hover:opacity-100">
             <i data-lucide="x" class="w-4 h-4"></i>
         </button>

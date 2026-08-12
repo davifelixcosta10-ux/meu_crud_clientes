@@ -1,11 +1,24 @@
-/* Custom Styles & Utilities for Admin Dashboard */
+/* Custom Styles & Utilities for Mobile & Desktop Admin Dashboard */
 
-/* Smooth Transitions */
+/* Smooth Transitions for Modals */
 .modal-box {
-    transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease-out;
 }
 
-/* Custom Scrollbars for Table and App */
+/* Mobile Bottom Sheet Alignment for Modals */
+@media (max-width: 639px) {
+    .modal-container {
+        align-items: flex-end;
+        padding: 0;
+    }
+    .modal-box {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        max-height: 92vh;
+    }
+}
+
+/* Custom Touch-Friendly Scrollbars */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;

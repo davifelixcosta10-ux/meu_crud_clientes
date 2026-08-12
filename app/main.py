@@ -1,71 +1,97 @@
+import os
 from datetime import date
 from pydantic import ValidationError
 from app.models import ClienteCreate, Cliente, PlanoEnum, ClienteUpdate
-from app.storage import carregar_clientes, salvar_clientes
+from app.storage import (
+    carregar_clientes,
+    salvar_novo_cliente,
+    atualizar_cliente_db,
+    deletar_cliente_db,
+)
+from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-#função que irá listar as informações dos clientes
-def listar_clientes():
+app = FastAPI()
+
+# Permite que o frontend acesse os endpoints sem ser bloqueado
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Em produção, você pode restringir para "https://site-one-peach-32.vercel.app"
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Servir arquivos estáticos do frontend
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static_files")
+
+# --- ENDPOINTS DA API FASTAPI ---
+
+@app.get("/clientes", response_model=list[Cliente])
+def api_listar_clientes():
+    return listar_clientes()
+
+@app.get("/clientes/{cliente_id}", response_model=Cliente)
+def api_buscar_cliente(cliente_id: int):
+    cliente = buscar_clientes(cliente_id)
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    return cliente
+
+@app.post("/clientes", response_model=Cliente, status_code=status.HTTP_201_CREATED)
+def api_criar_cliente(dados: ClienteCreate):
+    return criar_cliente(dados)
+
+@app.patch("/clientes/{cliente_id}", response_model=Cliente)
+def api_atualizar_cliente(cliente_id: int, dados: ClienteUpdate):
+    cliente = atualizar_cliente(cliente_id, dados)
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    return cliente
+
+@app.delete("/clientes/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
+def api_deletar_cliente(cliente_id: int):
+    sucesso = deletar_clientes(cliente_id)
+    if not sucesso:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+
+# Mount da página principal (HTML) na raiz
+if os.path.exists(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+
+# --- FUNÇÕES DE NEGÓCIO ---
+
+# função que irá listar as informações dos clientes
+def listar_clientes() -> list[Cliente]:
     return carregar_clientes()
 
-#Função que irá buscar os clientes pelo ID
+# Função que irá buscar os clientes pelo ID
 def buscar_clientes(cliente_id: int) -> Cliente | None:
-    #Função que coloca clientespela função que carrega a lista de clientes.json
     clientes = carregar_clientes()
-    #Percorre a lista "criada" pela função carregar_clientes e retorna o nome os dados do cliente
     for c in clientes:
         if c.id == cliente_id:
             return c
     return None
 
-#Nome da função é autoexplicativo
+# Função para criar um novo cliente no banco de dados (Supabase)
 def criar_cliente(dados: ClienteCreate) -> Cliente:
-    #Mesma coisa lá em cima
-    clientes = carregar_clientes()
-    #Cria o ID do novo cliente, é default=0 pois não há clientes(Pode causar bugs)
-    novo_id = max([c.id for c in clientes], default=0) + 1
+    payload = dados.model_dump(mode="json")
+    payload["data_cadastro"] = date.today().isoformat()
+    return salvar_novo_cliente(payload)
 
-    #Atribui os dados do cliente necessários
-    novo_cliente = Cliente(
-        id=novo_id,
-        nome=dados.nome,
-        email=dados.email,
-        plano=dados.plano,
-        ativo=dados.ativo,
-        data_cadastro=date.today()
-    )
-
-    #Adiciona o cliente ao arquivo e salva no arquivo clientes.json 
-    clientes.append(novo_cliente)
-    salvar_clientes(clientes)
-    return novo_cliente
-
+# Função para deletar um cliente pelo ID
 def deletar_clientes(cliente_id: int) -> bool:
-    clientes = carregar_clientes()
-    #Peneira para manter apenas quem NÃO tem ID passado
-    clientes_filtrados = [c for c in clientes if c.id != cliente_id]
+    return deletar_cliente_db(cliente_id)
 
-    if len(clientes_filtrados) == len(clientes):
-        return False # Nenhum cliente foi removido (ID não existe)
-
-    salvar_clientes(clientes_filtrados)
-    return True
-
+# Função para atualizar os dados de um cliente
 def atualizar_cliente(cliente_id: int, dados_novos: ClienteUpdate) -> Cliente | None:
-    clientes = carregar_clientes()
-
-    for idx, c in enumerate(clientes):
-        if c.id == cliente_id:
-            #Pega apenas os campos que já foram preenchidos (diferentes de None)
-            campos_para_atualizar = dados_novos.model_dump(exclude_unset=True)
-
-            # Cria uma cópia do cliente  mantendo o ID e a data intactos
-            cliente_atualizado = c.model_copy(update=campos_para_atualizar)
-
-            clientes[idx] = cliente_atualizado
-            salvar_clientes(clientes)
-            return cliente_atualizado
-        
-    return None
+    campos_para_atualizar = dados_novos.model_dump(exclude_unset=True, mode="json")
+    if not campos_para_atualizar:
+        return buscar_clientes(cliente_id)
+    return atualizar_cliente_db(cliente_id, campos_para_atualizar)
 
 #----------- INTERFACE CLI TEMPORÁRIA -----------
 def menu():
