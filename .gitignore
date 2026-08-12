@@ -1,0 +1,16 @@
+# Chaves e variáveis de ambiente (Segurança)
+data/arquivos.env
+*.env
+.env
+
+# Ambiente virtual
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDEs
+.vscode/
+.idea/
