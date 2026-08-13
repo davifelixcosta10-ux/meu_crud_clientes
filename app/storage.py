@@ -30,16 +30,17 @@ def salvar_novo_cliente(cliente_dados: dict) -> Cliente:
     return Cliente.model_validate(response.data[0])
 
 
-def atualizar_cliente_db(cliente_id: int, cliente_dados: dict) -> Cliente | None:
+def atualizar_cliente_db(cliente_id: int | str, cliente_dados: dict) -> Cliente | None:
     supabase = get_supabase_client()
-    # Atualiza apenas os campos passados
-    response = supabase.table("clientes").update(cliente_dados).eq("id", cliente_id).execute()
+    # Filtra chaves com valor None para atualizações parciais
+    dados_filtrados = {k: v for k, v in cliente_dados.items() if v is not None}
+    response = supabase.table("clientes").update(dados_filtrados).eq("id", cliente_id).execute()
     if response.data:
         return Cliente.model_validate(response.data[0])
     return None
 
 
-def deletar_cliente_db(cliente_id: int) -> bool:
+def deletar_cliente_db(cliente_id: int | str) -> bool:
     supabase = get_supabase_client()
     response = supabase.table("clientes").delete().eq("id", cliente_id).execute()
     return len(response.data) > 0
