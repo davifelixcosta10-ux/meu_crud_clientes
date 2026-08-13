@@ -1,11 +1,21 @@
-/* Custom Styles & Utilities for Mobile & Desktop Admin Dashboard */
+/* ============================================================
+   DaviFlow — Custom Styles & Utilities
+   Dashboard Admin + Landing Page
+   ============================================================ */
 
-/* Smooth Transitions for Modals */
+/* --- Smooth Scroll --- */
+html {
+    scroll-behavior: smooth;
+}
+
+/* ============================================================
+   DASHBOARD: Modal Animations
+   ============================================================ */
+
 .modal-box {
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease-out;
 }
 
-/* Mobile Bottom Sheet Alignment for Modals */
 @media (max-width: 639px) {
     .modal-container {
         align-items: flex-end;
@@ -18,29 +28,146 @@
     }
 }
 
-/* Custom Touch-Friendly Scrollbars */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+/* ============================================================
+   LANDING PAGE: Animations & Effects
+   ============================================================ */
+
+/* Scroll-reveal fade-in-up */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(32px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-::-webkit-scrollbar-track {
-    background: transparent;
+.animate-fade-in-up {
+    animation: fadeInUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Stagger delays for children */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.12s; }
+.stagger-3 { animation-delay: 0.19s; }
+.stagger-4 { animation-delay: 0.26s; }
+.stagger-5 { animation-delay: 0.33s; }
+
+/* Intersection Observer hidden state */
+.reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Gradient text — hero headline */
+.gradient-text {
+    background: linear-gradient(135deg, #22d3ee 0%, #10b981 60%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Neon glow on primary CTA */
+.btn-glow {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.35), 0 4px 15px rgba(0,0,0,0.3);
+    transition: box-shadow 0.25s ease, transform 0.2s ease;
+}
+.btn-glow:hover {
+    box-shadow: 0 0 32px rgba(6, 182, 212, 0.55), 0 6px 20px rgba(0,0,0,0.4);
+    transform: translateY(-2px);
+}
+
+/* Glassmorphism cards */
+.glass-card {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+/* Feature card glow on hover */
+.feature-card {
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Pricing card highlight ring */
+.pricing-highlight {
+    box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.5), 0 20px 60px rgba(6, 182, 212, 0.12);
+}
+
+/* Animated background blobs */
+@keyframes blobFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(30px, -20px) scale(1.05); }
+    66%       { transform: translate(-20px, 10px) scale(0.97); }
+}
+.blob {
+    animation: blobFloat 12s ease-in-out infinite;
+    filter: blur(80px);
+    opacity: 0.18;
+    will-change: transform;
+}
+.blob-delay {
+    animation-delay: -6s;
+}
+
+/* Mockup dashboard inside hero */
+.mockup-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2.5s infinite;
+}
+@keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Step connector line */
+.step-line::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 22px;
+    left: calc(50% + 28px);
+    width: calc(100% - 56px);
+    height: 2px;
+    background: linear-gradient(90deg, #22d3ee33, #10b98133);
+    border-radius: 2px;
+}
+@media (max-width: 767px) {
+    .step-line::after { display: none; }
+}
+
+/* Navbar scrolled state */
+.navbar-scrolled {
+    background: rgba(15, 23, 42, 0.92) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(100, 116, 139, 0.15);
+}
+
+/* ============================================================
+   SHARED: Custom Scrollbars
+   ============================================================ */
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
     background: rgba(148, 163, 184, 0.4);
     border-radius: 9999px;
 }
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(148, 163, 184, 0.6);
-}
-
-.dark ::-webkit-scrollbar-thumb {
-    background: rgba(71, 85, 105, 0.5);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-    background: rgba(71, 85, 105, 0.8);
-}
+::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.6); }
+.dark ::-webkit-scrollbar-thumb { background: rgba(71, 85, 105, 0.5); }
+.dark ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 0.8); }

@@ -1,15 +1,20 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Clientes - Gestão Operacional</title>
-    
-    <!-- Google Fonts (Inter) -->
+    <title>DaviFlow — Gestão de Clientes sem Planilhas</title>
+    <meta name="description" content="O DaviFlow centraliza cadastros, métricas e planos em um painel intuitivo. Perfeito para freelancers, autônomos e pequenos negócios. Comece gratuitamente.">
+    <meta name="keywords" content="gestão de clientes, CRM, freelancer, pequenos negócios, painel de métricas, DaviFlow">
+    <meta property="og:title" content="DaviFlow — Gestão de Clientes sem Planilhas">
+    <meta property="og:description" content="Centralize cadastros, métricas e planos. Sem o caos das planilhas.">
+    <meta property="og:type" content="website">
+
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -17,405 +22,1096 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        brand: {
-                            50: '#f0f7ff',
-                            100: '#e0effe',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                        }
+                        slate: {
+                            950: '#0f172a',
+                            900: '#0f172a',
+                            850: '#131e30',
+                            800: '#1e293b',
+                        },
+                        cyan: { DEFAULT: '#06b6d4' },
+                        emerald: { DEFAULT: '#10b981' },
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                     }
                 }
             }
         }
     </script>
-    
-    <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style.css">
-    
+
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Application Script -->
-    <script src="app.js" defer></script>
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="h-full bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 antialiased font-sans flex flex-col min-h-screen transition-colors duration-200">
+<body class="bg-[#0f172a] text-slate-100 antialiased font-sans overflow-x-hidden">
 
-    <!-- Container Principal -->
-    <div class="flex-1 flex flex-col max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+    <!-- =====================================================
+         ANIMATED BACKGROUND BLOBS
+         ===================================================== -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="blob absolute w-[600px] h-[600px] -top-40 -left-40 rounded-full bg-cyan-500"></div>
+        <div class="blob blob-delay absolute w-[500px] h-[500px] top-1/3 right-[-150px] rounded-full bg-emerald-500"></div>
+        <div class="blob absolute w-[400px] h-[400px] bottom-[-100px] left-1/4 rounded-full bg-cyan-600"></div>
+    </div>
 
-        <!-- HEADER RESPONSIVO -->
-        <header class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="flex items-center justify-between sm:justify-start w-full sm:w-auto">
-                <div class="flex items-center space-x-3">
-                    <div class="p-2 sm:p-2.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
-                        <i data-lucide="users" class="w-6 h-6 sm:w-7 sm:h-7"></i>
+    <!-- =====================================================
+         NAVBAR
+         ===================================================== -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 sm:h-18">
+
+                <!-- Logo -->
+                <a href="#" class="flex items-center space-x-2.5 group" aria-label="DaviFlow Home">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-200">
+                        <i data-lucide="zap" class="w-5 h-5 text-white"></i>
                     </div>
-                    <div>
-                        <div class="flex items-center space-x-2 sm:space-x-3">
-                            <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Painel de Clientes</h1>
-                            <!-- Indicator de status da API (Desktop) -->
-                            <div id="api-status-badge" class="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 transition-colors">
-                                <span id="api-status-dot" class="w-2 h-2 mr-1.5 rounded-full bg-slate-400"></span>
-                                <span id="api-status-text">Verificando...</span>
+                    <span class="text-xl font-bold text-white tracking-tight">Davi<span class="gradient-text">Flow</span></span>
+                </a>
+
+                <!-- Desktop Nav Links -->
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="#features" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-150">Recursos</a>
+                    <a href="#how-it-works" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-150">Como Funciona</a>
+                    <a href="#pricing" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-150">Preços</a>
+                    <a href="#about" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-150">Sobre</a>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-3">
+                    <button id="nav-login-btn" onclick="openModal('modal-login')"
+                        class="hidden sm:inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-xl bg-transparent hover:bg-white/5 transition-all duration-200">
+                        Entrar
+                    </button>
+                    <button id="nav-register-btn" onclick="openModal('modal-register')"
+                        class="inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 rounded-xl shadow-md btn-glow transition-all duration-200">
+                        Criar Conta
+                    </button>
+
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-btn" class="md:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all" aria-label="Menu">
+                        <i data-lucide="menu" class="w-5 h-5" id="menu-icon-open"></i>
+                        <i data-lucide="x" class="w-5 h-5 hidden" id="menu-icon-close"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-800 bg-[#0f172a]/95 backdrop-blur-lg">
+            <div class="px-4 py-4 space-y-1">
+                <a href="#features" onclick="closeMobileMenu()" class="block px-4 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-all">Recursos</a>
+                <a href="#how-it-works" onclick="closeMobileMenu()" class="block px-4 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-all">Como Funciona</a>
+                <a href="#pricing" onclick="closeMobileMenu()" class="block px-4 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-all">Preços</a>
+                <a href="#about" onclick="closeMobileMenu()" class="block px-4 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-all">Sobre</a>
+                <div class="pt-3 border-t border-slate-800 flex flex-col space-y-2">
+                    <button onclick="closeMobileMenu(); openModal('modal-login')"
+                        class="w-full px-4 py-2.5 text-sm font-semibold text-slate-300 border border-slate-700 rounded-xl hover:bg-white/5 transition-all">
+                        Entrar
+                    </button>
+                    <button onclick="closeMobileMenu(); openModal('modal-register')"
+                        class="w-full px-4 py-2.5 text-sm font-semibold text-slate-900 bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-xl">
+                        Criar Conta Gratuita
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- =====================================================
+         HERO SECTION
+         ===================================================== -->
+    <section id="hero" class="relative pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 z-10">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+                <!-- Left: Copy -->
+                <div class="text-center lg:text-left">
+                    <!-- Badge -->
+                    <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-widest mb-6 animate-fade-in-up">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                        <span>Plataforma para profissionais modernos</span>
+                    </div>
+
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.08] tracking-tight text-white animate-fade-in-up stagger-1">
+                        Acompanhe seus clientes<br>
+                        <span class="gradient-text">sem o caos</span><br>
+                        das planilhas.
+                    </h1>
+
+                    <p class="mt-6 text-base sm:text-lg text-slate-400 leading-relaxed max-w-xl mx-auto lg:mx-0 animate-fade-in-up stagger-2">
+                        O DaviFlow centraliza cadastros, métricas e planos em um painel intuitivo para você focar no que realmente importa: <span class="text-slate-200 font-medium">fazer seu negócio crescer.</span>
+                    </p>
+
+                    <!-- CTAs -->
+                    <div class="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 animate-fade-in-up stagger-3">
+                        <button id="hero-register-btn" onclick="openModal('modal-register')"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-bold text-slate-900 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 rounded-2xl btn-glow transition-all duration-200">
+                            <i data-lucide="rocket" class="w-4 h-4"></i>
+                            Criar Conta Gratuita
+                        </button>
+                        <a href="#how-it-works"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-2xl hover:bg-white/5 transition-all duration-200">
+                            <i data-lucide="play-circle" class="w-4 h-4"></i>
+                            Ver Demonstração
+                        </a>
+                    </div>
+
+                    <!-- Social Proof -->
+                    <div class="mt-8 flex items-center justify-center lg:justify-start gap-4 animate-fade-in-up stagger-4">
+                        <div class="flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 border-2 border-[#0f172a] flex items-center justify-center text-xs font-bold text-white">M</div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 border-2 border-[#0f172a] flex items-center justify-center text-xs font-bold text-white">A</div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 border-2 border-[#0f172a] flex items-center justify-center text-xs font-bold text-white">R</div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 border-2 border-[#0f172a] flex items-center justify-center text-xs font-bold text-white">L</div>
+                        </div>
+                        <p class="text-sm text-slate-400">
+                            <span class="text-white font-semibold">+500 profissionais</span> já usam o DaviFlow
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right: Dashboard Mockup -->
+                <div class="relative animate-fade-in-up stagger-2">
+                    <!-- Outer glow frame -->
+                    <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/10 blur-2xl scale-105"></div>
+                    <div class="relative rounded-3xl overflow-hidden border border-slate-700/60 shadow-2xl glass-card">
+
+                        <!-- Mockup Header Bar -->
+                        <div class="flex items-center justify-between px-4 py-3 bg-slate-800/80 border-b border-slate-700/60">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 rounded-full bg-rose-500/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+                            </div>
+                            <div class="flex items-center space-x-1.5 text-slate-400 text-xs">
+                                <i data-lucide="zap" class="w-3.5 h-3.5 text-cyan-400"></i>
+                                <span class="font-medium text-slate-300">DaviFlow</span>
+                                <span>— Painel de Clientes</span>
+                            </div>
+                            <div class="flex items-center space-x-1 text-[10px] text-emerald-400 font-medium bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+                                <span>Live</span>
                             </div>
                         </div>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Gestão interna e controle operacional de cadastros</p>
+
+                        <!-- Mockup Body -->
+                        <div class="p-4 bg-[#0f172a]/80 space-y-4">
+
+                            <!-- Metric Cards Row -->
+                            <div class="grid grid-cols-4 gap-2">
+                                <div class="glass-card rounded-xl p-2.5 text-center">
+                                    <div class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Total</div>
+                                    <div class="text-xl font-black text-white mt-0.5">48</div>
+                                    <div class="text-[9px] text-slate-500">clientes</div>
+                                </div>
+                                <div class="glass-card rounded-xl p-2.5 text-center">
+                                    <div class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Ativos</div>
+                                    <div class="text-xl font-black text-emerald-400 mt-0.5">36</div>
+                                    <div class="text-[9px] text-emerald-600 font-medium">75%</div>
+                                </div>
+                                <div class="glass-card rounded-xl p-2.5 text-center">
+                                    <div class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Inativos</div>
+                                    <div class="text-xl font-black text-rose-400 mt-0.5">12</div>
+                                    <div class="text-[9px] text-rose-600 font-medium">25%</div>
+                                </div>
+                                <div class="glass-card rounded-xl p-2.5 text-center">
+                                    <div class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Planos</div>
+                                    <div class="grid grid-cols-3 gap-0.5 mt-1">
+                                        <div class="bg-amber-500/20 rounded text-[8px] text-amber-400 font-bold text-center py-0.5">12</div>
+                                        <div class="bg-slate-500/20 rounded text-[8px] text-slate-300 font-bold text-center py-0.5">20</div>
+                                        <div class="bg-yellow-500/20 rounded text-[8px] text-yellow-400 font-bold text-center py-0.5">16</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Search Bar Mock -->
+                            <div class="flex gap-2">
+                                <div class="flex-1 flex items-center gap-2 glass-card rounded-xl px-3 py-2">
+                                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500"></i>
+                                    <span class="text-slate-500 text-xs">Buscar cliente...</span>
+                                </div>
+                                <div class="glass-card rounded-xl px-3 py-2 text-xs text-slate-500">Plano ▾</div>
+                                <div class="glass-card rounded-xl px-3 py-2 text-xs text-slate-500">Status ▾</div>
+                                <div class="bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 flex items-center gap-1">
+                                    <i data-lucide="plus" class="w-3 h-3"></i> Novo
+                                </div>
+                            </div>
+
+                            <!-- Client Table Mock -->
+                            <div class="glass-card rounded-xl overflow-hidden">
+                                <div class="grid grid-cols-4 gap-2 px-3 py-2 border-b border-slate-700/60 text-[9px] font-semibold uppercase tracking-wider text-slate-500">
+                                    <span>Nome</span>
+                                    <span>Email</span>
+                                    <span>Plano</span>
+                                    <span>Status</span>
+                                </div>
+                                <!-- Row 1 -->
+                                <div class="grid grid-cols-4 gap-2 px-3 py-2 border-b border-slate-800/60 items-center">
+                                    <span class="text-xs text-white font-medium truncate">Ana Lima</span>
+                                    <span class="text-[10px] text-slate-500 truncate">ana@mail.com</span>
+                                    <span class="inline-block px-1.5 py-0.5 text-[9px] font-bold bg-yellow-500/10 text-yellow-400 rounded-md">Ouro</span>
+                                    <span class="inline-flex items-center gap-1 text-[9px] font-medium text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>Ativo</span>
+                                </div>
+                                <!-- Row 2 -->
+                                <div class="grid grid-cols-4 gap-2 px-3 py-2 border-b border-slate-800/60 items-center">
+                                    <span class="text-xs text-white font-medium truncate">Carlos M.</span>
+                                    <span class="text-[10px] text-slate-500 truncate">carlos@mail.com</span>
+                                    <span class="inline-block px-1.5 py-0.5 text-[9px] font-bold bg-slate-500/20 text-slate-300 rounded-md">Prata</span>
+                                    <span class="inline-flex items-center gap-1 text-[9px] font-medium text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>Ativo</span>
+                                </div>
+                                <!-- Row 3 -->
+                                <div class="grid grid-cols-4 gap-2 px-3 py-2 items-center">
+                                    <span class="text-xs text-white font-medium truncate">Juliana R.</span>
+                                    <span class="text-[10px] text-slate-500 truncate">ju@mail.com</span>
+                                    <span class="inline-block px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/10 text-amber-400 rounded-md">Bronze</span>
+                                    <span class="inline-flex items-center gap-1 text-[9px] font-medium text-rose-400"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block"></span>Inativo</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Floating badge -->
+                    <div class="absolute -top-3 -right-3 bg-gradient-to-br from-cyan-400 to-emerald-400 text-slate-900 text-xs font-black px-3 py-1.5 rounded-xl shadow-lg rotate-3">
+                        ✨ Tempo Real
                     </div>
                 </div>
 
-                <!-- Header Actions (Mobile Right) -->
-                <div class="flex sm:hidden items-center space-x-2">
-                    <button id="theme-toggle-mobile" onclick="toggleTemaManual()" type="button" class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 active:bg-slate-100" title="Alternar Tema">
-                        <i data-lucide="moon" class="w-4 h-4 hidden dark:block"></i>
-                        <i data-lucide="sun" class="w-4 h-4 block dark:hidden"></i>
-                    </button>
-                    <button onclick="carregarClientes()" type="button" class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 active:bg-slate-100" title="Atualizar Dados">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                    </button>
-                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =====================================================
+         FEATURES SECTION
+         ===================================================== -->
+    <section id="features" class="relative py-20 sm:py-28 px-4 z-10">
+        <div class="max-w-7xl mx-auto">
+
+            <!-- Section Header -->
+            <div class="text-center mb-16 reveal">
+                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-widest mb-4">
+                    Recursos
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-black text-white">Tudo que você precisa,<br><span class="gradient-text">em um só lugar.</span></h2>
+                <p class="mt-4 text-slate-400 max-w-xl mx-auto">Projetado para quem não tem tempo a perder. Rápido, inteligente e feito para o seu ritmo.</p>
             </div>
 
-            <!-- Header Actions (Desktop & Mobile Status Line) -->
-            <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-700/60 sm:space-x-3">
-                <!-- Status Badge no Mobile -->
-                <div id="api-status-badge-mobile" class="inline-flex sm:hidden items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                    <span id="api-status-dot-mobile" class="w-2 h-2 mr-1.5 rounded-full bg-slate-400"></span>
-                    <span id="api-status-text-mobile">Verificando...</span>
-                </div>
+            <!-- Feature Cards Grid -->
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
-                <div class="hidden sm:flex items-center space-x-3">
-                    <!-- Toggle Dark Mode Desktop -->
-                    <button id="theme-toggle" type="button" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500" title="Alternar Tema">
-                        <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
-                        <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
-                    </button>
-
-                    <!-- Reload Button Desktop -->
-                    <button onclick="carregarClientes()" type="button" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500" title="Atualizar Dados">
-                        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- CARDS DE MÉTRICAS RESPONSIVOS (Grid 2x2 no mobile, 4 colunas no Desktop) -->
-        <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <!-- Total de Clientes -->
-            <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total</span>
-                    <div class="p-1.5 sm:p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
-                        <i data-lucide="users" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                <!-- Card 1: Gestão Centralizada -->
+                <div class="feature-card glass-card rounded-2xl p-6 hover:border-cyan-500/40 reveal">
+                    <div class="w-11 h-11 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-5">
+                        <i data-lucide="users" class="w-5 h-5 text-cyan-400"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-2">Gestão Centralizada</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">Cadastre, edite e acompanhe o status de cada cliente em tempo real, sem abrir uma única planilha.</p>
+                    <div class="mt-5 flex items-center gap-1.5 text-xs font-medium text-cyan-400">
+                        <span>Saiba mais</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                     </div>
                 </div>
-                <div class="mt-2 sm:mt-3 flex items-baseline justify-between">
-                    <span id="metric-total" class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">0</span>
-                    <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">clientes</span>
-                </div>
-            </div>
 
-            <!-- Clientes Ativos -->
-            <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ativos</span>
-                    <div class="p-1.5 sm:p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
-                        <i data-lucide="user-check" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                <!-- Card 2: Painel de Métricas -->
+                <div class="feature-card glass-card rounded-2xl p-6 hover:border-emerald-500/40 reveal">
+                    <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-5">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-emerald-400"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-2">Painel de Métricas</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">Visualize instantaneamente o total de clientes ativos, inativos e a distribuição entre planos.</p>
+                    <div class="mt-5 flex items-center gap-1.5 text-xs font-medium text-emerald-400">
+                        <span>Saiba mais</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                     </div>
                 </div>
-                <div class="mt-2 sm:mt-3 flex items-baseline justify-between">
-                    <span id="metric-ativos" class="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">0</span>
-                    <span id="metric-ativos-pct" class="text-[10px] sm:text-xs font-medium text-emerald-600 dark:text-emerald-400">0%</span>
-                </div>
-            </div>
 
-            <!-- Clientes Inativos -->
-            <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Inativos</span>
-                    <div class="p-1.5 sm:p-2 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg">
-                        <i data-lucide="user-x" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                <!-- Card 3: Segurança -->
+                <div class="feature-card glass-card rounded-2xl p-6 hover:border-purple-500/40 reveal">
+                    <div class="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-5">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-purple-400"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-2">Segurança & Isolamento</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">Seus dados protegidos com criptografia e isolamento individual de conta. Nível corporativo.</p>
+                    <div class="mt-5 flex items-center gap-1.5 text-xs font-medium text-purple-400">
+                        <span>Saiba mais</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                     </div>
                 </div>
-                <div class="mt-2 sm:mt-3 flex items-baseline justify-between">
-                    <span id="metric-inativos" class="text-2xl sm:text-3xl font-extrabold text-rose-600 dark:text-rose-400">0</span>
-                    <span id="metric-inativos-pct" class="text-[10px] sm:text-xs font-medium text-rose-600 dark:text-rose-400">0%</span>
-                </div>
-            </div>
 
-            <!-- Distribuição por Plano -->
-            <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Planos</span>
-                    <div class="p-1.5 sm:p-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg">
-                        <i data-lucide="award" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                <!-- Card 4: Acesso em Qualquer Lugar -->
+                <div class="feature-card glass-card rounded-2xl p-6 hover:border-amber-500/40 reveal">
+                    <div class="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-5">
+                        <i data-lucide="smartphone" class="w-5 h-5 text-amber-400"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-2">Acesso em Qualquer Lugar</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">Totalmente responsivo e otimizado para desktop, tablet e celular. Onde você estiver.</p>
+                    <div class="mt-5 flex items-center gap-1.5 text-xs font-medium text-amber-400">
+                        <span>Saiba mais</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                     </div>
                 </div>
-                <div class="mt-1.5 sm:mt-2 grid grid-cols-3 gap-1 text-center">
-                    <div class="bg-amber-50 dark:bg-amber-950/40 p-1 rounded-lg border border-amber-200/60 dark:border-amber-800/40">
-                        <span class="block text-[9px] sm:text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">Bro</span>
-                        <span id="metric-bronze" class="text-xs sm:text-base font-bold text-amber-900 dark:text-amber-200">0</span>
-                    </div>
-                    <div class="bg-slate-100 dark:bg-slate-700/50 p-1 rounded-lg border border-slate-200/60 dark:border-slate-600/40">
-                        <span class="block text-[9px] sm:text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">Pra</span>
-                        <span id="metric-prata" class="text-xs sm:text-base font-bold text-slate-800 dark:text-slate-100">0</span>
-                    </div>
-                    <div class="bg-yellow-50 dark:bg-yellow-950/40 p-1 rounded-lg border border-yellow-200/60 dark:border-yellow-800/40">
-                        <span class="block text-[9px] sm:text-[10px] font-bold uppercase text-yellow-700 dark:text-yellow-400">Ouro</span>
-                        <span id="metric-ouro" class="text-xs sm:text-base font-bold text-yellow-900 dark:text-yellow-200">0</span>
-                    </div>
-                </div>
+
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- BARRA DE CONTROLE & BUSCA RESPONSIVA -->
-        <section class="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
-            
-            <!-- Campo de Busca e Filtros -->
-            <div class="flex-1 flex flex-col sm:flex-row gap-2.5 sm:gap-3">
-                <!-- Busca -->
-                <div class="relative flex-1">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                        <i data-lucide="search" class="w-4 h-4"></i>
-                    </div>
-                    <input type="text" id="search-input" oninput="filtrarTabela()" placeholder="Buscar por nome, email ou ID..." 
-                           class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-all">
-                </div>
+    <!-- =====================================================
+         HOW IT WORKS SECTION
+         ===================================================== -->
+    <section id="how-it-works" class="relative py-20 sm:py-28 px-4 z-10">
+        <div class="max-w-5xl mx-auto">
 
-                <!-- Grid de Selects no Mobile -->
-                <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-row">
-                    <select id="filter-plano" onchange="filtrarTabela()" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Todos Planos</option>
-                        <option value="bronze">Bronze</option>
-                        <option value="prata">Prata</option>
-                        <option value="ouro">Ouro</option>
-                    </select>
-
-                    <select id="filter-status" onchange="filtrarTabela()" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Todos Status</option>
-                        <option value="ativo">Ativos</option>
-                        <option value="inativo">Inativos</option>
-                    </select>
-                </div>
+            <!-- Section Header -->
+            <div class="text-center mb-16 reveal">
+                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-widest mb-4">
+                    Como Funciona
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-black text-white">Configure em minutos.<br><span class="gradient-text">Use para sempre.</span></h2>
             </div>
 
-            <!-- Botão Novo Cliente (Full Width no Mobile) -->
-            <button onclick="abrirModalCriar()" type="button" class="w-full md:w-auto inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium text-sm rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-slate-800">
-                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-                Novo Cliente
-            </button>
-        </section>
+            <!-- Steps -->
+            <div class="grid md:grid-cols-3 gap-8 relative">
 
-        <!-- LISTAGEM DE CLIENTES (DESKTOP: TABELA | MOBILE: CARDS RESPONSIVOS) -->
-        <main class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm overflow-hidden flex-1 flex flex-col">
-            
-            <!-- DESKTOP TABLE VIEW (Oculto em telas menores que md) -->
-            <div class="hidden md:block overflow-x-auto flex-1">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50/80 dark:bg-slate-700/40 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            <th class="py-3.5 px-6">ID</th>
-                            <th class="py-3.5 px-6">Nome</th>
-                            <th class="py-3.5 px-6">E-mail</th>
-                            <th class="py-3.5 px-6">Plano</th>
-                            <th class="py-3.5 px-6">Status</th>
-                            <th class="py-3.5 px-6">Data Cadastro</th>
-                            <th class="py-3.5 px-6 text-right">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabela-clientes-body" class="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
-                        <!-- Conteúdo Tabela Desktop -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- MOBILE CARDS VIEW (Visível apenas em telas mobile/tablet < md) -->
-            <div id="mobile-cards-container" class="block md:hidden p-3 space-y-3 flex-1 overflow-y-auto">
-                <!-- Conteúdo Cards Mobile -->
-            </div>
-
-            <!-- Estado Vazio (Empty State) -->
-            <div id="empty-state" class="hidden p-8 sm:p-12 text-center flex-1 flex flex-col items-center justify-center">
-                <div class="w-14 h-14 sm:w-16 sm:h-16 bg-slate-100 dark:bg-slate-700/50 text-slate-400 rounded-full flex items-center justify-center mb-3 sm:mb-4">
-                    <i data-lucide="users" class="w-7 h-7 sm:w-8 sm:h-8"></i>
+                <!-- Step 1 -->
+                <div class="relative text-center reveal step-line">
+                    <div class="flex flex-col items-center">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 mb-5">
+                            <i data-lucide="user-plus" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div class="absolute -top-2 -right-1 md:right-auto md:-top-2 w-7 h-7 rounded-full bg-cyan-500/10 border-2 border-cyan-500/30 flex items-center justify-center text-xs font-black text-cyan-400">1</div>
+                        <h3 class="text-lg font-bold text-white mb-2">Crie sua conta</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">Cadastre-se no DaviFlow em menos de 1 minuto. Sem cartão de crédito.</p>
+                    </div>
                 </div>
-                <h3 class="text-base font-semibold text-slate-800 dark:text-slate-200">Nenhum cliente encontrado</h3>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
-                    Tente ajustar seus termos de busca/filtros ou cadastre um novo cliente no sistema.
+
+                <!-- Step 2 -->
+                <div class="relative text-center reveal step-line">
+                    <div class="flex flex-col items-center">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/25 mb-5">
+                            <i data-lucide="clipboard-list" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div class="absolute -top-2 -right-1 md:right-auto md:-top-2 w-7 h-7 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center text-xs font-black text-emerald-400">2</div>
+                        <h3 class="text-lg font-bold text-white mb-2">Cadastre seus clientes</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">Adicione seus clientes e defina status e planos personalizados em segundos.</p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="relative text-center reveal">
+                    <div class="flex flex-col items-center">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25 mb-5">
+                            <i data-lucide="trending-up" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div class="absolute -top-2 -right-1 md:right-auto md:-top-2 w-7 h-7 rounded-full bg-purple-500/10 border-2 border-purple-500/30 flex items-center justify-center text-xs font-black text-purple-400">3</div>
+                        <h3 class="text-lg font-bold text-white mb-2">Acompanhe o crescimento</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">Visualize métricas precisas e tome decisões inteligentes para o seu negócio.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- CTA after steps -->
+            <div class="mt-14 text-center reveal">
+                <button onclick="openModal('modal-register')"
+                    class="inline-flex items-center gap-2 px-8 py-4 text-base font-bold text-slate-900 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 rounded-2xl btn-glow transition-all duration-200">
+                    <i data-lucide="rocket" class="w-5 h-5"></i>
+                    Começar gratuitamente agora
+                </button>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- =====================================================
+         ABOUT SECTION
+         ===================================================== -->
+    <section id="about" class="relative py-20 sm:py-28 px-4 z-10">
+        <div class="max-w-4xl mx-auto">
+            <div class="glass-card rounded-3xl p-8 sm:p-14 text-center reveal" style="border: 1px solid rgba(6,182,212,0.15); box-shadow: 0 0 80px rgba(6,182,212,0.05);">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <i data-lucide="zap" class="w-7 h-7 text-white"></i>
+                </div>
+                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-widest mb-6">
+                    Sobre o DaviFlow
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-black text-white mb-6">Nossa missão é simples:<br><span class="gradient-text">menos caos, mais resultado.</span></h2>
+                <p class="text-slate-300 leading-relaxed text-base sm:text-lg max-w-2xl mx-auto">
+                    O DaviFlow nasceu com a missão de descomplicar a gestão operacional de pequenos negócios e profissionais independentes. Unindo simplicidade, alta performance e segurança de dados de nível corporativo, nossa plataforma transforma processos manuais em um fluxo de trabalho organizado e eficiente. Garantimos isolamento total das suas informações e uma interface desenhada para que você gaste menos tempo administrando e <strong class="text-cyan-400 font-semibold">mais tempo faturando.</strong>
                 </p>
-                <button onclick="abrirModalCriar()" class="mt-4 px-4 py-2 text-xs font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg hover:bg-blue-100 transition-colors">
-                    + Cadastrar Novo Cliente
-                </button>
-            </div>
-
-            <!-- State de Carregamento -->
-            <div id="loading-state" class="p-8 sm:p-12 text-center flex-1 flex flex-col items-center justify-center">
-                <div class="inline-block animate-spin text-blue-600 dark:text-blue-400 mb-3">
-                    <i data-lucide="loader-2" class="w-8 h-8"></i>
-                </div>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Carregando lista de clientes...</p>
-            </div>
-        </main>
-        
-        <!-- Rodapé -->
-        <footer class="text-center text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 py-2">
-            Painel Interno de Gestão de Clientes &bull; <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">http://localhost:8000</code>
-        </footer>
-    </div>
-
-    <!-- MODAL: NOVO CLIENTE -->
-    <div id="modal-criar" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-container bg-slate-900/60 backdrop-blur-sm transition-opacity">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-all scale-95 opacity-0 modal-box">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
-                <div class="flex items-center space-x-2.5">
-                    <div class="p-2 bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg">
-                        <i data-lucide="user-plus" class="w-5 h-5"></i>
+                <!-- Trust badges -->
+                <div class="mt-10 flex flex-wrap items-center justify-center gap-4">
+                    <div class="flex items-center gap-2 px-4 py-2.5 glass-card rounded-xl">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                        <span class="text-xs font-semibold text-slate-300">Dados Criptografados</span>
                     </div>
-                    <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Novo Cliente</h3>
+                    <div class="flex items-center gap-2 px-4 py-2.5 glass-card rounded-xl">
+                        <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i>
+                        <span class="text-xs font-semibold text-slate-300">Alta Performance</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-4 py-2.5 glass-card rounded-xl">
+                        <i data-lucide="lock" class="w-4 h-4 text-purple-400"></i>
+                        <span class="text-xs font-semibold text-slate-300">Isolamento de Conta</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-4 py-2.5 glass-card rounded-xl">
+                        <i data-lucide="smartphone" class="w-4 h-4 text-amber-400"></i>
+                        <span class="text-xs font-semibold text-slate-300">100% Responsivo</span>
+                    </div>
                 </div>
-                <button onclick="fecharModalCriar()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
             </div>
-
-            <form id="form-criar" onsubmit="salvarNovoCliente(event)" class="mt-4 space-y-4">
-                <div>
-                    <label for="criar-nome" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Nome Completo *</label>
-                    <input type="text" id="criar-nome" required placeholder="Ex: Maria Silva" 
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-
-                <div>
-                    <label for="criar-email" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">E-mail *</label>
-                    <input type="email" id="criar-email" required placeholder="Ex: maria@empresa.com" 
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-
-                <div>
-                    <label for="criar-plano" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Plano Assinado *</label>
-                    <select id="criar-plano" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="bronze">Bronze</option>
-                        <option value="prata">Prata</option>
-                        <option value="ouro">Ouro</option>
-                    </select>
-                </div>
-
-                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-700/50">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Status Ativo</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="criar-ativo" checked class="sr-only peer">
-                        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-emerald-500"></div>
-                    </label>
-                </div>
-
-                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100 dark:border-slate-700">
-                    <button type="button" onclick="fecharModalCriar()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 text-sm font-medium transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" id="btn-submit-criar" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium shadow-sm transition-colors flex items-center justify-center">
-                        <span>Cadastrar Cliente</span>
-                    </button>
-                </div>
-            </form>
         </div>
-    </div>
+    </section>
 
-    <!-- MODAL: EDITAR CLIENTE -->
-    <div id="modal-editar" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-container bg-slate-900/60 backdrop-blur-sm transition-opacity">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-all scale-95 opacity-0 modal-box">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
-                <div class="flex items-center space-x-2.5">
-                    <div class="p-2 bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 rounded-lg">
-                        <i data-lucide="edit-3" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Editar Cliente</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">ID: #<span id="editar-id-label"></span></p>
-                    </div>
-                </div>
-                <button onclick="fecharModalEditar()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+    <!-- =====================================================
+         PRICING SECTION
+         ===================================================== -->
+    <section id="pricing" class="relative py-20 sm:py-28 px-4 z-10">
+        <div class="max-w-5xl mx-auto">
+
+            <!-- Section Header -->
+            <div class="text-center mb-16 reveal">
+                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-widest mb-4">
+                    Preços
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-black text-white">Simples, transparente,<br><span class="gradient-text">sem surpresas.</span></h2>
+                <p class="mt-4 text-slate-400 max-w-md mx-auto">Comece grátis. Evolua quando quiser.</p>
             </div>
 
-            <form id="form-editar" onsubmit="salvarEdicaoCliente(event)" class="mt-4 space-y-4">
-                <input type="hidden" id="editar-id">
+            <!-- Pricing Cards -->
+            <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
 
-                <div>
-                    <label for="editar-nome" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Nome Completo</label>
-                    <input type="text" id="editar-nome" required 
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-
-                <div>
-                    <label for="editar-email" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">E-mail</label>
-                    <input type="email" id="editar-email" required 
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-
-                <div>
-                    <label for="editar-plano" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Plano Assinado</label>
-                    <select id="editar-plano" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="bronze">Bronze</option>
-                        <option value="prata">Prata</option>
-                        <option value="ouro">Ouro</option>
-                    </select>
-                </div>
-
-                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-700/50">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Status Ativo</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="editar-ativo" class="sr-only peer">
-                        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:after:border-slate-600 peer-checked:bg-emerald-500"></div>
-                    </label>
-                </div>
-
-                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100 dark:border-slate-700">
-                    <button type="button" onclick="fecharModalEditar()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 text-sm font-medium transition-colors">
-                        Cancelar
+                <!-- Free Starter -->
+                <div class="glass-card rounded-3xl p-8 reveal flex flex-col">
+                    <div class="mb-6">
+                        <div class="w-10 h-10 rounded-xl bg-slate-700/60 border border-slate-600/40 flex items-center justify-center mb-4">
+                            <i data-lucide="star" class="w-5 h-5 text-slate-300"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">Starter</h3>
+                        <p class="text-slate-400 text-sm mt-1">Ideal para quem está começando.</p>
+                    </div>
+                    <div class="flex items-baseline gap-1 mb-8">
+                        <span class="text-5xl font-black text-white">R$0</span>
+                        <span class="text-slate-500 font-medium">/mês</span>
+                    </div>
+                    <ul class="space-y-3 flex-1 mb-8">
+                        <li class="flex items-center gap-3 text-sm text-slate-300">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
+                            Até 25 clientes cadastrados
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
+                            Painel de métricas básico
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
+                            Gestão de status e planos
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
+                            Acesso em todos os dispositivos
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-500">
+                            <i data-lucide="x-circle" class="w-4 h-4 text-slate-600 flex-shrink-0"></i>
+                            Exportação de dados
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-500">
+                            <i data-lucide="x-circle" class="w-4 h-4 text-slate-600 flex-shrink-0"></i>
+                            Suporte prioritário
+                        </li>
+                    </ul>
+                    <button onclick="openModal('modal-register')"
+                        class="w-full py-3.5 text-sm font-semibold text-slate-300 border border-slate-600 hover:border-slate-400 hover:text-white rounded-2xl hover:bg-white/5 transition-all duration-200">
+                        Começar Grátis
                     </button>
-                    <button type="submit" id="btn-submit-editar" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium shadow-sm transition-colors flex items-center justify-center">
-                        <span>Salvar Alterações</span>
+                </div>
+
+                <!-- Pro Tier -->
+                <div class="glass-card rounded-3xl p-8 reveal pricing-highlight flex flex-col relative overflow-hidden" style="border-color: rgba(6,182,212,0.3);">
+                    <!-- Popular badge -->
+                    <div class="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-full">
+                        Popular
+                    </div>
+                    <!-- Subtle top glow -->
+                    <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent"></div>
+
+                    <div class="mb-6">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 flex items-center justify-center mb-4">
+                            <i data-lucide="zap" class="w-5 h-5 text-cyan-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">Pro</h3>
+                        <p class="text-slate-400 text-sm mt-1">Para negócios em expansão.</p>
+                    </div>
+                    <div class="flex items-baseline gap-1 mb-8">
+                        <span class="text-5xl font-black gradient-text">R$29</span>
+                        <span class="text-slate-500 font-medium">/mês</span>
+                    </div>
+                    <ul class="space-y-3 flex-1 mb-8">
+                        <li class="flex items-center gap-3 text-sm text-slate-300">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400 flex-shrink-0"></i>
+                            <strong class="text-white">Clientes ilimitados</strong>
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400 flex-shrink-0"></i>
+                            Painel de métricas avançado
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400 flex-shrink-0"></i>
+                            Gestão completa e relatórios
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400 flex-shrink-0"></i>
+                            Exportação CSV/PDF
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400 flex-shrink-0"></i>
+                            Suporte prioritário 24/7
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400 flex-shrink-0"></i>
+                            API de integração
+                        </li>
+                    </ul>
+                    <button onclick="openModal('modal-register')"
+                        class="w-full py-3.5 text-sm font-bold text-slate-900 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 rounded-2xl btn-glow transition-all duration-200">
+                        Começar com Pro
                     </button>
                 </div>
-            </form>
-        </div>
-    </div>
 
-    <!-- MODAL: EXCLUIR CLIENTE -->
-    <div id="modal-deletar" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-container bg-slate-900/60 backdrop-blur-sm transition-opacity">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-all scale-95 opacity-0 modal-box">
-            <div class="flex items-center space-x-3 text-rose-600 dark:text-rose-400 mb-3">
-                <div class="p-2.5 bg-rose-50 dark:bg-rose-900/40 rounded-xl">
-                    <i data-lucide="alert-triangle" class="w-6 h-6"></i>
-                </div>
-                <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Confirmar Exclusão</h3>
             </div>
-            
-            <p class="text-sm text-slate-600 dark:text-slate-300">
-                Tem certeza que deseja apagar permanentemente o cliente <strong id="deletar-nome-label" class="text-slate-900 dark:text-white"></strong> (ID: #<span id="deletar-id-label"></span>)?
-            </p>
-            <p class="text-xs text-rose-500 dark:text-rose-400 mt-2 font-medium">
-                Esta ação não poderá ser desfeita.
+
+            <!-- Guarantee note -->
+            <p class="text-center text-slate-500 text-sm mt-8 reveal">
+                <i data-lucide="shield-check" class="w-4 h-4 inline text-emerald-400 mr-1"></i>
+                Cancele a qualquer momento. Sem multas, sem burocracia.
             </p>
 
-            <div class="flex justify-end space-x-3 pt-5 mt-4 border-t border-slate-100 dark:border-slate-700">
-                <button type="button" onclick="fecharModalDeletar()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 text-sm font-medium transition-colors">
-                    Cancelar
-                </button>
-                <button type="button" onclick="confirmarExclusao()" id="btn-submit-deletar" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium shadow-sm transition-colors flex items-center justify-center">
-                    <span>Excluir Cliente</span>
-                </button>
+        </div>
+    </section>
+
+    <!-- =====================================================
+         FINAL CTA BANNER
+         ===================================================== -->
+    <section class="relative py-20 px-4 z-10">
+        <div class="max-w-4xl mx-auto">
+            <div class="relative rounded-3xl p-10 sm:p-16 text-center overflow-hidden reveal"
+                 style="background: linear-gradient(135deg, rgba(6,182,212,0.12) 0%, rgba(16,185,129,0.08) 100%); border: 1px solid rgba(6,182,212,0.2);">
+                <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-emerald-500/5 rounded-3xl"></div>
+                <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent"></div>
+                <div class="relative">
+                    <h2 class="text-3xl sm:text-4xl font-black text-white mb-4">
+                        Pronto para organizar<br><span class="gradient-text">seu negócio de verdade?</span>
+                    </h2>
+                    <p class="text-slate-400 mb-8 text-lg max-w-xl mx-auto">Junte-se a centenas de profissionais que já largaram as planilhas para sempre.</p>
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <button onclick="openModal('modal-register')"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold text-slate-900 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 rounded-2xl btn-glow transition-all duration-200">
+                            <i data-lucide="rocket" class="w-5 h-5"></i>
+                            Criar Conta Grátis Agora
+                        </button>
+                        <button onclick="openModal('modal-login')"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-2xl hover:bg-white/5 transition-all duration-200">
+                            Já tenho conta → Entrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =====================================================
+         FOOTER
+         ===================================================== -->
+    <footer class="relative z-10 border-t border-slate-800/60 py-12 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+
+                <!-- Brand Column -->
+                <div class="md:col-span-2">
+                    <a href="#" class="flex items-center space-x-2.5 mb-4">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center">
+                            <i data-lucide="zap" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <span class="text-lg font-bold text-white">Davi<span class="gradient-text">Flow</span></span>
+                    </a>
+                    <p class="text-slate-400 text-sm leading-relaxed max-w-xs">
+                        Gestão de clientes inteligente para freelancers e pequenos negócios. Simples, rápido e seguro.
+                    </p>
+                    <!-- Social Links -->
+                    <div class="flex items-center gap-3 mt-5">
+                        <a href="#" aria-label="LinkedIn" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-slate-400 hover:text-cyan-400 hover:border-cyan-500/40 transition-all duration-200">
+                            <i data-lucide="linkedin" class="w-4 h-4"></i>
+                        </a>
+                        <a href="#" aria-label="GitHub" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-400/40 transition-all duration-200">
+                            <i data-lucide="github" class="w-4 h-4"></i>
+                        </a>
+                        <a href="#" aria-label="Twitter/X" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-slate-400 hover:text-slate-200 hover:border-slate-400/40 transition-all duration-200">
+                            <i data-lucide="twitter" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Product Links -->
+                <div>
+                    <h4 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">Produto</h4>
+                    <ul class="space-y-2.5">
+                        <li><a href="#features" class="text-sm text-slate-400 hover:text-white transition-colors">Recursos</a></li>
+                        <li><a href="#how-it-works" class="text-sm text-slate-400 hover:text-white transition-colors">Como Funciona</a></li>
+                        <li><a href="#pricing" class="text-sm text-slate-400 hover:text-white transition-colors">Preços</a></li>
+                        <li><a href="/dashboard" class="text-sm text-slate-400 hover:text-white transition-colors">Painel</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal Links -->
+                <div>
+                    <h4 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">Legal</h4>
+                    <ul class="space-y-2.5">
+                        <li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Política de Privacidade</a></li>
+                        <li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Termos de Serviço</a></li>
+                        <li><a href="#" class="text-sm text-slate-400 hover:text-white transition-colors">Cookies</a></li>
+                        <li><a href="#about" class="text-sm text-slate-400 hover:text-white transition-colors">Sobre Nós</a></li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- Footer Bottom -->
+            <div class="pt-6 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p class="text-xs text-slate-500">
+                    &copy; 2026 DaviFlow. Todos os direitos reservados. Feito com ❤️ no Brasil.
+                </p>
+                <div class="flex items-center gap-2 text-xs text-slate-600">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500/60"></i>
+                    <span>Powered by FastAPI + Supabase + Vercel</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- =====================================================
+         MODAL: LOGIN
+         ===================================================== -->
+    <div id="modal-login" class="fixed inset-0 z-[100] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeModal('modal-login')"></div>
+
+        <!-- Modal Box -->
+        <div class="relative w-full max-w-md animate-fade-in-up">
+            <div class="glass-card rounded-3xl overflow-hidden" style="border: 1px solid rgba(6,182,212,0.2); box-shadow: 0 25px 80px rgba(0,0,0,0.6);">
+                <!-- Glow top line -->
+                <div class="h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"></div>
+
+                <div class="p-8">
+                    <!-- Header -->
+                    <div class="flex items-start justify-between mb-7">
+                        <div>
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center">
+                                    <i data-lucide="zap" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <span class="font-bold text-white text-lg">DaviFlow</span>
+                            </div>
+                            <h2 id="login-modal-title" class="text-2xl font-black text-white">Bem-vindo de volta</h2>
+                            <p class="text-slate-400 text-sm mt-1">Entre na sua conta para continuar.</p>
+                        </div>
+                        <button onclick="closeModal('modal-login')" class="p-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/10 transition-all" aria-label="Fechar">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Login Form (Auth shell — wire up Supabase JS here) -->
+                    <form id="form-login" onsubmit="handleLogin(event)" class="space-y-5" novalidate>
+                        <div>
+                            <label for="login-email" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">E-mail</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                    <i data-lucide="mail" class="w-4 h-4"></i>
+                                </div>
+                                <input type="email" id="login-email" name="email" required autocomplete="email"
+                                    placeholder="seu@email.com"
+                                    class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-cyan-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all">
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="login-password" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Senha</label>
+                                <a href="#" class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-medium">Esqueci a senha</a>
+                            </div>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                    <i data-lucide="lock" class="w-4 h-4"></i>
+                                </div>
+                                <input type="password" id="login-password" name="password" required autocomplete="current-password"
+                                    placeholder="••••••••"
+                                    class="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-cyan-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all">
+                                <button type="button" onclick="togglePassword('login-password', 'login-eye-icon')"
+                                    class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors">
+                                    <i data-lucide="eye" class="w-4 h-4" id="login-eye-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Error message slot -->
+                        <div id="login-error" class="hidden px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2">
+                            <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+                            <span id="login-error-text"></span>
+                        </div>
+
+                        <button type="submit" id="btn-login-submit"
+                            class="w-full py-3.5 text-sm font-bold text-slate-900 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 rounded-xl btn-glow transition-all duration-200 flex items-center justify-center gap-2">
+                            <span id="btn-login-text">Entrar na minha conta</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4" id="btn-login-arrow"></i>
+                            <i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="btn-login-spinner"></i>
+                        </button>
+                    </form>
+
+                    <p class="mt-6 text-center text-sm text-slate-500">
+                        Não tem conta?
+                        <button onclick="closeModal('modal-login'); openModal('modal-register')"
+                            class="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors ml-1">
+                            Criar conta grátis
+                        </button>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- TOAST NOTIFICATIONS CONTAINER (Posicionado no centro inferior em telas pequenas) -->
-    <div id="toast-container" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-5 sm:bottom-5 z-50 flex flex-col space-y-2 max-w-sm w-auto pointer-events-none"></div>
+    <!-- =====================================================
+         MODAL: REGISTER
+         ===================================================== -->
+    <div id="modal-register" class="fixed inset-0 z-[100] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="register-modal-title">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeModal('modal-register')"></div>
+
+        <!-- Modal Box -->
+        <div class="relative w-full max-w-md animate-fade-in-up">
+            <div class="glass-card rounded-3xl overflow-hidden" style="border: 1px solid rgba(16,185,129,0.2); box-shadow: 0 25px 80px rgba(0,0,0,0.6);">
+                <!-- Glow top line -->
+                <div class="h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent"></div>
+
+                <div class="p-8">
+                    <!-- Header -->
+                    <div class="flex items-start justify-between mb-7">
+                        <div>
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center">
+                                    <i data-lucide="zap" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <span class="font-bold text-white text-lg">DaviFlow</span>
+                            </div>
+                            <h2 id="register-modal-title" class="text-2xl font-black text-white">Crie sua conta grátis</h2>
+                            <p class="text-slate-400 text-sm mt-1">Sem cartão de crédito. Cancele quando quiser.</p>
+                        </div>
+                        <button onclick="closeModal('modal-register')" class="p-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/10 transition-all" aria-label="Fechar">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Register Form (Auth shell — wire up Supabase JS here) -->
+                    <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4" novalidate>
+                        <div>
+                            <label for="register-name" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nome Completo</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                    <i data-lucide="user" class="w-4 h-4"></i>
+                                </div>
+                                <input type="text" id="register-name" name="name" required autocomplete="name"
+                                    placeholder="Seu nome completo"
+                                    class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-emerald-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="register-email" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">E-mail</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                    <i data-lucide="mail" class="w-4 h-4"></i>
+                                </div>
+                                <input type="email" id="register-email" name="email" required autocomplete="email"
+                                    placeholder="seu@email.com"
+                                    class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-emerald-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="register-password" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Senha</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                    <i data-lucide="lock" class="w-4 h-4"></i>
+                                </div>
+                                <input type="password" id="register-password" name="password" required autocomplete="new-password"
+                                    placeholder="Mínimo 8 caracteres"
+                                    class="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-emerald-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all">
+                                <button type="button" onclick="togglePassword('register-password', 'register-eye-icon')"
+                                    class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors">
+                                    <i data-lucide="eye" class="w-4 h-4" id="register-eye-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="register-confirm" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Confirmar Senha</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                                    <i data-lucide="lock" class="w-4 h-4"></i>
+                                </div>
+                                <input type="password" id="register-confirm" name="confirm" required autocomplete="new-password"
+                                    placeholder="Repita a senha"
+                                    class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-emerald-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all">
+                            </div>
+                        </div>
+
+                        <!-- Terms -->
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="checkbox" id="register-terms" required
+                                class="mt-0.5 w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500/30 cursor-pointer">
+                            <span class="text-xs text-slate-400 leading-relaxed">
+                                Concordo com os
+                                <a href="#" class="text-emerald-400 hover:text-emerald-300 transition-colors font-medium">Termos de Serviço</a>
+                                e
+                                <a href="#" class="text-emerald-400 hover:text-emerald-300 transition-colors font-medium">Política de Privacidade</a>
+                                do DaviFlow.
+                            </span>
+                        </label>
+
+                        <!-- Error message slot -->
+                        <div id="register-error" class="hidden px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2">
+                            <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+                            <span id="register-error-text"></span>
+                        </div>
+
+                        <button type="submit" id="btn-register-submit"
+                            class="w-full py-3.5 text-sm font-bold text-slate-900 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 rounded-xl btn-glow transition-all duration-200 flex items-center justify-center gap-2">
+                            <span id="btn-register-text">Criar minha conta grátis</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4" id="btn-register-arrow"></i>
+                            <i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="btn-register-spinner"></i>
+                        </button>
+                    </form>
+
+                    <p class="mt-5 text-center text-sm text-slate-500">
+                        Já tem conta?
+                        <button onclick="closeModal('modal-register'); openModal('modal-login')"
+                            class="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors ml-1">
+                            Entrar
+                        </button>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         LANDING PAGE JAVASCRIPT
+         ===================================================== -->
+    <script>
+        // --- Initialize Lucide Icons ---
+        lucide.createIcons();
+
+        // =====================================================
+        // NAVBAR: Scroll shadow + mobile menu
+        // =====================================================
+        const navbar = document.getElementById('navbar');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const menuIconOpen = document.getElementById('menu-icon-open');
+        const menuIconClose = document.getElementById('menu-icon-close');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 20) {
+                navbar.classList.add('navbar-scrolled');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+            }
+        }, { passive: true });
+
+        mobileMenuBtn.addEventListener('click', () => {
+            const isHidden = mobileMenu.classList.contains('hidden');
+            mobileMenu.classList.toggle('hidden', !isHidden);
+            menuIconOpen.classList.toggle('hidden', isHidden);
+            menuIconClose.classList.toggle('hidden', !isHidden);
+        });
+
+        function closeMobileMenu() {
+            mobileMenu.classList.add('hidden');
+            menuIconOpen.classList.remove('hidden');
+            menuIconClose.classList.add('hidden');
+        }
+
+        // =====================================================
+        // MODALS: Open / Close
+        // =====================================================
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            // Re-run lucide for any icons inside modal
+            lucide.createIcons();
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal('modal-login');
+                closeModal('modal-register');
+            }
+        });
+
+        // =====================================================
+        // AUTH: Placeholder handlers (wire up Supabase here)
+        // =====================================================
+        function setButtonLoading(btnId, arrowId, spinnerId, loading) {
+            const btn = document.getElementById(btnId);
+            const arrow = document.getElementById(arrowId);
+            const spinner = document.getElementById(spinnerId);
+            if (!btn) return;
+            btn.disabled = loading;
+            btn.style.opacity = loading ? '0.7' : '1';
+            if (arrow) arrow.classList.toggle('hidden', loading);
+            if (spinner) spinner.classList.toggle('hidden', !loading);
+        }
+
+        function showAuthError(containerId, textId, message) {
+            const container = document.getElementById(containerId);
+            const text = document.getElementById(textId);
+            if (container && text) {
+                text.textContent = message;
+                container.classList.remove('hidden');
+            }
+        }
+
+        function hideAuthError(containerId) {
+            const container = document.getElementById(containerId);
+            if (container) container.classList.add('hidden');
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            hideAuthError('login-error');
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            if (!email || !password) {
+                showAuthError('login-error', 'login-error-text', 'Por favor, preencha todos os campos.');
+                return;
+            }
+
+            setButtonLoading('btn-login-submit', 'btn-login-arrow', 'btn-login-spinner', true);
+
+            // TODO: Implement Supabase Auth
+            // const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            // if (error) { showAuthError('login-error', 'login-error-text', error.message); }
+            // else { window.location.href = '/dashboard'; }
+
+            // Placeholder simulation
+            await new Promise(r => setTimeout(r, 1500));
+            setButtonLoading('btn-login-submit', 'btn-login-arrow', 'btn-login-spinner', false);
+            showAuthError('login-error', 'login-error-text', 'Integração com Supabase pendente. Conecte sua chave de API.');
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            hideAuthError('register-error');
+            const name = document.getElementById('register-name').value.trim();
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value;
+            const confirm = document.getElementById('register-confirm').value;
+            const terms = document.getElementById('register-terms').checked;
+
+            if (!name || !email || !password || !confirm) {
+                showAuthError('register-error', 'register-error-text', 'Por favor, preencha todos os campos.');
+                return;
+            }
+            if (password !== confirm) {
+                showAuthError('register-error', 'register-error-text', 'As senhas não coincidem.');
+                return;
+            }
+            if (password.length < 8) {
+                showAuthError('register-error', 'register-error-text', 'A senha deve ter pelo menos 8 caracteres.');
+                return;
+            }
+            if (!terms) {
+                showAuthError('register-error', 'register-error-text', 'Você deve aceitar os Termos de Serviço.');
+                return;
+            }
+
+            setButtonLoading('btn-register-submit', 'btn-register-arrow', 'btn-register-spinner', true);
+
+            // TODO: Implement Supabase Auth
+            // const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
+            // if (error) { showAuthError('register-error', 'register-error-text', error.message); }
+            // else { window.location.href = '/dashboard'; }
+
+            // Placeholder simulation
+            await new Promise(r => setTimeout(r, 1500));
+            setButtonLoading('btn-register-submit', 'btn-register-arrow', 'btn-register-spinner', false);
+            showAuthError('register-error', 'register-error-text', 'Integração com Supabase pendente. Conecte sua chave de API.');
+        }
+
+        // =====================================================
+        // PASSWORD VISIBILITY TOGGLE
+        // =====================================================
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input) return;
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            if (icon) {
+                icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+                lucide.createIcons();
+            }
+        }
+
+        // =====================================================
+        // SCROLL REVEAL (Intersection Observer)
+        // =====================================================
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    // Stagger based on position among siblings
+                    const siblings = Array.from(entry.target.parentElement?.children || []);
+                    const idx = siblings.indexOf(entry.target);
+                    const delay = Math.min(idx * 70, 300);
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, delay);
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+        // =====================================================
+        // SMOOTH SCROLL for anchor links
+        // =====================================================
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', (e) => {
+                const target = document.querySelector(anchor.getAttribute('href'));
+                if (target) {
+                    e.preventDefault();
+                    const offset = 72; // navbar height
+                    const top = target.getBoundingClientRect().top + window.scrollY - offset;
+                    window.scrollTo({ top, behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>

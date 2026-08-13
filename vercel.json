@@ -11,6 +11,10 @@
     {
       "source": "/clientes/(.*)",
       "destination": "/api/index.py"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
     }
   ]
 }
