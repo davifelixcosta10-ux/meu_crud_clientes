@@ -1,9 +1,8 @@
 // Painel Administrativo de Clientes - Script Principal (Desktop & Mobile)
 
 // CONFIGURAÇÕES E ESTADO DA APLICAÇÃO
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:8000' 
-    : window.location.origin; // Usa a própria URL da Vercel quando estiver em produção
+// No topo do app.js:
+const API_BASE_URL = window.location.origin;
 
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', () => {
