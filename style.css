@@ -1,6 +1,6 @@
 /* ============================================================
-   DaviFlow — Custom Styles & Utilities
-   Dashboard Admin + Landing Page
+   DaviFlow — Design System & Custom Utilities
+   Landing Page + Dashboard Admin
    ============================================================ */
 
 /* --- Smooth Scroll --- */
@@ -9,18 +9,239 @@ html {
 }
 
 /* ============================================================
-   DASHBOARD: Modal Animations
+   SHARED: Custom Scrollbars
+   ============================================================ */
+::-webkit-scrollbar         { width: 5px; height: 5px; }
+::-webkit-scrollbar-track   { background: transparent; }
+::-webkit-scrollbar-thumb   { background: rgba(148,163,184,0.4); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.6); }
+.dark ::-webkit-scrollbar-thumb       { background: rgba(71,85,105,0.5); }
+.dark ::-webkit-scrollbar-thumb:hover { background: rgba(71,85,105,0.8); }
+
+/* ============================================================
+   DASHBOARD: Component Classes (Vanilla CSS - Linter Friendly)
    ============================================================ */
 
-.modal-box {
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease-out;
+/* Form Elements */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
+.form-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.375rem;
+    color: #64748b;
+}
+.dark .form-label {
+    color: #94a3b8;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #0f172a;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    transition: all 150ms ease;
+}
+.dark .form-input {
+    border-color: rgba(51, 65, 85, 0.8);
+    background-color: rgba(15, 23, 42, 0.5);
+    color: #ffffff;
+}
+.form-input::placeholder {
+    color: #94a3b8;
+}
+.dark .form-input::placeholder {
+    color: #64748b;
+}
+.form-input:focus {
+    outline: none;
+    border-color: rgba(6, 182, 212, 0.6);
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+}
+
+.field-error {
+    display: none;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #f43f5e;
+    align-items: center;
+    gap: 0.25rem;
+}
+.dark .field-error {
+    color: #fb7185;
+}
+.field-error.visible {
+    display: flex;
+}
+
+/* Buttons */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-image: linear-gradient(to right, #06b6d4, #10b981);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: all 150ms ease;
+    cursor: pointer;
+    border: none;
+}
+.btn-primary:hover {
+    background-image: linear-gradient(to right, #22d3ee, #34d399);
+}
+.btn-primary:active {
+    transform: scale(0.98);
+}
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+    background-color: transparent;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    transition: all 150ms ease;
+    cursor: pointer;
+}
+.dark .btn-ghost {
+    color: #cbd5e1;
+    border-color: #334155;
+}
+.btn-ghost:hover {
+    background-color: #f1f5f9;
+}
+.dark .btn-ghost:hover {
+    background-color: rgba(51, 65, 85, 0.6);
+}
+
+/* Metric Cards & Skeleton */
+.metric-card {
+    background-color: #ffffff;
+    padding: 1rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: all 200ms ease;
+}
+.dark .metric-card {
+    background-color: #1e293b;
+    border-color: rgba(51, 65, 85, 0.6);
+}
+.metric-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+}
+.dark .metric-card:hover {
+    border-color: #475569;
+}
+
+.skeleton {
+    background-color: #e2e8f0;
+    border-radius: 0.25rem;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.dark .skeleton {
+    background-color: rgba(51, 65, 85, 0.6);
+}
+
+/* Toggle Switches */
+.toggle-track {
+    width: 2.75rem;
+    height: 1.5rem;
+    background-color: #cbd5e1;
+    border-radius: 9999px;
+    position: relative;
+    transition: background-color 200ms ease;
+}
+.dark .toggle-track {
+    background-color: #475569;
+}
+.peer:checked ~ .toggle-track {
+    background-image: linear-gradient(to right, #06b6d4, #10b981);
+}
+.toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 1.25rem;
+    height: 1.25rem;
+    background-color: #ffffff;
+    border-radius: 9999px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: transform 200ms ease;
+}
+.peer:checked ~ .toggle-track::after {
+    transform: translateX(1.25rem);
+}
+
+.plan-toggle-track {
+    width: 2.5rem;
+    height: 1.25rem;
+    background-color: #cbd5e1;
+    border-radius: 9999px;
+    position: relative;
+    transition: background-color 200ms ease;
+}
+.dark .plan-toggle-track {
+    background-color: #475569;
+}
+.peer:checked ~ .plan-toggle-track {
+    background-image: linear-gradient(to right, #06b6d4, #10b981);
+}
+.plan-toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 1rem;
+    height: 1rem;
+    background-color: #ffffff;
+    border-radius: 9999px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: transform 200ms ease;
+}
+.peer:checked ~ .plan-toggle-track::after {
+    transform: translateX(1.25rem);
+}
+
+/* ============================================================
+   DASHBOARD: Modal Animations & Cards
+   ============================================================ */
+.modal-box {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity  0.22s ease-out;
+}
 @media (max-width: 639px) {
-    .modal-container {
-        align-items: flex-end;
-        padding: 0;
-    }
+    .modal-container { align-items: flex-end; padding: 0; }
     .modal-box {
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
@@ -28,34 +249,87 @@ html {
     }
 }
 
+.client-card {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.client-card:hover {
+    border-color: rgba(6,182,212,0.3);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+}
+.dark .client-card:hover {
+    border-color: rgba(6,182,212,0.2);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.plan-card {
+    transition: border-color 0.18s ease,
+                background-color 0.18s ease,
+                box-shadow 0.18s ease,
+                transform 0.15s ease;
+    cursor: pointer;
+}
+.plan-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.dark .plan-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.plan-card:active {
+    transform: scale(0.99);
+}
+.plan-check-icon {
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.plan-section-open {
+    animation: planSectionOpen 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes planSectionOpen {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastProgress {
+    from { width: 100%; }
+    to   { width: 0%; }
+}
+
+@keyframes fieldShake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-5px); }
+    40%      { transform: translateX(5px); }
+    60%      { transform: translateX(-3px); }
+    80%      { transform: translateX(3px); }
+}
+.input-error-shake {
+    animation: fieldShake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+#criar-contato-chevron,
+#editar-contato-chevron {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* ============================================================
    LANDING PAGE: Animations & Effects
    ============================================================ */
 
-/* Scroll-reveal fade-in-up */
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(32px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(32px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
-
 .animate-fade-in-up {
     animation: fadeInUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Stagger delays for children */
 .stagger-1 { animation-delay: 0.05s; }
 .stagger-2 { animation-delay: 0.12s; }
 .stagger-3 { animation-delay: 0.19s; }
 .stagger-4 { animation-delay: 0.26s; }
 .stagger-5 { animation-delay: 0.33s; }
 
-/* Intersection Observer hidden state */
 .reveal {
     opacity: 0;
     transform: translateY(28px);
@@ -67,7 +341,6 @@ html {
     transform: translateY(0);
 }
 
-/* Gradient text — hero headline */
 .gradient-text {
     background: linear-gradient(135deg, #22d3ee 0%, #10b981 60%, #06b6d4 100%);
     -webkit-background-clip: text;
@@ -75,17 +348,15 @@ html {
     background-clip: text;
 }
 
-/* Neon glow on primary CTA */
 .btn-glow {
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.35), 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 0 20px rgba(6,182,212,0.35), 0 4px 15px rgba(0,0,0,0.3);
     transition: box-shadow 0.25s ease, transform 0.2s ease;
 }
 .btn-glow:hover {
-    box-shadow: 0 0 32px rgba(6, 182, 212, 0.55), 0 6px 20px rgba(0,0,0,0.4);
+    box-shadow: 0 0 32px rgba(6,182,212,0.55), 0 6px 20px rgba(0,0,0,0.4);
     transform: translateY(-2px);
 }
 
-/* Glassmorphism cards */
 .glass-card {
     background: rgba(30, 41, 59, 0.6);
     backdrop-filter: blur(12px);
@@ -93,7 +364,6 @@ html {
     border: 1px solid rgba(100, 116, 139, 0.2);
 }
 
-/* Feature card glow on hover */
 .feature-card {
     transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
@@ -102,16 +372,14 @@ html {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
-/* Pricing card highlight ring */
 .pricing-highlight {
-    box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.5), 0 20px 60px rgba(6, 182, 212, 0.12);
+    box-shadow: 0 0 0 1px rgba(6,182,212,0.5), 0 20px 60px rgba(6,182,212,0.12);
 }
 
-/* Animated background blobs */
 @keyframes blobFloat {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33%       { transform: translate(30px, -20px) scale(1.05); }
-    66%       { transform: translate(-20px, 10px) scale(0.97); }
+    0%,100% { transform: translate(0, 0) scale(1); }
+    33%     { transform: translate(30px, -20px) scale(1.05); }
+    66%     { transform: translate(-20px, 10px) scale(0.97); }
 }
 .blob {
     animation: blobFloat 12s ease-in-out infinite;
@@ -119,11 +387,8 @@ html {
     opacity: 0.18;
     will-change: transform;
 }
-.blob-delay {
-    animation-delay: -6s;
-}
+.blob-delay { animation-delay: -6s; }
 
-/* Mockup dashboard inside hero */
 .mockup-shimmer {
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
     background-size: 200% 100%;
@@ -131,10 +396,9 @@ html {
 }
 @keyframes shimmer {
     0%   { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    100% { background-position:  200% 0; }
 }
 
-/* Step connector line */
 .step-line::after {
     content: '';
     display: block;
@@ -150,24 +414,9 @@ html {
     .step-line::after { display: none; }
 }
 
-/* Navbar scrolled state */
 .navbar-scrolled {
     background: rgba(15, 23, 42, 0.92) !important;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid rgba(100, 116, 139, 0.15);
 }
-
-/* ============================================================
-   SHARED: Custom Scrollbars
-   ============================================================ */
-
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.4);
-    border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.6); }
-.dark ::-webkit-scrollbar-thumb { background: rgba(71, 85, 105, 0.5); }
-.dark ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 0.8); }
