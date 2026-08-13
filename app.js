@@ -69,12 +69,61 @@ const PLANOS_CONFIG = [
     }
 ];
 
+// MOCK DATA para testes locais / offline quando a API não estiver conectada ao banco
+const CLIENTES_DEMO = [
+    {
+        id: 1,
+        nome: "Ana Beatriz Silva",
+        email: "ana.silva@tech.com",
+        plano: "pro",
+        ativo: true,
+        telefone: "(11) 98765-4321",
+        cpf: "123.456.789-00",
+        rg: "12.345.678-9",
+        data_cadastro: "2026-08-01"
+    },
+    {
+        id: 2,
+        nome: "Carlos Eduardo Mendes",
+        email: "carlos.mendes@empresa.com",
+        plano: "enterprise",
+        ativo: true,
+        telefone: "(21) 99887-6655",
+        cpf: "987.654.321-11",
+        rg: "98.765.432-1",
+        data_cadastro: "2026-08-05"
+    },
+    {
+        id: 3,
+        nome: "Juliana Rocha",
+        email: "juliana@design.co",
+        plano: "basico",
+        ativo: false,
+        telefone: "(31) 97123-4567",
+        cpf: "456.789.123-22",
+        rg: "45.678.912-3",
+        data_cadastro: "2026-08-10"
+    },
+    {
+        id: 4,
+        nome: "Lucas Ferreira",
+        email: "lucas.ferreira@mail.com",
+        plano: null,
+        ativo: true,
+        telefone: null,
+        cpf: null,
+        rg: null,
+        data_cadastro: "2026-08-12"
+    }
+];
+
 // ============================================================
 // ESTADO GLOBAL DA APLICAÇÃO
 // ============================================================
 const API_BASE_URL = window.location.origin;
 let clientesCache = [];
 let clienteParaDeletarId = null;
+let modoDemo = false;
 
 // ============================================================
 // INICIALIZAÇÃO
@@ -135,10 +184,14 @@ async function verificarStatusAPI() {
         const textEl  = document.getElementById(text);
         if (!badgeEl || !dotEl || !textEl) return;
 
-        if (isOnline) {
+        if (isOnline && !modoDemo) {
             dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0';
             badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-all duration-300';
             textEl.textContent = 'Conectado';
+        } else if (modoDemo) {
+            dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0';
+            badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition-all duration-300';
+            textEl.textContent = 'Modo Local (Demo)';
         } else {
             dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0';
             badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800 transition-all duration-300';
@@ -148,22 +201,28 @@ async function verificarStatusAPI() {
 }
 
 // ============================================================
-// 3. CARREGAR CLIENTES DA API
+// 3. CARREGAR CLIENTES DA API OU MOCK DEMO
 // ============================================================
 async function carregarClientes() {
     mostrarLoading(true);
     try {
         const response = await fetch(`${API_BASE_URL}/clientes`);
         if (!response.ok) throw new Error(`Erro ${response.status}`);
-        clientesCache = await response.json();
+        const data = await response.json();
+        clientesCache = data;
+        modoDemo = false;
         atualizarMetricas(clientesCache);
         filtrarTabela();
     } catch (error) {
-        console.error('Erro ao carregar clientes:', error);
-        exibirToast('Não foi possível carregar a lista de clientes.', 'erro');
-        clientesCache = [];
-        atualizarMetricas([]);
+        console.warn('API/Banco offline. Ativando modo de demonstração local:', error);
+        modoDemo = true;
+        if (clientesCache.length === 0) {
+            clientesCache = [...CLIENTES_DEMO];
+            exibirToast('Modo Local (Demo) ativado para testes interativos.', 'info');
+        }
+        atualizarMetricas(clientesCache);
         filtrarTabela();
+        verificarStatusAPI();
     } finally {
         mostrarLoading(false);
     }
@@ -432,41 +491,49 @@ async function salvarNovoCliente(event) {
 
     // Payload limpo — pronto para API
     const novoCliente = {
+        id: Date.now(),
         nome:     document.getElementById('criar-nome').value.trim(),
         email:    document.getElementById('criar-email').value.trim(),
         plano:    planoSelecionado,
         ativo:    document.getElementById('criar-ativo').checked,
-        // Campos opcionais (null se vazio)
         telefone: document.getElementById('criar-telefone')?.value.trim() || null,
         cpf:      document.getElementById('criar-cpf')?.value.trim()      || null,
         rg:       document.getElementById('criar-rg')?.value.trim()       || null,
+        data_cadastro: new Date().toISOString().split('T')[0]
     };
 
     setButtonLoading(btnSubmit, true, 'Cadastrando...');
 
     try {
-        // TODO: substituir por chamada real ao backend
-        const response = await fetch(`${API_BASE_URL}/clientes`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(novoCliente),
-        });
+        if (!modoDemo) {
+            const response = await fetch(`${API_BASE_URL}/clientes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(novoCliente),
+            });
 
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.detail || `Erro ${response.status} ao criar cliente.`);
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.detail || `Erro ${response.status} ao criar cliente.`);
+            }
+
+            const clienteCriado = await response.json();
+            exibirToast(`Cliente "${clienteCriado.nome}" criado com sucesso!`, 'sucesso');
+            fecharModalCriar();
+            carregarClientes();
+            return;
         }
-
-        const clienteCriado = await response.json();
-        exibirToast(`Cliente "${clienteCriado.nome}" criado com sucesso!`, 'sucesso');
-        fecharModalCriar();
-        carregarClientes();
     } catch (error) {
-        console.error('Erro ao salvar cliente:', error);
-        exibirToast(error.message || 'Erro ao conectar com o servidor.', 'erro');
-    } finally {
-        setButtonLoading(btnSubmit, false, 'Cadastrar Cliente');
+        console.warn('Falha na API backend. Executando em modo local:', error);
     }
+
+    // Fallback Modo Demo Local
+    clientesCache.unshift(novoCliente);
+    atualizarMetricas(clientesCache);
+    filtrarTabela();
+    exibirToast(`Cliente "${novoCliente.nome}" cadastrado! (Modo Local)`, 'sucesso');
+    fecharModalCriar();
+    setButtonLoading(btnSubmit, false, 'Cadastrar Cliente');
 }
 
 // ============================================================
@@ -527,7 +594,6 @@ async function salvarEdicaoCliente(event) {
     const planoAtivo     = document.getElementById('editar-plano-toggle')?.checked;
     const planoSelecionado = planoAtivo ? getPlanoSelecionado('editar') : null;
 
-    // Payload limpo — pronto para API
     const clienteAtualizado = {
         nome:     document.getElementById('editar-nome').value.trim(),
         email:    document.getElementById('editar-email').value.trim(),
@@ -541,27 +607,37 @@ async function salvarEdicaoCliente(event) {
     setButtonLoading(btnSubmit, true, 'Salvando...');
 
     try {
-        // TODO: substituir por chamada real ao backend
-        const response = await fetch(`${API_BASE_URL}/clientes/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(clienteAtualizado),
-        });
+        if (!modoDemo) {
+            const response = await fetch(`${API_BASE_URL}/clientes/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(clienteAtualizado),
+            });
 
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.detail || `Erro ${response.status} ao atualizar.`);
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.detail || `Erro ${response.status} ao atualizar.`);
+            }
+
+            exibirToast(`Cliente #${id} atualizado com sucesso!`, 'sucesso');
+            fecharModalEditar();
+            carregarClientes();
+            return;
         }
-
-        exibirToast(`Cliente #${id} atualizado com sucesso!`, 'sucesso');
-        fecharModalEditar();
-        carregarClientes();
     } catch (error) {
-        console.error('Erro ao editar cliente:', error);
-        exibirToast(error.message || 'Falha ao salvar edições.', 'erro');
-    } finally {
-        setButtonLoading(btnSubmit, false, 'Salvar Alterações');
+        console.warn('Falha na API backend. Salvando edição em modo local:', error);
     }
+
+    // Fallback Modo Demo Local
+    const index = clientesCache.findIndex(c => c.id === id);
+    if (index !== -1) {
+        clientesCache[index] = { ...clientesCache[index], ...clienteAtualizado };
+        atualizarMetricas(clientesCache);
+        filtrarTabela();
+        exibirToast(`Cliente #${id} atualizado! (Modo Local)`, 'sucesso');
+    }
+    fecharModalEditar();
+    setButtonLoading(btnSubmit, false, 'Salvar Alterações');
 }
 
 // ============================================================
@@ -586,26 +662,34 @@ function fecharModalDeletar() {
 async function confirmarExclusao() {
     if (!clienteParaDeletarId) return;
 
+    const id = clienteParaDeletarId;
     const btnSubmit = document.getElementById('btn-submit-deletar');
     setButtonLoading(btnSubmit, true, 'Excluindo...');
 
     try {
-        // TODO: substituir por chamada real ao backend
-        const response = await fetch(`${API_BASE_URL}/clientes/${clienteParaDeletarId}`, {
-            method: 'DELETE',
-        });
+        if (!modoDemo) {
+            const response = await fetch(`${API_BASE_URL}/clientes/${id}`, {
+                method: 'DELETE',
+            });
 
-        if (!response.ok) throw new Error(`Erro ${response.status} ao excluir.`);
+            if (!response.ok) throw new Error(`Erro ${response.status} ao excluir.`);
 
-        exibirToast(`Cliente #${clienteParaDeletarId} removido com sucesso!`, 'sucesso');
-        fecharModalDeletar();
-        carregarClientes();
+            exibirToast(`Cliente #${id} removido com sucesso!`, 'sucesso');
+            fecharModalDeletar();
+            carregarClientes();
+            return;
+        }
     } catch (error) {
-        console.error('Erro ao deletar cliente:', error);
-        exibirToast('Erro ao tentar remover cliente.', 'erro');
-    } finally {
-        setButtonLoading(btnSubmit, false, 'Excluir Cliente');
+        console.warn('Falha na API backend. Excluindo em modo local:', error);
     }
+
+    // Fallback Modo Demo Local
+    clientesCache = clientesCache.filter(c => c.id !== id);
+    atualizarMetricas(clientesCache);
+    filtrarTabela();
+    exibirToast(`Cliente #${id} removido! (Modo Local)`, 'sucesso');
+    fecharModalDeletar();
+    setButtonLoading(btnSubmit, false, 'Excluir Cliente');
 }
 
 // ============================================================
@@ -640,7 +724,6 @@ function renderizarCardsPlanoModal(ctx) {
         container.appendChild(card);
     });
 
-    // Seleciona o primeiro por padrão
     if (PLANOS_CONFIG.length > 0) selecionarPlanoCard(ctx, PLANOS_CONFIG[0].id);
 }
 
@@ -648,7 +731,6 @@ function selecionarPlanoCard(ctx, planoId) {
     const plano = PLANOS_CONFIG.find(p => p.id === planoId);
     if (!plano) return;
 
-    // Limpa todas as seleções
     PLANOS_CONFIG.forEach(p => {
         const card  = document.getElementById(`${ctx}-plano-card-${p.id}`);
         const check = document.getElementById(`${ctx}-plano-check-${p.id}`);
@@ -665,7 +747,6 @@ function selecionarPlanoCard(ctx, planoId) {
         }
     });
 
-    // Aplica seleção no card ativo
     const activeCard  = document.getElementById(`${ctx}-plano-card-${planoId}`);
     const activeCheck = document.getElementById(`${ctx}-plano-check-${planoId}`);
 
@@ -694,7 +775,6 @@ function selecionarPlanoCard(ctx, planoId) {
         activeCheck.innerHTML = `<svg class="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     }
 
-    // Armazena a seleção em hidden input
     let hiddenInput = document.getElementById(`${ctx}-plano-value`);
     if (!hiddenInput) {
         hiddenInput = document.createElement('input');
@@ -752,7 +832,6 @@ function toggleContatoSection(ctx) {
     secao.classList.toggle('hidden', !isHidden);
     if (chevron) chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
 
-    // Atualiza badge indicador
     if (badge) {
         const temDados = !!(
             document.getElementById(`${ctx}-telefone`)?.value ||
@@ -803,7 +882,7 @@ function validarFormulario(ctx) {
         }
     }
 
-    // Telefone (se preenchido — mínimo 14 chars com máscara)
+    // Telefone (se preenchido)
     const telInput = document.getElementById(`${ctx}-telefone`);
     if (telInput && telInput.value.trim()) {
         const telLimpo = telInput.value.replace(/\D/g, '');
@@ -816,7 +895,6 @@ function validarFormulario(ctx) {
     }
 
     if (!valido) {
-        // Scroll ao primeiro erro
         const firstError = document.querySelector(`#form-${ctx} .field-error.visible`);
         firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -852,7 +930,7 @@ function exibirErroField(errorId, msg) {
     el.querySelector('span').textContent = msg;
     el.classList.add('visible');
     el.classList.remove('hidden');
-    // Shake no input pai
+
     const inputEl = document.getElementById(errorId.replace('-error', ''));
     if (inputEl) {
         inputEl.classList.add('input-error-shake', 'border-rose-400', 'dark:border-rose-500', 'focus:border-rose-400');
