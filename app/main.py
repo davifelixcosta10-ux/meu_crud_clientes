@@ -31,10 +31,12 @@ if os.path.exists(static_dir):
 # --- ENDPOINTS DA API FASTAPI ---
 
 @app.get("/clientes", response_model=list[Cliente])
+@app.get("/api/clientes", response_model=list[Cliente])
 def api_listar_clientes():
     return listar_clientes()
 
 @app.get("/clientes/{cliente_id}", response_model=Cliente)
+@app.get("/api/clientes/{cliente_id}", response_model=Cliente)
 def api_buscar_cliente(cliente_id: int):
     cliente = buscar_clientes(cliente_id)
     if not cliente:
@@ -42,10 +44,12 @@ def api_buscar_cliente(cliente_id: int):
     return cliente
 
 @app.post("/clientes", response_model=Cliente, status_code=status.HTTP_201_CREATED)
+@app.post("/api/clientes", response_model=Cliente, status_code=status.HTTP_201_CREATED)
 def api_criar_cliente(dados: ClienteCreate):
     return criar_cliente(dados)
 
 @app.patch("/clientes/{cliente_id}", response_model=Cliente)
+@app.patch("/api/clientes/{cliente_id}", response_model=Cliente)
 def api_atualizar_cliente(cliente_id: int, dados: ClienteUpdate):
     cliente = atualizar_cliente(cliente_id, dados)
     if not cliente:
@@ -53,6 +57,7 @@ def api_atualizar_cliente(cliente_id: int, dados: ClienteUpdate):
     return cliente
 
 @app.delete("/clientes/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/api/clientes/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
 def api_deletar_cliente(cliente_id: int):
     sucesso = deletar_clientes(cliente_id)
     if not sucesso:
