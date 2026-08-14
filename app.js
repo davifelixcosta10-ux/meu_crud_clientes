@@ -120,10 +120,36 @@ const CLIENTES_DEMO = [
 // ============================================================
 // ESTADO GLOBAL DA APLICAÇÃO
 // ============================================================
-const API_BASE_URL = window.location.origin;
+const API_BASE_URL = 'https://daviflowgestoes.vercel.app/api';
 let clientesCache = [];
 let clienteParaDeletarId = null;
 let modoDemo = false;
+
+// ============================================================
+// GESTÃO DE AUTENTICAÇÃO E SESSÃO
+// ============================================================
+function obterUserId() {
+    return localStorage.getItem('df_user_id') || '';
+}
+
+function obterAuthHeaders() {
+    const userId = obterUserId();
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userId}`
+    };
+}
+
+function salvarSessao(userId, token) {
+    localStorage.setItem('df_user_id', userId);
+    localStorage.setItem('df_token', token);
+}
+
+function encerrarSessao() {
+    localStorage.removeItem('df_user_id');
+    localStorage.removeItem('df_token');
+    window.location.reload();
+}
 
 // ============================================================
 // INICIALIZAÇÃO
@@ -206,7 +232,12 @@ async function verificarStatusAPI() {
 async function carregarClientes() {
     mostrarLoading(true);
     try {
-        const response = await fetch(`${API_BASE_URL}/clientes`);
+        // AQUI: Adiciona o objeto com as opções e o header de autenticação
+        const response = await fetch(`${API_BASE_URL}/clientes`, {
+            method: 'GET',
+            headers: obterAuthHeaders()
+        });
+
         if (!response.ok) throw new Error(`Erro ${response.status}`);
         const data = await response.json();
         clientesCache = data;
@@ -454,31 +485,8 @@ function inicializarFiltroPlanos() {
 }
 
 // ============================================================
-// 6. MODAL NOVO CLIENTE
+// 6. MODAL NOVO CLIENTE (SALVAR)
 // ============================================================
-function abrirModalCriar() {
-    document.getElementById('form-criar').reset();
-    document.getElementById('criar-ativo').checked = true;
-
-    // Reset plano toggle e seleção
-    setPlanoToggle('criar', false);
-
-    // Limpa erros
-    limparErrosForm('form-criar');
-
-    // Fecha seção de contato
-    const secao = document.getElementById('criar-contato-section');
-    if (secao && !secao.classList.contains('hidden')) {
-        toggleContatoSection('criar');
-    }
-
-    abrirModal('modal-criar');
-}
-
-function fecharModalCriar() {
-    fecharModal('modal-criar');
-}
-
 async function salvarNovoCliente(event) {
     event.preventDefault();
     if (!validarFormulario('criar')) return;
@@ -491,7 +499,6 @@ async function salvarNovoCliente(event) {
 
     // Payload limpo — pronto para API
     const novoCliente = {
-        id: Date.now(),
         nome:     document.getElementById('criar-nome').value.trim(),
         email:    document.getElementById('criar-email').value.trim(),
         plano:    planoSelecionado,
@@ -508,7 +515,7 @@ async function salvarNovoCliente(event) {
         if (!modoDemo) {
             const response = await fetch(`${API_BASE_URL}/clientes`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: obterAuthHeaders(),
                 body: JSON.stringify(novoCliente),
             });
 
@@ -528,6 +535,7 @@ async function salvarNovoCliente(event) {
     }
 
     // Fallback Modo Demo Local
+    novoCliente.id = Date.now();
     clientesCache.unshift(novoCliente);
     atualizarMetricas(clientesCache);
     filtrarTabela();
@@ -537,61 +545,16 @@ async function salvarNovoCliente(event) {
 }
 
 // ============================================================
-// 7. MODAL EDITAR CLIENTE
+// 7. MODAL EDITAR CLIENTE (SALVAR EDIÇÃO)
 // ============================================================
-function abrirModalEditar(id) {
-    const cliente = clientesCache.find(c => c.id === id);
-    if (!cliente) return;
-
-    document.getElementById('editar-id').value            = cliente.id;
-    document.getElementById('editar-id-label').textContent = cliente.id;
-    document.getElementById('editar-nome').value          = cliente.nome;
-    document.getElementById('editar-email').value         = cliente.email;
-    document.getElementById('editar-ativo').checked       = cliente.ativo;
-
-    // Plano toggle
-    const temPlano = !!cliente.plano;
-    setPlanoToggle('editar', temPlano);
-    if (temPlano) {
-        setPlanoSelecionado('editar', cliente.plano);
-    }
-
-    // Campos de contato
-    if (document.getElementById('editar-telefone')) {
-        document.getElementById('editar-telefone').value = cliente.telefone || '';
-    }
-    if (document.getElementById('editar-cpf')) {
-        document.getElementById('editar-cpf').value = cliente.cpf || '';
-    }
-    if (document.getElementById('editar-rg')) {
-        document.getElementById('editar-rg').value = cliente.rg || '';
-    }
-
-    // Abre seção de contato se houver dados
-    const temContato = !!(cliente.telefone || cliente.cpf || cliente.rg);
-    const secaoEditar = document.getElementById('editar-contato-section');
-    if (temContato && secaoEditar && secaoEditar.classList.contains('hidden')) {
-        toggleContatoSection('editar');
-    } else if (!temContato && secaoEditar && !secaoEditar.classList.contains('hidden')) {
-        toggleContatoSection('editar');
-    }
-
-    limparErrosForm('form-editar');
-    abrirModal('modal-editar');
-}
-
-function fecharModalEditar() {
-    fecharModal('modal-editar');
-}
-
 async function salvarEdicaoCliente(event) {
     event.preventDefault();
     if (!validarFormulario('editar')) return;
 
-    const id        = parseInt(document.getElementById('editar-id').value);
+    const id        = document.getElementById('editar-id').value;
     const btnSubmit = document.getElementById('btn-submit-editar');
 
-    const planoAtivo     = document.getElementById('editar-plano-toggle')?.checked;
+    const planoAtivo       = document.getElementById('editar-plano-toggle')?.checked;
     const planoSelecionado = planoAtivo ? getPlanoSelecionado('editar') : null;
 
     const clienteAtualizado = {
@@ -610,7 +573,7 @@ async function salvarEdicaoCliente(event) {
         if (!modoDemo) {
             const response = await fetch(`${API_BASE_URL}/clientes/${id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: obterAuthHeaders(),
                 body: JSON.stringify(clienteAtualizado),
             });
 
@@ -629,7 +592,7 @@ async function salvarEdicaoCliente(event) {
     }
 
     // Fallback Modo Demo Local
-    const index = clientesCache.findIndex(c => c.id === id);
+    const index = clientesCache.findIndex(c => String(c.id) === String(id));
     if (index !== -1) {
         clientesCache[index] = { ...clientesCache[index], ...clienteAtualizado };
         atualizarMetricas(clientesCache);
@@ -640,25 +603,10 @@ async function salvarEdicaoCliente(event) {
     setButtonLoading(btnSubmit, false, 'Salvar Alterações');
 }
 
+
 // ============================================================
-// 8. MODAL EXCLUIR CLIENTE
+// 8. MODAL EXCLUIR CLIENTE (CONFIRMAR EXCLUSÃO)
 // ============================================================
-function abrirModalDeletar(id) {
-    const cliente = clientesCache.find(c => c.id === id);
-    if (!cliente) return;
-
-    clienteParaDeletarId = id;
-    document.getElementById('deletar-id-label').textContent   = cliente.id;
-    document.getElementById('deletar-nome-label').textContent = cliente.nome;
-
-    abrirModal('modal-deletar');
-}
-
-function fecharModalDeletar() {
-    clienteParaDeletarId = null;
-    fecharModal('modal-deletar');
-}
-
 async function confirmarExclusao() {
     if (!clienteParaDeletarId) return;
 
@@ -670,6 +618,7 @@ async function confirmarExclusao() {
         if (!modoDemo) {
             const response = await fetch(`${API_BASE_URL}/clientes/${id}`, {
                 method: 'DELETE',
+                headers: obterAuthHeaders()
             });
 
             if (!response.ok) throw new Error(`Erro ${response.status} ao excluir.`);
@@ -684,7 +633,7 @@ async function confirmarExclusao() {
     }
 
     // Fallback Modo Demo Local
-    clientesCache = clientesCache.filter(c => c.id !== id);
+    clientesCache = clientesCache.filter(c => String(c.id) !== String(id));
     atualizarMetricas(clientesCache);
     filtrarTabela();
     exibirToast(`Cliente #${id} removido! (Modo Local)`, 'sucesso');
