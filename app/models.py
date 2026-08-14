@@ -1,8 +1,27 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 
+# --- MODELOS DE AUTENTICAÇÃO ---
+class UserSignUp(BaseModel):
+    email: EmailStr
+    password: str
+    nome_completo: Optional[str] = None
+    nome_empresa: Optional[str] = None
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_id: str
+    email: str
+
+# --- MODELOS DE CLIENTES ---
 class Cliente(BaseModel):
     id: Optional[int | str] = None
+    user_id: Optional[str] = None
     nome: str
     email: str
     status: Optional[str] = "Ativo"

@@ -1,3 +1,5 @@
+from app.models import UserLogin
+from app.models import UserSignUp
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -15,32 +17,59 @@ def get_supabase_client() -> Client:
         raise ValueError("SUPABASE_URL e SUPABASE_KEY não foram encontrados nas variáveis de ambiente.")
     return create_client(url, key)
 
-
-def carregar_clientes() -> list[Cliente]:
+#FUNÇÕES DO AUTH
+def registrar_usuario(dados: UserSignUp):
     supabase = get_supabase_client()
-    response = supabase.table("clientes").select("*").execute()
+    # Cadastra o usuário no Supabase
+    response = supabase.auth.sign_up({
+        "email": dados.email,
+        "password": dados.password,
+        "options": {
+            "data": {
+                "nome completo": dados.nome_completo or dados.email,
+                "nome_empresa":dados.nome_empresa or ""
+            }
+        }
+    })
+    return response
+
+def autenticar_usuario(dados: UserLogin):
+    supabase = get_supabase_client()
+    response = supabase.auth.sign_in_with_password({
+        "email": dados.email,
+        "password": dados.password
+    })
+    return response
+
+
+# --- FUNÇÕES DE CLIENTES ISOLADOS POR USER_ID --- 
+def carregar_clientes(user_id: str) -> list[Cliente]:
+    supabase = get_supabase_client()
+    response = supabase.table("clientes").select("*").eq("user_id", user_id).execute()
     # Converte os registros do banco diretamente para instâncias da classe Cliente
     return [Cliente.model_validate(item) for item in response.data]
 
 
-def salvar_novo_cliente(cliente_dados: dict) -> Cliente:
+def salvar_novo_cliente(cliente_dados: dict, user_id: str) -> Cliente:
     supabase = get_supabase_client()
+    # Adiciona o user_id ao dicionário de dados do cliente
+    cliente_dados["user_id"] = user_id
     # Insere um novo cliente no Supabase
     response = supabase.table("clientes").insert(cliente_dados).execute()
     return Cliente.model_validate(response.data[0])
 
 
-def atualizar_cliente_db(cliente_id: int | str, cliente_dados: dict) -> Cliente | None:
+def atualizar_cliente_db(cliente_id: int | str, cliente_dados: dict, user_id: str) -> Cliente | None:
     supabase = get_supabase_client()
     # Filtra chaves com valor None para atualizações parciais
     dados_filtrados = {k: v for k, v in cliente_dados.items() if v is not None}
-    response = supabase.table("clientes").update(dados_filtrados).eq("id", cliente_id).execute()
+    response = supabase.table("clientes").update(dados_filtrados).eq("id", cliente_id).eq("user_id", user_id).execute()
     if response.data:
         return Cliente.model_validate(response.data[0])
     return None
 
 
-def deletar_cliente_db(cliente_id: int | str) -> bool:
+def deletar_cliente_db(cliente_id: int | str, user_id: str) -> bool:
     supabase = get_supabase_client()
-    response = supabase.table("clientes").delete().eq("id", cliente_id).execute()
+    response = supabase.table("clientes").delete().eq("id", cliente_id).eq("user_id", user_id).execute()
     return len(response.data) > 0
