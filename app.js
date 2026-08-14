@@ -505,8 +505,34 @@ function inicializarFiltroPlanos() {
 }
 
 // ============================================================
-// 6. MODAL NOVO CLIENTE (SALVAR)
+// 6. MODAL NOVO CLIENTE (ABRIR / FECHAR / SALVAR)
 // ============================================================
+function abrirModalCriar() {
+    const form = document.getElementById('form-criar');
+    if (form) form.reset();
+
+    const ativoCheckbox = document.getElementById('criar-ativo');
+    if (ativoCheckbox) ativoCheckbox.checked = true;
+
+    // Reset plano toggle e seleção
+    setPlanoToggle('criar', false);
+
+    // Limpa erros
+    limparErrosForm('form-criar');
+
+    // Fecha seção de contato se aberta
+    const secao = document.getElementById('criar-contato-section');
+    if (secao && !secao.classList.contains('hidden')) {
+        toggleContatoSection('criar');
+    }
+
+    abrirModal('modal-criar');
+}
+
+function fecharModalCriar() {
+    fecharModal('modal-criar');
+}
+
 async function salvarNovoCliente(event) {
     event.preventDefault();
     if (!validarFormulario('criar')) return;
@@ -565,8 +591,53 @@ async function salvarNovoCliente(event) {
 }
 
 // ============================================================
-// 7. MODAL EDITAR CLIENTE (SALVAR EDIÇÃO)
+// 7. MODAL EDITAR CLIENTE (ABRIR / FECHAR / SALVAR)
 // ============================================================
+function abrirModalEditar(id) {
+    const cliente = clientesCache.find(c => String(c.id) === String(id));
+    if (!cliente) return;
+
+    document.getElementById('editar-id').value            = cliente.id;
+    document.getElementById('editar-id-label').textContent = cliente.id;
+    document.getElementById('editar-nome').value          = cliente.nome;
+    document.getElementById('editar-email').value         = cliente.email;
+    document.getElementById('editar-ativo').checked       = cliente.ativo;
+
+    // Plano toggle
+    const temPlano = !!cliente.plano;
+    setPlanoToggle('editar', temPlano);
+    if (temPlano) {
+        setPlanoSelecionado('editar', cliente.plano);
+    }
+
+    // Campos de contato
+    if (document.getElementById('editar-telefone')) {
+        document.getElementById('editar-telefone').value = cliente.telefone || '';
+    }
+    if (document.getElementById('editar-cpf')) {
+        document.getElementById('editar-cpf').value = cliente.cpf || '';
+    }
+    if (document.getElementById('editar-rg')) {
+        document.getElementById('editar-rg').value = cliente.rg || '';
+    }
+
+    // Abre seção de contato se houver dados
+    const temContato = !!(cliente.telefone || cliente.cpf || cliente.rg);
+    const secaoEditar = document.getElementById('editar-contato-section');
+    if (temContato && secaoEditar && secaoEditar.classList.contains('hidden')) {
+        toggleContatoSection('editar');
+    } else if (!temContato && secaoEditar && !secaoEditar.classList.contains('hidden')) {
+        toggleContatoSection('editar');
+    }
+
+    limparErrosForm('form-editar');
+    abrirModal('modal-editar');
+}
+
+function fecharModalEditar() {
+    fecharModal('modal-editar');
+}
+
 async function salvarEdicaoCliente(event) {
     event.preventDefault();
     if (!validarFormulario('editar')) return;
@@ -623,10 +694,24 @@ async function salvarEdicaoCliente(event) {
     setButtonLoading(btnSubmit, false, 'Salvar Alterações');
 }
 
+// ============================================================
+// 8. MODAL EXCLUIR CLIENTE (ABRIR / FECHAR / CONFIRMAR)
+// ============================================================
+function abrirModalDeletar(id) {
+    const cliente = clientesCache.find(c => String(c.id) === String(id));
+    if (!cliente) return;
 
-// ============================================================
-// 8. MODAL EXCLUIR CLIENTE (CONFIRMAR EXCLUSÃO)
-// ============================================================
+    clienteParaDeletarId = id;
+    document.getElementById('deletar-id-label').textContent   = cliente.id;
+    document.getElementById('deletar-nome-label').textContent = cliente.nome;
+
+    abrirModal('modal-deletar');
+}
+
+function fecharModalDeletar() {
+    clienteParaDeletarId = null;
+    fecharModal('modal-deletar');
+}
 async function confirmarExclusao() {
     if (!clienteParaDeletarId) return;
 
