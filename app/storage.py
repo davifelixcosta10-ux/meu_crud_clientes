@@ -20,14 +20,13 @@ def get_supabase_client() -> Client:
 #FUNÇÕES DO AUTH
 def registrar_usuario(dados: UserSignUp):
     supabase = get_supabase_client()
-    # Cadastra o usuário no Supabase
     response = supabase.auth.sign_up({
         "email": dados.email,
         "password": dados.password,
         "options": {
             "data": {
-                "nome completo": dados.nome_completo or dados.email,
-                "nome_empresa":dados.nome_empresa or ""
+                "nome_completo": dados.nome_completo or "",
+                "nome_empresa": dados.nome_empresa or ""
             }
         }
     })
