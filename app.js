@@ -759,10 +759,14 @@ function renderizarCardsPlanoModal(ctx) {
         card.type = 'button';
         card.id = `${ctx}-plano-card-${p.id}`;
         card.dataset.plano = p.id;
-        card.className = `plan-card relative w-full text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 ${p.card.border} hover:border-slate-400 dark:hover:border-slate-500 bg-white dark:bg-slate-900/40`;
-        card.onclick = () => selecionarPlanoCard(ctx, p.id);
+        card.className = `plan-card relative w-full text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900/40`;
+        card.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            selecionarPlanoCard(ctx, p.id);
+        });
         card.innerHTML = `
-            <div class="flex items-start gap-2.5">
+            <div class="flex items-start gap-2.5 pointer-events-none">
                 <span class="text-lg leading-none mt-0.5">${p.emoji}</span>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-1">
@@ -789,10 +793,7 @@ function selecionarPlanoCard(ctx, planoId) {
         const card  = document.getElementById(`${ctx}-plano-card-${p.id}`);
         const check = document.getElementById(`${ctx}-plano-check-${p.id}`);
         if (card) {
-            card.className = card.className
-                .replace(/border-\S+/g, '')
-                .replace(/ring-\S+/g, '');
-            card.classList.add('border-2', p.card.border, 'bg-white', 'dark:bg-slate-900/40');
+            card.className = `plan-card relative w-full text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900/40`;
             card.setAttribute('aria-checked', 'false');
         }
         if (check) {
@@ -805,24 +806,24 @@ function selecionarPlanoCard(ctx, planoId) {
     const activeCheck = document.getElementById(`${ctx}-plano-check-${planoId}`);
 
     if (activeCard) {
-        activeCard.className = activeCard.className
-            .replace(/border-\S+/g, '')
-            .replace(/ring-\S+/g, '');
-
-        const borderColor = planoId === 'enterprise' ? 'border-yellow-400 dark:border-yellow-500'
+        const borderColor = planoId === 'enterprise' ? 'border-yellow-500 dark:border-yellow-400'
                           : planoId === 'pro'         ? 'border-cyan-500 dark:border-cyan-400'
-                          :                             'border-slate-400 dark:border-slate-400';
+                          :                             'border-slate-500 dark:border-slate-400';
 
-        const bgColor = planoId === 'enterprise' ? 'bg-yellow-50/50 dark:bg-yellow-950/20'
-                      : planoId === 'pro'         ? 'bg-cyan-50/50 dark:bg-cyan-950/20'
-                      :                             'bg-slate-50 dark:bg-slate-800/40';
+        const bgColor = planoId === 'enterprise' ? 'bg-yellow-500/10 dark:bg-yellow-950/30'
+                      : planoId === 'pro'         ? 'bg-cyan-500/10 dark:bg-cyan-950/30'
+                      :                             'bg-slate-100 dark:bg-slate-800/60';
 
-        activeCard.classList.add('border-2', borderColor, bgColor);
+        const ringColor = planoId === 'enterprise' ? 'ring-2 ring-yellow-500/40'
+                        : planoId === 'pro'         ? 'ring-2 ring-cyan-500/40'
+                        :                             'ring-2 ring-slate-400/40';
+
+        activeCard.className = `plan-card relative w-full text-left p-3 rounded-xl border-2 transition-all duration-200 focus:outline-none ${borderColor} ${bgColor} ${ringColor}`;
         activeCard.setAttribute('aria-checked', 'true');
     }
 
     if (activeCheck) {
-        const checkColor = planoId === 'enterprise' ? 'bg-yellow-400 border-yellow-400'
+        const checkColor = planoId === 'enterprise' ? 'bg-yellow-500 border-yellow-500'
                          : planoId === 'pro'         ? 'bg-cyan-500 border-cyan-500'
                          :                             'bg-slate-500 border-slate-500';
         activeCheck.className = `plan-check-icon w-4 h-4 rounded-full border-2 ${checkColor} flex-shrink-0 mt-0.5 flex items-center justify-center transition-all duration-150`;
@@ -835,7 +836,8 @@ function selecionarPlanoCard(ctx, planoId) {
         hiddenInput.type = 'hidden';
         hiddenInput.id   = `${ctx}-plano-value`;
         hiddenInput.name = 'plano';
-        document.getElementById(`form-${ctx}`)?.appendChild(hiddenInput);
+        const formEl = document.getElementById(`form-${ctx}`) || document.getElementById(`${ctx}-plano-section`);
+        formEl?.appendChild(hiddenInput);
     }
     hiddenInput.value = planoId;
 }
