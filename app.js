@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderizarCardsPlanoModal('criar');
     renderizarCardsPlanoModal('editar');
     inicializarFiltroPlanos();
+    if (window.lucide) lucide.createIcons();
 
     // Polling de status da API a cada 10s
     setInterval(verificarStatusAPI, 10000);
@@ -200,9 +201,25 @@ async function verificarStatusAPI() {
 
     let isOnline = false;
     try {
-        const res = await fetch(`${API_BASE_URL}/clientes`, { method: 'GET' });
-        isOnline = res.ok || res.status === 200;
-    } catch (_) {}
+        const res = await fetch(`${API_BASE_URL}/health`, { method: 'GET' });
+        if (res.ok) {
+            isOnline = true;
+        } else {
+            const res2 = await fetch(`${API_BASE_URL}/clientes`, {
+                method: 'GET',
+                headers: obterAuthHeaders()
+            });
+            isOnline = res2.ok || res2.status === 200 || res2.status === 401;
+        }
+    } catch (_) {
+        try {
+            const res2 = await fetch(`${API_BASE_URL}/clientes`, {
+                method: 'GET',
+                headers: obterAuthHeaders()
+            });
+            isOnline = res2.ok || res2.status === 200 || res2.status === 401;
+        } catch (e2) {}
+    }
 
     selectors.forEach(({ badge, dot, text }) => {
         const badgeEl = document.getElementById(badge);
@@ -224,6 +241,8 @@ async function verificarStatusAPI() {
             textEl.textContent = 'Desconectado';
         }
     });
+
+    if (window.lucide) lucide.createIcons();
 }
 
 // ============================================================
@@ -329,6 +348,7 @@ function renderizarClientes(clientes) {
     if (clientes.length === 0) {
         emptyState.classList.remove('hidden');
         emptyState.classList.add('flex');
+        if (window.lucide) lucide.createIcons();
         return;
     }
 

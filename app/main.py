@@ -50,6 +50,15 @@ def obter_user_id(authorization: str = Header(None)) -> str:
     return token
 
 
+# --- ENDPOINTS DE STATUS / HEALTH ---
+
+@app.get("/")
+@app.get("/api")
+@app.get("/api/health")
+def health_check():
+    return {"status": "online", "message": "DaviFlow API v1.2"}
+
+
 # --- ENDPOINTS DE AUTENTICAÇÃO ---
 
 @app.post("/auth/signup", status_code=status.HTTP_201_CREATED)
