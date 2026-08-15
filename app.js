@@ -543,12 +543,12 @@ async function salvarNovoCliente(event) {
     const planoAtivo = document.getElementById('criar-plano-toggle')?.checked;
     const planoSelecionado = planoAtivo ? getPlanoSelecionado('criar') : null;
 
-    // Payload limpo — pronto para API
+    // No salvarNovoCliente:
     const novoCliente = {
         nome:     document.getElementById('criar-nome').value.trim(),
         email:    document.getElementById('criar-email').value.trim(),
         plano:    planoSelecionado,
-        ativo:    document.getElementById('criar-ativo').checked,
+        ativo:    Boolean(document.getElementById('criar-ativo')?.checked), // <-- Força ser boolean true/false
         telefone: document.getElementById('criar-telefone')?.value.trim() || null,
         cpf:      document.getElementById('criar-cpf')?.value.trim()      || null,
         rg:       document.getElementById('criar-rg')?.value.trim()       || null,
@@ -648,11 +648,12 @@ async function salvarEdicaoCliente(event) {
     const planoAtivo       = document.getElementById('editar-plano-toggle')?.checked;
     const planoSelecionado = planoAtivo ? getPlanoSelecionado('editar') : null;
 
+   // No salvarEdicaoCliente:
     const clienteAtualizado = {
         nome:     document.getElementById('editar-nome').value.trim(),
         email:    document.getElementById('editar-email').value.trim(),
         plano:    planoSelecionado,
-        ativo:    document.getElementById('editar-ativo').checked,
+        ativo:    Boolean(document.getElementById('editar-ativo')?.checked), // <-- Força ser boolean true/false
         telefone: document.getElementById('editar-telefone')?.value.trim() || null,
         cpf:      document.getElementById('editar-cpf')?.value.trim()      || null,
         rg:       document.getElementById('editar-rg')?.value.trim()       || null,

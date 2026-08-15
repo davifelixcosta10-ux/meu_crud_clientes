@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, Union
 
 # --- MODELOS DE AUTENTICAÇÃO ---
 class UserSignUp(BaseModel):
@@ -20,25 +20,24 @@ class TokenResponse(BaseModel):
 
 # --- MODELOS DE CLIENTES ---
 class Cliente(BaseModel):
-    id: Optional[int | str] = None
+    id: Optional[Union[int, str]] = None
     user_id: Optional[str] = None
     nome: str
     email: str
-    status: Optional[str] = "Ativo"
-    plano: Optional[str] = "Básico"
+    plano: Optional[str] = None
+    ativo: bool = True
     telefone: Optional[str] = None
     cpf: Optional[str] = None
     rg: Optional[str] = None
-    usa_plano: Optional[bool] = False
-    valor_plano: Optional[float] = 0.0
-
+    data_cadastro: Optional[str] = None
+    
     class Config:
         from_attributes = True
 
 class ClienteCreate(BaseModel):
     nome: str
     email: str
-    status: Optional[str] = "Ativo"
+    ativo: Optional[bool] = True
     plano: Optional[str] = "Básico"
     telefone: Optional[str] = None
     cpf: Optional[str] = None
@@ -49,7 +48,7 @@ class ClienteCreate(BaseModel):
 class ClienteUpdate(BaseModel):
     nome: Optional[str] = None
     email: Optional[str] = None
-    status: Optional[str] = None
+    ativo: Optional[bool] = None
     plano: Optional[str] = None
     telefone: Optional[str] = None
     cpf: Optional[str] = None
