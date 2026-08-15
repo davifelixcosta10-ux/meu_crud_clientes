@@ -26,7 +26,7 @@ app = FastAPI(title="DaviFlow API v1.2")
 # Permite acesso do Frontend sem bloqueios de CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://daviflowgestoes.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
