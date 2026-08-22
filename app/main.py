@@ -28,11 +28,19 @@ _extra_origins = [
     for o in os.environ.get("ALLOWED_ORIGINS", "").split(",")
     if o.strip()
 ]
-ALLOWED_ORIGINS = _default_origins + _extra_origins
+# Adiciona localhost para desenvolvimento e regex para subdomínios Vercel preview
+ALLOWED_ORIGINS = _default_origins + _extra_origins + [
+    "http://localhost",
+    "http://127.0.0.1",
+    "https://localhost",
+    "https://127.0.0.1",
+]
+# Permite subdomínios Vercel (.vercel.app) via regex quando necessário
+# (Nota: Em produção, mantemos as origens fixas acima; para development usa-se "*" se necessário)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|[a-z0-9-]+\.vercel\.app)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

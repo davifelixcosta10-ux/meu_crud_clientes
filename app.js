@@ -241,6 +241,7 @@ async function verificarStatusAPI() {
     const textEl  = document.getElementById('api-status-text');
 
     let isOnline = false;
+    let wasException = false;
     try {
         const res = await fetch(`${API_BASE_URL}/health`, { method: 'GET' });
         if (res.ok) {
@@ -253,7 +254,13 @@ async function verificarStatusAPI() {
             isOnline = res2.ok || res2.status === 200 || res2.status === 401;
         }
     } catch (_) {
+        wasException = true;
+    }
+
+    if (wasException) {
         modoDemo = true;
+    } else if (isOnline) {
+        modoDemo = false;
     }
 
     if (!badgeEl || !dotEl || !textEl) return;
@@ -388,11 +395,11 @@ function atualizarMetricas(clientes) {
 
         planosCache.forEach(plano => {
             const count = counts[plano.id] || 0;
-            const theme = PLAN_THEMES[plano.cor] || PLAN_THEMES.indigo;
+            const theme = (MAPA_CORES_PLANO && MAPA_CORES_PLANO[plano.cor]) ? MAPA_CORES_PLANO[plano.cor] : (MAPA_CORES_PLANO ? MAPA_CORES_PLANO.indigo : { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-700 dark:text-indigo-300', border: 'border-indigo-200 dark:border-indigo-800/50' });
             const div = document.createElement('div');
             div.className = `rounded-xl ${theme.bg} border ${theme.border} px-1.5 py-1 text-center flex-1 min-w-[55px]`;
             div.innerHTML = `
-                <div class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide leading-none ${theme.text} mb-1 truncate">${escaparHTML(plano.nome.slice(0, 5))}</div>
+                <div class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide leading-none ${theme.text} mb-1 truncate">${escaparHTML(plano.nome ? plano.nome.slice(0, 8) : '')}</div>
                 <div class="text-sm font-black ${theme.text} tabular-nums leading-none">${count}</div>
             `;
             container.appendChild(div);
