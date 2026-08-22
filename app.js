@@ -132,14 +132,24 @@ function obterUserId() {
     return localStorage.getItem('df_user_id') || '';
 }
 
+/**
+ * Retorna os headers de autenticação para as requisições à API.
+ * IMPORTANTE: usa o JWT access_token (df_token) no header Authorization,
+ * conforme o padrão Bearer. O user_id é enviado como header auxiliar.
+ */
 function obterAuthHeaders() {
-    const userId = obterUserId();
+    const token = localStorage.getItem('df_token') || obterUserId();
     return {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userId}`
+        'Authorization': `Bearer ${token}`
     };
 }
 
+/**
+ * Persiste a sessão após login bem-sucedido.
+ * @param {string} userId  - UUID do usuário (ex: "abc-123")
+ * @param {string} token   - JWT access_token retornado pelo Supabase
+ */
 function salvarSessao(userId, token) {
     localStorage.setItem('df_user_id', userId);
     localStorage.setItem('df_token', token);
@@ -573,11 +583,13 @@ async function salvarNovoCliente(event) {
             const clienteCriado = await response.json();
             exibirToast(`Cliente "${clienteCriado.nome}" criado com sucesso!`, 'sucesso');
             fecharModalCriar();
+            setButtonLoading(btnSubmit, false, 'Cadastrar Cliente');
             carregarClientes();
             return;
         }
     } catch (error) {
         console.warn('Falha na API backend. Executando em modo local:', error);
+        exibirToast(error.message || 'Erro ao comunicar com a API.', 'erro');
     }
 
     // Fallback Modo Demo Local
@@ -676,11 +688,13 @@ async function salvarEdicaoCliente(event) {
 
             exibirToast(`Cliente #${id} atualizado com sucesso!`, 'sucesso');
             fecharModalEditar();
+            setButtonLoading(btnSubmit, false, 'Salvar Alterações');
             carregarClientes();
             return;
         }
     } catch (error) {
         console.warn('Falha na API backend. Salvando edição em modo local:', error);
+        exibirToast(error.message || 'Erro ao comunicar com a API.', 'erro');
     }
 
     // Fallback Modo Demo Local
@@ -727,15 +741,20 @@ async function confirmarExclusao() {
                 headers: obterAuthHeaders()
             });
 
-            if (!response.ok) throw new Error(`Erro ${response.status} ao excluir.`);
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.detail || `Erro ${response.status} ao excluir.`);
+            }
 
             exibirToast(`Cliente #${id} removido com sucesso!`, 'sucesso');
             fecharModalDeletar();
+            setButtonLoading(btnSubmit, false, 'Excluir Cliente');
             carregarClientes();
             return;
         }
     } catch (error) {
         console.warn('Falha na API backend. Excluindo em modo local:', error);
+        exibirToast(error.message || 'Erro ao comunicar com a API.', 'erro');
     }
 
     // Fallback Modo Demo Local
