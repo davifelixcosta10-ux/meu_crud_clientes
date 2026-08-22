@@ -3,8 +3,25 @@
    Landing Page + Dashboard Admin
    ============================================================ */
 
-/* --- Smooth Scroll --- */
-html { scroll-behavior: smooth; }
+/* --- Smooth Scroll & Touch Optimizations --- */
+html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Previne auto-zoom desagradável no iOS ao focar em inputs em telas pequenas */
+@media (max-width: 639px) {
+    .form-input, input, select, textarea {
+        font-size: 16px !important;
+    }
+    .modal-box {
+        max-height: 88vh;
+        overscroll-behavior: contain;
+    }
+    .btn-primary, .btn-ghost, .btn-danger {
+        min-height: 42px;
+    }
+}
 
 /* ============================================================
    DESIGN TOKENS — Dashboard Profissional
