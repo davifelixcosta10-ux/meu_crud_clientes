@@ -40,10 +40,37 @@ app.add_middleware(
 
 
 # ============================================================
-# DEPENDÊNCIA DE AUTENTICAÇÃO
-# ============================================================
+import base64
+import json
+import uuid
+
+
+def extrair_user_id(token_str: str) -> str:
+    """Extrai o UUID do usuário a partir de um UUID direto ou de um JWT (claim 'sub')."""
+    token_str = token_str.strip()
+    try:
+        return str(uuid.UUID(token_str))
+    except ValueError:
+        pass
+
+    parts = token_str.split(".")
+    if len(parts) == 3:
+        try:
+            payload_b64 = parts[1]
+            payload_b64 += "=" * (-len(payload_b64) % 4)
+            payload_data = json.loads(base64.urlsafe_b64decode(payload_b64))
+            uid = payload_data.get("sub") or payload_data.get("user_id")
+            if uid:
+                return str(uuid.UUID(uid))
+        except Exception:
+            pass
+
+    return token_str
+
+
+# --- DEPENDÊNCIA DE AUTENTICAÇÃO ---
 def obter_user_id(authorization: str = Header(None)) -> str:
-    """Extrai o user_id/token do header Authorization: Bearer <token>."""
+    """Extrai o user_id (UUID) a partir do header Authorization: Bearer <token>."""
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -57,7 +84,20 @@ def obter_user_id(authorization: str = Header(None)) -> str:
             detail="Token inválido. Use o formato: 'Bearer <token>'.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return parts[1].strip()
+
+    raw_token = parts[1].strip()
+    user_id = extrair_user_id(raw_token)
+
+    try:
+        uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de usuário inválido ou formato UUID incorreto.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return user_id
 
 
 # ============================================================
