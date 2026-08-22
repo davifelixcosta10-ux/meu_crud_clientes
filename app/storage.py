@@ -1,15 +1,14 @@
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from app.models import Cliente, UserLogin, UserSignUp
+from app.models import Cliente, Plano, UserLogin, UserSignUp
 
 # Carrega variáveis de ambiente de .env ou data/arquivos.env
 load_dotenv()
 if not os.environ.get("SUPABASE_URL"):
     load_dotenv(os.path.join(os.path.dirname(__file__), "..", "data", "arquivos.env"))
 
-# --- SINGLETON: cliente Supabase criado uma única vez por processo ---
-# Evita abrir uma nova conexão a cada requisição, reduzindo latência.
+# --- SINGLETON: cliente Supabase reutilizado por processo ---
 _supabase_client: Client | None = None
 
 
@@ -26,55 +25,129 @@ def get_supabase_client() -> Client:
     return _supabase_client
 
 
-# --- FUNÇÕES DE AUTENTICAÇÃO ---
+# ============================================================
+# FUNÇÕES DE AUTENTICAÇÃO
+# ============================================================
 
 def registrar_usuario(dados: UserSignUp):
     supabase = get_supabase_client()
-    response = supabase.auth.sign_up({
+    return supabase.auth.sign_up({
         "email": dados.email,
         "password": dados.password,
         "options": {
             "data": {
                 "nome_completo": dados.nome_completo or "",
-                "nome_empresa": dados.nome_empresa or ""
+                "nome_empresa":  dados.nome_empresa  or "",
             }
-        }
+        },
     })
-    return response
 
 
 def autenticar_usuario(dados: UserLogin):
     supabase = get_supabase_client()
-    response = supabase.auth.sign_in_with_password({
-        "email": dados.email,
-        "password": dados.password
+    return supabase.auth.sign_in_with_password({
+        "email":    dados.email,
+        "password": dados.password,
     })
-    return response
 
 
-# --- FUNÇÕES DE CLIENTES ISOLADOS POR USER_ID ---
+# ============================================================
+# FUNÇÕES DE PLANOS (dinâmicos por usuário)
+# ============================================================
+
+def listar_planos(user_id: str) -> list[Plano]:
+    supabase = get_supabase_client()
+    response = (
+        supabase.table("planos")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("created_at")
+        .execute()
+    )
+    return [Plano.model_validate(item) for item in response.data]
+
+
+def criar_plano(dados: dict, user_id: str) -> Plano:
+    supabase = get_supabase_client()
+    payload = {
+        "user_id":   user_id,
+        "nome":      dados.get("nome"),
+        "cor":       dados.get("cor", "indigo"),
+        "descricao": dados.get("descricao"),
+        "valor":     dados.get("valor"),
+    }
+    response = supabase.table("planos").insert(payload).execute()
+    if not response.data:
+        raise ValueError("Falha ao criar plano.")
+    return Plano.model_validate(response.data[0])
+
+
+def atualizar_plano(plano_id: int | str, dados: dict, user_id: str) -> Plano | None:
+    supabase = get_supabase_client()
+    dados_filtrados = {k: v for k, v in dados.items() if v is not None}
+    if not dados_filtrados:
+        return None
+    response = (
+        supabase.table("planos")
+        .update(dados_filtrados)
+        .eq("id", plano_id)
+        .eq("user_id", user_id)
+        .execute()
+    )
+    if response.data:
+        return Plano.model_validate(response.data[0])
+    return None
+
+
+def deletar_plano(plano_id: int | str, user_id: str) -> bool:
+    supabase = get_supabase_client()
+    response = (
+        supabase.table("planos")
+        .delete()
+        .eq("id", plano_id)
+        .eq("user_id", user_id)
+        .execute()
+    )
+    return len(response.data) > 0
+
+
+# ============================================================
+# FUNÇÕES DE CLIENTES (isolados por user_id)
+# ============================================================
+
+# Colunas que existem na tabela `clientes` do Supabase
+_COLUNAS_CLIENTE = [
+    "user_id", "nome", "email", "plano", "ativo", "data_cadastro",
+    "telefone", "cpf", "rg",
+    "data_nascimento", "genero", "empresa", "cargo", "observacoes",
+    "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "estado",
+]
+
 
 def carregar_clientes(user_id: str) -> list[Cliente]:
     supabase = get_supabase_client()
-    response = supabase.table("clientes").select("*").eq("user_id", user_id).execute()
+    response = (
+        supabase.table("clientes")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("data_cadastro", desc=True)
+        .execute()
+    )
     return [Cliente.model_validate(item) for item in response.data]
 
 
 def salvar_novo_cliente(cliente_dados: dict, user_id: str) -> Cliente:
     supabase = get_supabase_client()
 
-    # Mapeia apenas as colunas aceitas na tabela public.clientes
-    payload_banco = {
-        "user_id":       user_id,
-        "nome":          cliente_dados.get("nome"),
-        "email":         cliente_dados.get("email"),
-        "plano":         cliente_dados.get("plano"),
-        "ativo":         cliente_dados.get("ativo", True),
-        "telefone":      cliente_dados.get("telefone"),
-        "cpf":           cliente_dados.get("cpf"),
-        "rg":            cliente_dados.get("rg"),
-        "data_cadastro": cliente_dados.get("data_cadastro"),
-    }
+    payload_banco: dict = {"user_id": user_id}
+    for col in _COLUNAS_CLIENTE:
+        if col == "user_id":
+            continue
+        if col in cliente_dados:
+            payload_banco[col] = cliente_dados[col]
+
+    # Garante valor padrão de ativo
+    payload_banco.setdefault("ativo", True)
 
     response = supabase.table("clientes").insert(payload_banco).execute()
     if not response.data:
@@ -86,10 +159,9 @@ def salvar_novo_cliente(cliente_dados: dict, user_id: str) -> Cliente:
 def atualizar_cliente_db(cliente_id: int | str, cliente_dados: dict, user_id: str) -> Cliente | None:
     supabase = get_supabase_client()
 
-    # CORREÇÃO CRÍTICA: usar "is not None" em vez de "if v" para preservar
-    # valores falsy válidos como ativo=False e valor_plano=0.0.
+    # IMPORTANTE: usa "is not None" para preservar valores falsy válidos
+    # como ativo=False, valor_plano=0.0, etc.
     dados_filtrados = {k: v for k, v in cliente_dados.items() if v is not None}
-
     if not dados_filtrados:
         return None
 

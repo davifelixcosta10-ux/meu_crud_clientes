@@ -200,20 +200,30 @@
                     class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/60 transition-all duration-150">
             </div>
 
-            <!-- Filters + Button -->
-            <div class="flex gap-2">
-                <!-- Filter Plano — populado via JS com PLANOS_CONFIG -->
+            <!-- Filters + Buttons -->
+            <div class="flex flex-wrap sm:flex-nowrap gap-2">
+                <!-- Filter Plano — populado via JS -->
                 <select id="filter-plano" onchange="filtrarTabela()"
-                    class="flex-1 sm:flex-none px-3 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 cursor-pointer transition-all">
+                    class="flex-1 sm:flex-none px-3 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer transition-all">
                     <option value="">Todos os Planos</option>
                 </select>
 
                 <select id="filter-status" onchange="filtrarTabela()"
-                    class="flex-1 sm:flex-none px-3 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 cursor-pointer transition-all">
+                    class="flex-1 sm:flex-none px-3 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer transition-all">
                     <option value="">Todos Status</option>
                     <option value="ativo">Ativos</option>
                     <option value="inativo">Inativos</option>
                 </select>
+
+                <button onclick="abrirModalPlanos()" type="button" class="btn-ghost whitespace-nowrap" title="Gerenciar Planos">
+                    <i data-lucide="award" class="w-4 h-4 text-indigo-500"></i>
+                    <span class="hidden md:inline">Planos</span>
+                </button>
+
+                <button onclick="exportarCSV()" type="button" class="btn-ghost whitespace-nowrap" title="Exportar dados da tabela para CSV">
+                    <i data-lucide="download" class="w-4 h-4 text-emerald-500"></i>
+                    <span class="hidden md:inline">Exportar</span>
+                </button>
 
                 <button onclick="abrirModalCriar()" type="button" class="btn-primary whitespace-nowrap">
                     <i data-lucide="user-plus" class="w-4 h-4"></i>
@@ -429,14 +439,14 @@
 
                     <!-- Seção: Contato (colapsável) -->
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
-                        <button type="button" onclick="toggleContatoSection('criar')"
+                        <button type="button" onclick="toggleSection('criar-contato')"
                             class="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors text-left gap-3">
                             <div class="flex items-center gap-2.5">
                                 <i data-lucide="phone" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
-                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Informações de Contato</span>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Contato (Telefone, CPF, RG)</span>
                                 <span id="criar-contato-badge" class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide flex-shrink-0">Opcional</span>
                             </div>
-                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 flex-shrink-0" id="criar-contato-chevron"></i>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 flex-shrink-0 collapsible-chevron" id="criar-contato-chevron"></i>
                         </button>
 
                         <div id="criar-contato-section" class="hidden px-4 pb-4 pt-3.5 space-y-3.5 border-t border-slate-200 dark:border-slate-700/60 bg-slate-50/40 dark:bg-slate-800/20">
@@ -480,6 +490,114 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Seção: Dados Pessoais & Empresa (colapsável) -->
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                        <button type="button" onclick="toggleSection('criar-pessoais')"
+                            class="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors text-left gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="building" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Dados Pessoais & Empresa</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide flex-shrink-0">Opcional</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 flex-shrink-0 collapsible-chevron" id="criar-pessoais-chevron"></i>
+                        </button>
+
+                        <div id="criar-pessoais-section" class="hidden px-4 pb-4 pt-3.5 space-y-3.5 border-t border-slate-200 dark:border-slate-700/60 bg-slate-50/40 dark:bg-slate-800/20">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="form-group">
+                                    <label for="criar-empresa" class="form-label">Empresa</label>
+                                    <input type="text" id="criar-empresa" placeholder="Ex: Acme Inc" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="criar-cargo" class="form-label">Cargo / Função</label>
+                                    <input type="text" id="criar-cargo" placeholder="Ex: Diretor" class="form-input">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="form-group">
+                                    <label for="criar-nascimento" class="form-label">Data de Nascimento</label>
+                                    <input type="date" id="criar-nascimento" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="criar-genero" class="form-label">Gênero</label>
+                                    <select id="criar-genero" class="form-input">
+                                        <option value="">Não informado</option>
+                                        <option value="M">Masculino</option>
+                                        <option value="F">Feminino</option>
+                                        <option value="Outro">Outro</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Endereço (colapsável com ViaCEP) -->
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                        <button type="button" onclick="toggleSection('criar-endereco')"
+                            class="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors text-left gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="map-pin" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Endereço (com busca por CEP)</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide flex-shrink-0">Opcional</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 flex-shrink-0 collapsible-chevron" id="criar-endereco-chevron"></i>
+                        </button>
+
+                        <div id="criar-endereco-section" class="hidden px-4 pb-4 pt-3.5 space-y-3.5 border-t border-slate-200 dark:border-slate-700/60 bg-slate-50/40 dark:bg-slate-800/20">
+                            <!-- CEP -->
+                            <div class="form-group">
+                                <label for="criar-cep" class="form-label">CEP</label>
+                                <div class="relative">
+                                    <input type="text" id="criar-cep" placeholder="00000-000" maxlength="9"
+                                        oninput="mascaraCEP(this); buscarCEP(this.value, 'criar')"
+                                        class="form-input pr-10">
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <i data-lucide="search" class="w-4 h-4 text-slate-400" id="criar-cep-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="col-span-2 form-group">
+                                    <label for="criar-logradouro" class="form-label">Rua / Logradouro</label>
+                                    <input type="text" id="criar-logradouro" placeholder="Ex: Av Paulista" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="criar-numero" class="form-label">Número</label>
+                                    <input type="text" id="criar-numero" placeholder="1000" class="form-input">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="form-group">
+                                    <label for="criar-complemento" class="form-label">Complemento</label>
+                                    <input type="text" id="criar-complemento" placeholder="Apto 42, Bloco B" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="criar-bairro" class="form-label">Bairro</label>
+                                    <input type="text" id="criar-bairro" placeholder="Centro" class="form-input">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="col-span-2 form-group">
+                                    <label for="criar-cidade" class="form-label">Cidade</label>
+                                    <input type="text" id="criar-cidade" placeholder="São Paulo" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="criar-estado" class="form-label">Estado</label>
+                                    <input type="text" id="criar-estado" placeholder="SP" maxlength="2" class="form-input uppercase">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observações -->
+                    <div class="form-group">
+                        <label for="criar-observacoes" class="form-label">Observações internas</label>
+                        <textarea id="criar-observacoes" rows="2" placeholder="Notas sobre o cliente, preferências, etc..." class="form-input"></textarea>
                     </div>
 
                     <!-- ── Seção de Plano ── -->
@@ -596,14 +714,14 @@
 
                     <!-- Contato (colapsável) -->
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
-                        <button type="button" onclick="toggleContatoSection('editar')"
+                        <button type="button" onclick="toggleSection('editar-contato')"
                             class="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors text-left gap-3">
                             <div class="flex items-center gap-2.5">
                                 <i data-lucide="phone" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
-                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Informações de Contato</span>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Contato (Telefone, CPF, RG)</span>
                                 <span id="editar-contato-badge" class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide flex-shrink-0">Opcional</span>
                             </div>
-                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 flex-shrink-0" id="editar-contato-chevron"></i>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 flex-shrink-0 collapsible-chevron" id="editar-contato-chevron"></i>
                         </button>
 
                         <div id="editar-contato-section" class="hidden px-4 pb-4 pt-3.5 space-y-3.5 border-t border-slate-200 dark:border-slate-700/60 bg-slate-50/40 dark:bg-slate-800/20">
@@ -645,6 +763,114 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Seção: Dados Pessoais & Empresa (colapsável) -->
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                        <button type="button" onclick="toggleSection('editar-pessoais')"
+                            class="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors text-left gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="building" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Dados Pessoais & Empresa</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide flex-shrink-0">Opcional</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 flex-shrink-0 collapsible-chevron" id="editar-pessoais-chevron"></i>
+                        </button>
+
+                        <div id="editar-pessoais-section" class="hidden px-4 pb-4 pt-3.5 space-y-3.5 border-t border-slate-200 dark:border-slate-700/60 bg-slate-50/40 dark:bg-slate-800/20">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="form-group">
+                                    <label for="editar-empresa" class="form-label">Empresa</label>
+                                    <input type="text" id="editar-empresa" placeholder="Ex: Acme Inc" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editar-cargo" class="form-label">Cargo / Função</label>
+                                    <input type="text" id="editar-cargo" placeholder="Ex: Diretor" class="form-input">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="form-group">
+                                    <label for="editar-nascimento" class="form-label">Data de Nascimento</label>
+                                    <input type="date" id="editar-nascimento" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editar-genero" class="form-label">Gênero</label>
+                                    <select id="editar-genero" class="form-input">
+                                        <option value="">Não informado</option>
+                                        <option value="M">Masculino</option>
+                                        <option value="F">Feminino</option>
+                                        <option value="Outro">Outro</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Endereço (colapsável com ViaCEP) -->
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                        <button type="button" onclick="toggleSection('editar-endereco')"
+                            class="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors text-left gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="map-pin" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Endereço (com busca por CEP)</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide flex-shrink-0">Opcional</span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 flex-shrink-0 collapsible-chevron" id="editar-endereco-chevron"></i>
+                        </button>
+
+                        <div id="editar-endereco-section" class="hidden px-4 pb-4 pt-3.5 space-y-3.5 border-t border-slate-200 dark:border-slate-700/60 bg-slate-50/40 dark:bg-slate-800/20">
+                            <!-- CEP -->
+                            <div class="form-group">
+                                <label for="editar-cep" class="form-label">CEP</label>
+                                <div class="relative">
+                                    <input type="text" id="editar-cep" placeholder="00000-000" maxlength="9"
+                                        oninput="mascaraCEP(this); buscarCEP(this.value, 'editar')"
+                                        class="form-input pr-10">
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <i data-lucide="search" class="w-4 h-4 text-slate-400" id="editar-cep-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="col-span-2 form-group">
+                                    <label for="editar-logradouro" class="form-label">Rua / Logradouro</label>
+                                    <input type="text" id="editar-logradouro" placeholder="Ex: Av Paulista" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editar-numero" class="form-label">Número</label>
+                                    <input type="text" id="editar-numero" placeholder="1000" class="form-input">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="form-group">
+                                    <label for="editar-complemento" class="form-label">Complemento</label>
+                                    <input type="text" id="editar-complemento" placeholder="Apto 42, Bloco B" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editar-bairro" class="form-label">Bairro</label>
+                                    <input type="text" id="editar-bairro" placeholder="Centro" class="form-input">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="col-span-2 form-group">
+                                    <label for="editar-cidade" class="form-label">Cidade</label>
+                                    <input type="text" id="editar-cidade" placeholder="São Paulo" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editar-estado" class="form-label">Estado</label>
+                                    <input type="text" id="editar-estado" placeholder="SP" maxlength="2" class="form-input uppercase">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observações -->
+                    <div class="form-group">
+                        <label for="editar-observacoes" class="form-label">Observações internas</label>
+                        <textarea id="editar-observacoes" rows="2" placeholder="Notas sobre o cliente, preferências, etc..." class="form-input"></textarea>
                     </div>
 
                     <!-- ── Seção de Plano ── -->
@@ -723,6 +949,125 @@
                     class="flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-xl shadow-sm transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-rose-500/40 disabled:opacity-60">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                     <span>Excluir Cliente</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         MODAL: GERENCIAR PLANOS
+         ==================================================== -->
+    <div id="modal-planos" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl sm:rounded-2xl rounded-b-none sm:rounded-b-2xl w-full sm:max-w-lg shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box flex flex-col max-h-[92vh] sm:max-h-[90vh] sm:mx-4 scale-95 opacity-0">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 flex items-center justify-center">
+                        <i data-lucide="award" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Meus Planos</h3>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500">Crie e personalize seus planos de atendimento</p>
+                    </div>
+                </div>
+                <button onclick="fecharModalPlanos()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="overflow-y-auto flex-1 px-5 sm:px-6 py-4 space-y-4">
+                <!-- Lista de Planos Existentes -->
+                <div class="space-y-2">
+                    <p class="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Planos Configurados</p>
+                    <div id="lista-planos-gerenciamento" class="space-y-2">
+                        <!-- Populado via JS -->
+                    </div>
+                </div>
+
+                <!-- Formulário para Criar/Editar Plano -->
+                <form id="form-plano-salvar" onsubmit="salvarPlanoCustom(event)" class="p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-800/30 space-y-3">
+                    <input type="hidden" id="plano-id-editar" value="">
+                    <p id="titulo-form-plano" class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Novo Plano</p>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label for="plano-nome" class="form-label">Nome do Plano *</label>
+                            <input type="text" id="plano-nome" required placeholder="Ex: Mensal, VIP..." class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="plano-valor" class="form-label">Valor / Preço</label>
+                            <input type="text" id="plano-valor" placeholder="Ex: R$ 99/mês" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="plano-descricao" class="form-label">Descrição Curta</label>
+                        <input type="text" id="plano-descricao" placeholder="Ex: Para negócios em expansão" class="form-input">
+                    </div>
+
+                    <!-- Color Picker -->
+                    <div>
+                        <label class="form-label">Cor do Badge</label>
+                        <input type="hidden" id="plano-cor-selecionada" value="indigo">
+                        <div class="flex items-center gap-2 pt-1" id="color-picker-container">
+                            <button type="button" onclick="selecionarCorPlano('indigo')" class="color-dot bg-indigo-500 selected" data-color="indigo" title="Índigo"></button>
+                            <button type="button" onclick="selecionarCorPlano('cyan')" class="color-dot bg-cyan-500" data-color="cyan" title="Cyan"></button>
+                            <button type="button" onclick="selecionarCorPlano('emerald')" class="color-dot bg-emerald-500" data-color="emerald" title="Emerald"></button>
+                            <button type="button" onclick="selecionarCorPlano('amber')" class="color-dot bg-amber-500" data-color="amber" title="Amber"></button>
+                            <button type="button" onclick="selecionarCorPlano('rose')" class="color-dot bg-rose-500" data-color="rose" title="Rose"></button>
+                            <button type="button" onclick="selecionarCorPlano('purple')" class="color-dot bg-purple-500" data-color="purple" title="Purple"></button>
+                            <button type="button" onclick="selecionarCorPlano('slate')" class="color-dot bg-slate-500" data-color="slate" title="Slate"></button>
+                            <button type="button" onclick="selecionarCorPlano('orange')" class="color-dot bg-orange-500" data-color="orange" title="Orange"></button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2">
+                        <button type="button" id="btn-cancelar-editar-plano" onclick="resetarFormPlano()" class="btn-ghost hidden">Cancelar Edição</button>
+                        <button type="submit" id="btn-salvar-plano" class="btn-primary">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Salvar Plano</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="flex items-center justify-end px-5 sm:px-6 py-3 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/20 rounded-b-2xl">
+                <button type="button" onclick="fecharModalPlanos()" class="btn-ghost">Concluído</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         MODAL: DETALHES DO CLIENTE
+         ==================================================== -->
+    <div id="modal-detalhes" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl sm:rounded-2xl rounded-b-none sm:rounded-b-2xl w-full sm:max-w-lg shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box flex flex-col max-h-[92vh] sm:max-h-[90vh] sm:mx-4 scale-95 opacity-0">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div id="detalhes-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black text-white">?</div>
+                    <div>
+                        <h3 id="detalhes-nome" class="text-base font-bold text-slate-900 dark:text-white leading-tight">—</h3>
+                        <p id="detalhes-email" class="text-xs text-slate-500 dark:text-slate-400">—</p>
+                    </div>
+                </div>
+                <button onclick="fecharModalDetalhes()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div id="detalhes-body" class="overflow-y-auto flex-1 px-5 sm:px-6 py-5 space-y-4 text-sm">
+                <!-- Populado via JS -->
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 flex-shrink-0 bg-slate-50/50 dark:bg-slate-800/20 rounded-b-2xl">
+                <button type="button" onclick="fecharModalDetalhes()" class="btn-ghost">Fechar</button>
+                <button type="button" id="btn-editar-de-detalhes" onclick="" class="btn-primary">
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                    <span>Editar Cliente</span>
                 </button>
             </div>
         </div>

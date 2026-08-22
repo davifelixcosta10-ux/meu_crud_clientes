@@ -4,32 +4,24 @@ from fastapi import FastAPI, HTTPException, status, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import (
-    Cliente,
-    ClienteCreate,
-    ClienteUpdate,
-    UserSignUp,
-    UserLogin,
-    TokenResponse,
+    Cliente, ClienteCreate, ClienteUpdate,
+    Plano, PlanoCreate, PlanoUpdate,
+    UserSignUp, UserLogin, TokenResponse,
 )
 from app.storage import (
-    carregar_clientes,
-    salvar_novo_cliente,
-    atualizar_cliente_db,
-    deletar_cliente_db,
-    registrar_usuario,
-    autenticar_usuario,
+    carregar_clientes, salvar_novo_cliente,
+    atualizar_cliente_db, deletar_cliente_db,
+    listar_planos, criar_plano, atualizar_plano, deletar_plano,
+    registrar_usuario, autenticar_usuario,
 )
 
 app = FastAPI(
     title="DaviFlow API",
-    version="1.3.0",
-    description="API de gerenciamento de clientes — DaviFlow Gestões",
+    version="1.4.0",
+    description="API de gerenciamento de clientes e planos — DaviFlow Gestões",
 )
 
 # --- CORS ---
-# Em produção, apenas o domínio Vercel é permitido.
-# Para testes locais, adicione ALLOWED_ORIGINS no ambiente:
-#   ALLOWED_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
 _default_origins = ["https://daviflowgestoes.vercel.app"]
 _extra_origins = [
     o.strip()
@@ -47,11 +39,11 @@ app.add_middleware(
 )
 
 
-# --- DEPENDÊNCIA DE AUTENTICAÇÃO ---
-# Extrai e valida o header Authorization.
-# Usado via Depends() para que o FastAPI documente corretamente no Swagger.
+# ============================================================
+# DEPENDÊNCIA DE AUTENTICAÇÃO
+# ============================================================
 def obter_user_id(authorization: str = Header(None)) -> str:
-    """Extrai o user_id do header Authorization: Bearer <user_id>."""
+    """Extrai o user_id/token do header Authorization: Bearer <token>."""
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -69,17 +61,17 @@ def obter_user_id(authorization: str = Header(None)) -> str:
 
 
 # ============================================================
-# ENDPOINTS DE STATUS / HEALTH
+# STATUS / HEALTH
 # ============================================================
 
 @app.get("/api/health", tags=["Status"])
 @app.get("/api", tags=["Status"])
 def health_check():
-    return {"status": "online", "message": "DaviFlow API v1.3.0"}
+    return {"status": "online", "message": "DaviFlow API v1.4.0"}
 
 
 # ============================================================
-# ENDPOINTS DE AUTENTICAÇÃO
+# AUTENTICAÇÃO
 # ============================================================
 
 @app.post("/api/auth/signup", status_code=status.HTTP_201_CREATED, tags=["Auth"])
@@ -108,9 +100,8 @@ def login(dados: UserLogin):
     try:
         res = autenticar_usuario(dados)
     except Exception as e:
-        # Distingue erro de credenciais de erro interno do servidor
         msg = str(e).lower()
-        if "invalid" in msg or "credentials" in msg or "wrong" in msg or "email" in msg:
+        if any(k in msg for k in ("invalid", "credentials", "wrong", "email", "password")):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="E-mail ou senha incorretos.",
@@ -137,7 +128,64 @@ def login(dados: UserLogin):
 
 
 # ============================================================
-# ENDPOINTS DE CLIENTES (AUTENTICADOS)
+# PLANOS (dinâmicos por usuário)
+# ============================================================
+
+@app.get("/api/planos", response_model=list[Plano], tags=["Planos"])
+def get_planos(user_id: str = Depends(obter_user_id)):
+    """Lista todos os planos do usuário autenticado."""
+    try:
+        return listar_planos(user_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao buscar planos: {str(e)}",
+        )
+
+
+@app.post("/api/planos", response_model=Plano, status_code=status.HTTP_201_CREATED, tags=["Planos"])
+def post_plano(dados: PlanoCreate, user_id: str = Depends(obter_user_id)):
+    """Cria um novo plano para o usuário autenticado."""
+    try:
+        return criar_plano(dados.model_dump(mode="json"), user_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Erro ao criar plano: {str(e)}",
+        )
+
+
+@app.patch("/api/planos/{plano_id}", response_model=Plano, tags=["Planos"])
+def patch_plano(plano_id: str | int, dados: PlanoUpdate, user_id: str = Depends(obter_user_id)):
+    """Atualiza parcialmente um plano."""
+    try:
+        campos = dados.model_dump(exclude_unset=True, mode="json")
+        if not campos:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo enviado.")
+        plano = atualizar_plano(plano_id, campos, user_id)
+        if not plano:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plano não encontrado.")
+        return plano
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@app.delete("/api/planos/{plano_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Planos"])
+def delete_plano(plano_id: str | int, user_id: str = Depends(obter_user_id)):
+    """Remove um plano."""
+    try:
+        if not deletar_plano(plano_id, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plano não encontrado.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ============================================================
+# CLIENTES (autenticados)
 # ============================================================
 
 @app.get("/api/clientes", response_model=list[Cliente], tags=["Clientes"])
@@ -152,12 +200,7 @@ def listar_clientes(user_id: str = Depends(obter_user_id)):
         )
 
 
-@app.post(
-    "/api/clientes",
-    response_model=Cliente,
-    status_code=status.HTTP_201_CREATED,
-    tags=["Clientes"],
-)
+@app.post("/api/clientes", response_model=Cliente, status_code=status.HTTP_201_CREATED, tags=["Clientes"])
 def criar_cliente(dados: ClienteCreate, user_id: str = Depends(obter_user_id)):
     """Cria um novo cliente vinculado ao usuário autenticado."""
     try:
@@ -171,11 +214,7 @@ def criar_cliente(dados: ClienteCreate, user_id: str = Depends(obter_user_id)):
         )
 
 
-@app.patch(
-    "/api/clientes/{cliente_id}",
-    response_model=Cliente,
-    tags=["Clientes"],
-)
+@app.patch("/api/clientes/{cliente_id}", response_model=Cliente, tags=["Clientes"])
 def atualizar_cliente(
     cliente_id: str | int,
     dados: ClienteUpdate,
@@ -184,55 +223,30 @@ def atualizar_cliente(
     """Atualiza parcialmente os dados de um cliente (PATCH)."""
     try:
         campos = dados.model_dump(exclude_unset=True, mode="json")
-
         if not campos:
-            # Nenhum campo enviado: retorna o cliente atual sem alterar o banco
             clientes = carregar_clientes(user_id)
             for c in clientes:
                 if str(c.id) == str(cliente_id):
                     return c
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Cliente não encontrado.",
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado.")
 
         cliente_atualizado = atualizar_cliente_db(cliente_id, campos, user_id)
         if not cliente_atualizado:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Cliente não encontrado ou sem permissão.",
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado.")
         return cliente_atualizado
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Erro ao atualizar cliente: {str(e)}",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@app.delete(
-    "/api/clientes/{cliente_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    tags=["Clientes"],
-)
-def deletar_cliente(
-    cliente_id: str | int,
-    user_id: str = Depends(obter_user_id),
-):
+@app.delete("/api/clientes/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Clientes"])
+def deletar_cliente(cliente_id: str | int, user_id: str = Depends(obter_user_id)):
     """Remove um cliente do banco de dados."""
     try:
-        sucesso = deletar_cliente_db(cliente_id, user_id)
-        if not sucesso:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Cliente não encontrado ou sem permissão.",
-            )
+        if not deletar_cliente_db(cliente_id, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado.")
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Erro ao deletar cliente: {str(e)}",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

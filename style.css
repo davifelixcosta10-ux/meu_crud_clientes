@@ -4,8 +4,41 @@
    ============================================================ */
 
 /* --- Smooth Scroll --- */
-html {
-    scroll-behavior: smooth;
+html { scroll-behavior: smooth; }
+
+/* ============================================================
+   DESIGN TOKENS — Dashboard Profissional
+   ============================================================ */
+:root {
+    --dash-bg:            #f1f5f9;
+    --dash-surface:       #ffffff;
+    --dash-surface-2:     #f8fafc;
+    --dash-border:        #e2e8f0;
+    --dash-border-subtle: rgba(226,232,240,0.6);
+    --dash-text-1:        #0f172a;
+    --dash-text-2:        #475569;
+    --dash-text-3:        #94a3b8;
+    --dash-accent:        #4f46e5;   /* indigo-600 */
+    --dash-accent-hover:  #4338ca;   /* indigo-700 */
+    --dash-accent-light:  #eef2ff;   /* indigo-50  */
+    --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --dash-shadow-md:     0 4px 12px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+    --dash-radius:        0.75rem;
+}
+.dark {
+    --dash-bg:            #0f172a;
+    --dash-surface:       #1e293b;
+    --dash-surface-2:     #162032;
+    --dash-border:        rgba(51,65,85,0.7);
+    --dash-border-subtle: rgba(51,65,85,0.4);
+    --dash-text-1:        #f1f5f9;
+    --dash-text-2:        #94a3b8;
+    --dash-text-3:        #64748b;
+    --dash-accent:        #6366f1;   /* indigo-400 */
+    --dash-accent-hover:  #818cf8;
+    --dash-accent-light:  rgba(99,102,241,0.12);
+    --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.3);
+    --dash-shadow-md:     0 4px 12px rgba(0,0,0,0.4);
 }
 
 /* ============================================================
@@ -19,10 +52,8 @@ html {
 .dark ::-webkit-scrollbar-thumb:hover { background: rgba(71,85,105,0.8); }
 
 /* ============================================================
-   DASHBOARD: Component Classes (Vanilla CSS - Linter Friendly)
+   DASHBOARD: Form Elements
    ============================================================ */
-
-/* Form Elements */
 .form-group {
     display: flex;
     flex-direction: column;
@@ -34,40 +65,32 @@ html {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.375rem;
-    color: #64748b;
-}
-.dark .form-label {
-    color: #94a3b8;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.25rem;
+    color: var(--dash-text-2);
 }
 
 .form-input {
     width: 100%;
-    padding: 0.625rem 0.875rem;
-    border-radius: 0.75rem;
-    border: 1px solid #e2e8f0;
-    background-color: #ffffff;
-    color: #0f172a;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--dash-border);
+    background-color: var(--dash-surface);
+    color: var(--dash-text-1);
     font-size: 0.875rem;
-    line-height: 1.25rem;
-    transition: all 150ms ease;
+    line-height: 1.5;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
 }
-.dark .form-input {
-    border-color: rgba(51, 65, 85, 0.8);
-    background-color: rgba(15, 23, 42, 0.5);
-    color: #ffffff;
-}
-.form-input::placeholder {
-    color: #94a3b8;
-}
-.dark .form-input::placeholder {
-    color: #64748b;
-}
+.form-input::placeholder { color: var(--dash-text-3); }
 .form-input:focus {
     outline: none;
-    border-color: rgba(6, 182, 212, 0.6);
-    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+    border-color: var(--dash-accent);
+    box-shadow: 0 0 0 3px var(--dash-accent-light);
+}
+.form-input:disabled {
+    background-color: var(--dash-surface-2);
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .field-error {
@@ -78,167 +101,157 @@ html {
     align-items: center;
     gap: 0.25rem;
 }
-.dark .field-error {
-    color: #fb7185;
-}
-.field-error.visible {
-    display: flex;
-}
+.dark .field-error { color: #fb7185; }
+.field-error.visible { display: flex; }
 
-/* Buttons */
+/* ============================================================
+   DASHBOARD: Buttons
+   ============================================================ */
 .btn-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
+    padding: 0.5rem 1.125rem;
     font-size: 0.875rem;
     font-weight: 600;
     color: #ffffff;
-    background-image: linear-gradient(to right, #06b6d4, #10b981);
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    transition: all 150ms ease;
-    cursor: pointer;
+    background-color: var(--dash-accent);
+    border-radius: 0.5rem;
     border: none;
+    cursor: pointer;
+    transition: background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+    box-shadow: var(--dash-shadow-sm);
 }
-.btn-primary:hover {
-    background-image: linear-gradient(to right, #22d3ee, #34d399);
-}
-.btn-primary:active {
-    transform: scale(0.98);
-}
-.btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
+.btn-primary:hover  { background-color: var(--dash-accent-hover); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
 .btn-ghost {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.625rem 1rem;
+    padding: 0.5rem 1rem;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #475569;
+    color: var(--dash-text-2);
     background-color: transparent;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
-    transition: all 150ms ease;
+    border: 1px solid var(--dash-border);
+    border-radius: 0.5rem;
     cursor: pointer;
-}
-.dark .btn-ghost {
-    color: #cbd5e1;
-    border-color: #334155;
+    transition: background-color 150ms ease, border-color 150ms ease;
 }
 .btn-ghost:hover {
-    background-color: #f1f5f9;
-}
-.dark .btn-ghost:hover {
-    background-color: rgba(51, 65, 85, 0.6);
+    background-color: var(--dash-surface-2);
+    border-color: var(--dash-text-3);
+    color: var(--dash-text-1);
 }
 
-/* Metric Cards & Skeleton */
-.metric-card {
-    background-color: #ffffff;
-    padding: 1rem;
-    border-radius: 1rem;
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    transition: all 200ms ease;
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.125rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: #e11d48;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 150ms ease, transform 100ms ease;
 }
-.dark .metric-card {
-    background-color: #1e293b;
-    border-color: rgba(51, 65, 85, 0.6);
+.btn-danger:hover  { background-color: #be123c; }
+.btn-danger:active { transform: scale(0.98); }
+.btn-danger:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ============================================================
+   DASHBOARD: Metric Cards
+   ============================================================ */
+.metric-card {
+    background-color: var(--dash-surface);
+    padding: 1.25rem 1.25rem 1rem;
+    border-radius: var(--dash-radius);
+    border: 1px solid var(--dash-border);
+    box-shadow: var(--dash-shadow-sm);
+    transition: box-shadow 200ms ease, border-color 200ms ease;
 }
 .metric-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    border-color: #cbd5e1;
-}
-.dark .metric-card:hover {
-    border-color: #475569;
+    box-shadow: var(--dash-shadow-md);
+    border-color: var(--dash-text-3);
 }
 
 .skeleton {
-    background-color: #e2e8f0;
-    border-radius: 0.25rem;
+    background-color: var(--dash-border);
+    border-radius: 0.375rem;
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-.dark .skeleton {
-    background-color: rgba(51, 65, 85, 0.6);
-}
-
-/* Toggle Switches */
-.toggle-track {
-    width: 2.75rem;
-    height: 1.5rem;
-    background-color: #cbd5e1;
-    border-radius: 9999px;
-    position: relative;
-    transition: background-color 200ms ease;
-}
-.dark .toggle-track {
-    background-color: #475569;
-}
-.peer:checked ~ .toggle-track {
-    background-image: linear-gradient(to right, #06b6d4, #10b981);
-}
-.toggle-track::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 1.25rem;
-    height: 1.25rem;
-    background-color: #ffffff;
-    border-radius: 9999px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    transition: transform 200ms ease;
-}
-.peer:checked ~ .toggle-track::after {
-    transform: translateX(1.25rem);
-}
-
-.plan-toggle-track {
-    width: 2.5rem;
-    height: 1.25rem;
-    background-color: #cbd5e1;
-    border-radius: 9999px;
-    position: relative;
-    transition: background-color 200ms ease;
-}
-.dark .plan-toggle-track {
-    background-color: #475569;
-}
-.peer:checked ~ .plan-toggle-track {
-    background-image: linear-gradient(to right, #06b6d4, #10b981);
-}
-.plan-toggle-track::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 1rem;
-    height: 1rem;
-    background-color: #ffffff;
-    border-radius: 9999px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    transition: transform 200ms ease;
-}
-.peer:checked ~ .plan-toggle-track::after {
-    transform: translateX(1.25rem);
 }
 
 /* ============================================================
-   DASHBOARD: Modal Animations & Cards
+   DASHBOARD: Toggle Switches
+   ============================================================ */
+.toggle-track {
+    width: 2.75rem; height: 1.5rem;
+    background-color: #cbd5e1;
+    border-radius: 9999px; position: relative;
+    transition: background-color 200ms ease;
+}
+.dark .toggle-track { background-color: #475569; }
+.peer:checked ~ .toggle-track { background-color: var(--dash-accent); }
+.toggle-track::after {
+    content: ''; position: absolute;
+    top: 3px; left: 3px;
+    width: 1.125rem; height: 1.125rem;
+    background-color: #fff; border-radius: 9999px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    transition: transform 200ms ease;
+}
+.peer:checked ~ .toggle-track::after { transform: translateX(1.25rem); }
+
+.plan-toggle-track {
+    width: 2.25rem; height: 1.125rem;
+    background-color: #cbd5e1;
+    border-radius: 9999px; position: relative;
+    transition: background-color 200ms ease;
+}
+.dark .plan-toggle-track { background-color: #475569; }
+.peer:checked ~ .plan-toggle-track { background-color: var(--dash-accent); }
+.plan-toggle-track::after {
+    content: ''; position: absolute;
+    top: 2px; left: 2px;
+    width: 0.875rem; height: 0.875rem;
+    background-color: #fff; border-radius: 9999px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    transition: transform 200ms ease;
+}
+.peer:checked ~ .plan-toggle-track::after { transform: translateX(1.125rem); }
+
+/* ============================================================
+   DASHBOARD: Color Dot Picker (para planos)
+   ============================================================ */
+.color-dot {
+    width: 1.5rem; height: 1.5rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 150ms ease, border-color 150ms ease;
+    flex-shrink: 0;
+}
+.color-dot:hover { transform: scale(1.15); }
+.color-dot.selected {
+    border-color: var(--dash-text-1);
+    transform: scale(1.15);
+    box-shadow: 0 0 0 1px var(--dash-surface);
+}
+
+/* ============================================================
+   DASHBOARD: Modal
    ============================================================ */
 .modal-box {
     transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity  0.22s ease-out;
+                opacity   0.22s ease-out;
 }
 @media (max-width: 639px) {
     .modal-container { align-items: flex-end; padding: 0; }
@@ -249,53 +262,59 @@ html {
     }
 }
 
+/* ============================================================
+   DASHBOARD: Client Cards (mobile) & Table
+   ============================================================ */
 .client-card {
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius);
 }
 .client-card:hover {
-    border-color: rgba(6,182,212,0.3);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    transform: translateY(-1px);
-}
-.dark .client-card:hover {
-    border-color: rgba(6,182,212,0.2);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    border-color: var(--dash-accent);
+    box-shadow: var(--dash-shadow-sm);
 }
 
+/* Plan cards no modal */
 .plan-card {
-    transition: border-color 0.18s ease,
-                background-color 0.18s ease,
-                box-shadow 0.18s ease,
-                transform 0.15s ease;
     cursor: pointer;
+    border-radius: 0.5rem;
+    border: 1px solid var(--dash-border);
+    background-color: var(--dash-surface);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.plan-card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-.dark .plan-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-.plan-card:active {
-    transform: scale(0.99);
+.plan-card:hover { border-color: var(--dash-accent); }
+.plan-card[aria-checked="true"] {
+    border-color: var(--dash-accent);
+    background-color: var(--dash-accent-light);
+    box-shadow: 0 0 0 1px var(--dash-accent);
 }
 .plan-check-icon {
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
-
 .plan-section-open {
-    animation: planSectionOpen 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: planSectionOpen 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* ============================================================
+   DASHBOARD: Section colapsável (Contato, Endereço, etc.)
+   ============================================================ */
+.collapsible-chevron {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   ANIMATIONS (shared)
+   ============================================================ */
 @keyframes planSectionOpen {
-    from { opacity: 0; transform: translateY(-8px); }
+    from { opacity: 0; transform: translateY(-6px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes toastProgress {
     from { width: 100%; }
     to   { width: 0%; }
 }
-
 @keyframes fieldShake {
     0%,100% { transform: translateX(0); }
     20%      { transform: translateX(-5px); }
@@ -307,23 +326,14 @@ html {
     animation: fieldShake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
-#criar-contato-chevron,
-#editar-contato-chevron {
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 /* ============================================================
    LANDING PAGE: Animations & Effects
    ============================================================ */
-
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(32px); }
+    from { opacity: 0; transform: translateY(28px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-in-up {
-    animation: fadeInUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
+.animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .stagger-1 { animation-delay: 0.05s; }
 .stagger-2 { animation-delay: 0.12s; }
 .stagger-3 { animation-delay: 0.19s; }
@@ -331,15 +341,11 @@ html {
 .stagger-5 { animation-delay: 0.33s; }
 
 .reveal {
-    opacity: 0;
-    transform: translateY(28px);
-    transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0; transform: translateY(24px);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.reveal.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
+.reveal.visible { opacity: 1; transform: translateY(0); }
 
 .gradient-text {
     background: linear-gradient(135deg, #22d3ee 0%, #10b981 60%, #06b6d4 100%);
@@ -349,11 +355,11 @@ html {
 }
 
 .btn-glow {
-    box-shadow: 0 0 20px rgba(6,182,212,0.35), 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 0 20px rgba(6,182,212,0.3), 0 4px 15px rgba(0,0,0,0.25);
     transition: box-shadow 0.25s ease, transform 0.2s ease;
 }
 .btn-glow:hover {
-    box-shadow: 0 0 32px rgba(6,182,212,0.55), 0 6px 20px rgba(0,0,0,0.4);
+    box-shadow: 0 0 30px rgba(6,182,212,0.5), 0 6px 20px rgba(0,0,0,0.35);
     transform: translateY(-2px);
 }
 
@@ -368,12 +374,12 @@ html {
     transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 .feature-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 .pricing-highlight {
-    box-shadow: 0 0 0 1px rgba(6,182,212,0.5), 0 20px 60px rgba(6,182,212,0.12);
+    box-shadow: 0 0 0 1px rgba(6,182,212,0.5), 0 20px 60px rgba(6,182,212,0.1);
 }
 
 @keyframes blobFloat {
@@ -382,41 +388,33 @@ html {
     66%     { transform: translate(-20px, 10px) scale(0.97); }
 }
 .blob {
-    animation: blobFloat 12s ease-in-out infinite;
-    filter: blur(80px);
-    opacity: 0.18;
-    will-change: transform;
+    animation: blobFloat 14s ease-in-out infinite;
+    filter: blur(80px); opacity: 0.15; will-change: transform;
 }
-.blob-delay { animation-delay: -6s; }
+.blob-delay { animation-delay: -7s; }
 
-.mockup-shimmer {
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
-    background-size: 200% 100%;
-    animation: shimmer 2.5s infinite;
+.step-line::after {
+    content: ''; display: block; position: absolute;
+    top: 22px; left: calc(50% + 28px);
+    width: calc(100% - 56px); height: 2px;
+    background: linear-gradient(90deg, #22d3ee22, #10b98122);
+    border-radius: 2px;
 }
+@media (max-width: 767px) { .step-line::after { display: none; } }
+
+.navbar-scrolled {
+    background: rgba(15, 23, 42, 0.93) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(100, 116, 139, 0.12);
+}
+
 @keyframes shimmer {
     0%   { background-position: -200% 0; }
     100% { background-position:  200% 0; }
 }
-
-.step-line::after {
-    content: '';
-    display: block;
-    position: absolute;
-    top: 22px;
-    left: calc(50% + 28px);
-    width: calc(100% - 56px);
-    height: 2px;
-    background: linear-gradient(90deg, #22d3ee33, #10b98133);
-    border-radius: 2px;
-}
-@media (max-width: 767px) {
-    .step-line::after { display: none; }
-}
-
-.navbar-scrolled {
-    background: rgba(15, 23, 42, 0.92) !important;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(100, 116, 139, 0.15);
+.mockup-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2.5s infinite;
 }
