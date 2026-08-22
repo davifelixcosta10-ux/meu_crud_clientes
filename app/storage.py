@@ -146,6 +146,8 @@ def salvar_novo_cliente(cliente_dados: dict, user_id: str) -> Cliente:
         if col in cliente_dados:
             payload_banco[col] = cliente_dados[col]
 
+    # Garante valor padrão de plano se não enviado
+    payload_banco.setdefault("plano", "basico")
     # Garante valor padrão de ativo
     payload_banco.setdefault("ativo", True)
 

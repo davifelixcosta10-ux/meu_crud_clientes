@@ -100,7 +100,7 @@ class ClienteCreate(BaseModel):
     nome: str
     email: EmailStr
     ativo: Optional[bool] = True
-    plano: Optional[str] = None
+    plano: Optional[str] = "basico"
     # Contato
     telefone: Optional[str] = None
     cpf: Optional[str] = None
