@@ -81,10 +81,11 @@ const CLIENTES_DEMO = [
     }
 ];
 
-// ============================================================
-// ESTADO GLOBAL DA APLICAÇÃO
-// ============================================================
-const API_BASE_URL = 'https://daviflowgestoes.vercel.app/api';
+// Detecta automaticamente se está rodando localmente ou na Vercel
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
+    ? 'http://127.0.0.1:8000/api'
+    : `${window.location.origin}/api`;
+
 let clientesCache = [];
 let planosCache = [...PLANOS_DEFAULT];
 let clienteParaDeletarId = null;
