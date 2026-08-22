@@ -16,3 +16,7 @@ __pycache__/
 .idea/
 node_modules/
 
+# Documentos de instruções e contexto gerados
+instructions.md
+context.md
+

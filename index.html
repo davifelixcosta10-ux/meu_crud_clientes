@@ -62,28 +62,19 @@
 </head>
 <body class="bg-[#0f172a] text-slate-100 antialiased font-sans overflow-x-hidden">
 
-    <!-- =====================================================
-         ANIMATED BACKGROUND BLOBS
-         ===================================================== -->
-    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div class="blob absolute w-[600px] h-[600px] -top-40 -left-40 rounded-full bg-cyan-500"></div>
-        <div class="blob blob-delay absolute w-[500px] h-[500px] top-1/3 right-[-150px] rounded-full bg-emerald-500"></div>
-        <div class="blob absolute w-[400px] h-[400px] bottom-[-100px] left-1/4 rounded-full bg-cyan-600"></div>
-    </div>
-
-    <!-- =====================================================
-         NAVBAR
-         ===================================================== -->
+<!-- =====================================================
+       NAVBAR
+       ===================================================== -->
     <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 sm:h-18">
 
                 <!-- Logo -->
                 <a href="#" class="flex items-center space-x-2.5 group" aria-label="DaviFlow Home">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-200">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-200">
                         <i data-lucide="zap" class="w-5 h-5 text-white"></i>
                     </div>
-                    <span class="text-xl font-bold text-white tracking-tight">Davi<span class="gradient-text">Flow</span></span>
+                    <span class="text-xl font-bold text-white tracking-tight">Davi<span class="text-indigo-400 font-medium">Flow</span></span>
                 </a>
 
                 <!-- Desktop Nav Links -->
@@ -101,7 +92,7 @@
                         Entrar
                     </button>
                     <button id="nav-register-btn" onclick="openModal('modal-register')"
-                        class="inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-cyan-300 hover:to-emerald-300 rounded-xl shadow-md btn-glow transition-all duration-200">
+                        class="inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 bg-indigo-600 rounded-xl transition-all duration-200">
                         Criar Conta
                     </button>
 
@@ -127,7 +118,7 @@
                         Entrar
                     </button>
                     <button onclick="closeMobileMenu(); openModal('modal-register')"
-                        class="w-full px-4 py-2.5 text-sm font-semibold text-slate-900 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-xl">
+                        class="w-full px-4 py-2.5 text-sm font-semibold text-slate-900 bg-indigo-600 rounded-xl">
                         Criar Conta Gratuita
                     </button>
                 </div>
@@ -144,15 +135,9 @@
 
                 <!-- Left: Copy -->
                 <div class="text-center lg:text-left">
-                    <!-- Badge -->
-                    <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-widest mb-6 animate-fade-in-up">
-                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-                        <span>Plataforma para profissionais modernos</span>
-                    </div>
-
                     <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.08] tracking-tight text-white animate-fade-in-up stagger-1">
                         Acompanhe seus clientes<br>
-                        <span class="gradient-text">sem o caos</span><br>
+                        <span class="text-indigo-400 font-medium">sem o caos</span><br>
                         das planilhas.
                     </h1>
 
@@ -163,7 +148,7 @@
                     <!-- CTAs -->
                     <div class="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 animate-fade-in-up stagger-3">
                         <button id="hero-register-btn" onclick="openModal('modal-register')"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-bold text-slate-900 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-cyan-300 hover:to-emerald-300 rounded-2xl btn-glow transition-all duration-200">
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-bold text-slate-900 bg-indigo-600 rounded-2xl transition-all duration-200">
                             <i data-lucide="rocket" class="w-4 h-4"></i>
                             Criar Conta Gratuita
                         </button>
@@ -176,12 +161,6 @@
 
                     <!-- Social Proof -->
                     <div class="mt-8 flex items-center justify-center lg:justify-start gap-4 animate-fade-in-up stagger-4">
-                        <div class="flex -space-x-2">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 border-2 border-[#0f172a] flex items-center justify-center text-xs font-bold text-white">M</div>
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 border-2 border-[#0f172a] flex items-center justify-center text-xs font-bold text-white">A</div>
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 border-2 border-[#0f172a] flex items-center justify-center text-xs font-bold text-white">R</div>
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 border-2 border-[#0f172a] flex items-center justify-center text-xs font-bold text-white">L</div>
-                        </div>
                         <p class="text-sm text-slate-400">
                             <span class="text-white font-semibold">+500 profissionais</span> já usam o DaviFlow
                         </p>
@@ -190,27 +169,7 @@
 
                 <!-- Right: Dashboard Mockup -->
                 <div class="relative animate-fade-in-up stagger-2">
-                    <!-- Outer glow frame -->
-                    <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/10 blur-2xl scale-105"></div>
-                    <div class="relative rounded-3xl overflow-hidden border border-slate-700/60 shadow-2xl glass-card">
-
-                        <!-- Mockup Header Bar -->
-                        <div class="flex items-center justify-between px-4 py-3 bg-slate-800/80 border-b border-slate-700/60">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-3 h-3 rounded-full bg-rose-500/80"></div>
-                                <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
-                                <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
-                            </div>
-                            <div class="flex items-center space-x-1.5 text-slate-400 text-xs">
-                                <i data-lucide="zap" class="w-3.5 h-3.5 text-indigo-400"></i>
-                                <span class="font-medium text-slate-300">DaviFlow</span>
-                                <span>— Painel de Clientes</span>
-                            </div>
-                            <div class="flex items-center space-x-1 text-[10px] text-emerald-400 font-medium bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
-                                <span>Live</span>
-                            </div>
-                        </div>
+                    <div class="relative rounded-3xl overflow-hidden border border-slate-800 shadow-2xl glass-card">
 
                         <!-- Mockup Body -->
                         <div class="p-4 bg-[#0f172a]/80 space-y-4">
@@ -250,7 +209,7 @@
                                 </div>
                                 <div class="glass-card rounded-xl px-3 py-2 text-xs text-slate-500">Plano ▾</div>
                                 <div class="glass-card rounded-xl px-3 py-2 text-xs text-slate-500">Status ▾</div>
-                                <div class="bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 flex items-center gap-1">
+                                <div class="bg-indigo-600 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 flex items-center gap-1">
                                     <i data-lucide="plus" class="w-3 h-3"></i> Novo
                                 </div>
                             </div>
@@ -289,10 +248,7 @@
                         </div>
                     </div>
 
-                    <!-- Floating badge -->
-                    <div class="absolute -top-3 -right-3 bg-gradient-to-br from-indigo-500 to-indigo-600 text-slate-900 text-xs font-black px-3 py-1.5 rounded-xl shadow-lg rotate-3">
-                        ✨ Tempo Real
-                    </div>
+                    
                 </div>
 
             </div>
@@ -306,11 +262,9 @@
         <div class="max-w-7xl mx-auto">
 
             <!-- Section Header -->
-            <div class="text-center mb-16 reveal">
-                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-widest mb-4">
-                    Recursos
-                </span>
-                <h2 class="text-3xl sm:text-4xl font-black text-white">Tudo que você precisa,<br><span class="gradient-text">em um só lugar.</span></h2>
+            <div class="text-center mb-12 reveal">
+                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full border border-slate-700/20 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-4">Recursos</span>
+                <h2 class="text-3xl sm:text-4xl font-black text-white">Tudo que você precisa,<br>em um só lugar.</h2>
                 <p class="mt-4 text-slate-400 max-w-xl mx-auto">Projetado para quem não tem tempo a perder. Rápido, inteligente e feito para o seu ritmo.</p>
             </div>
 
@@ -318,52 +272,52 @@
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
                 <!-- Card 1: Gestão Centralizada -->
-                <div class="feature-card glass-card rounded-2xl p-6 hover:border-cyan-500/40 reveal">
-                    <div class="w-11 h-11 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-5">
-                        <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i>
+                <div class="feature-card glass-card rounded-2xl p-6 reveal">
+                    <div class="w-11 h-11 rounded-xl border border-slate-700/20 flex items-center justify-center mb-5">
+                        <i data-lucide="users" class="w-5 h-5 text-slate-400"></i>
                     </div>
                     <h3 class="text-base font-bold text-white mb-2">Gestão Centralizada</h3>
                     <p class="text-sm text-slate-400 leading-relaxed">Cadastre, edite e acompanhe o status de cada cliente em tempo real, sem abrir uma única planilha.</p>
-                    <div class="mt-5 flex items-center gap-1.5 text-xs font-medium text-indigo-400">
+                    <div class="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-400">
                         <span>Saiba mais</span>
                         <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                     </div>
                 </div>
 
                 <!-- Card 2: Painel de Métricas -->
-                <div class="feature-card glass-card rounded-2xl p-6 hover:border-emerald-500/40 reveal">
-                    <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-5">
-                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-emerald-400"></i>
+                <div class="feature-card glass-card rounded-2xl p-6 reveal">
+                    <div class="w-11 h-11 rounded-xl border border-slate-700/20 flex items-center justify-center mb-5">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-slate-400"></i>
                     </div>
                     <h3 class="text-base font-bold text-white mb-2">Painel de Métricas</h3>
                     <p class="text-sm text-slate-400 leading-relaxed">Visualize instantaneamente o total de clientes ativos, inativos e a distribuição entre planos.</p>
-                    <div class="mt-5 flex items-center gap-1.5 text-xs font-medium text-emerald-400">
+                    <div class="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-400">
                         <span>Saiba mais</span>
                         <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                     </div>
                 </div>
 
                 <!-- Card 3: Segurança -->
-                <div class="feature-card glass-card rounded-2xl p-6 hover:border-purple-500/40 reveal">
-                    <div class="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-5">
-                        <i data-lucide="shield-check" class="w-5 h-5 text-purple-400"></i>
+                <div class="feature-card glass-card rounded-2xl p-6 reveal">
+                    <div class="w-11 h-11 rounded-xl border border-slate-700/20 flex items-center justify-center mb-5">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-slate-400"></i>
                     </div>
                     <h3 class="text-base font-bold text-white mb-2">Segurança & Isolamento</h3>
                     <p class="text-sm text-slate-400 leading-relaxed">Seus dados protegidos com criptografia e isolamento individual de conta. Nível corporativo.</p>
-                    <div class="mt-5 flex items-center gap-1.5 text-xs font-medium text-purple-400">
+                    <div class="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-400">
                         <span>Saiba mais</span>
                         <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                     </div>
                 </div>
 
                 <!-- Card 4: Acesso em Qualquer Lugar -->
-                <div class="feature-card glass-card rounded-2xl p-6 hover:border-amber-500/40 reveal">
-                    <div class="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-5">
-                        <i data-lucide="smartphone" class="w-5 h-5 text-amber-400"></i>
+                <div class="feature-card glass-card rounded-2xl p-6 reveal">
+                    <div class="w-11 h-11 rounded-xl border border-slate-700/20 flex items-center justify-center mb-5">
+                        <i data-lucide="smartphone" class="w-5 h-5 text-slate-400"></i>
                     </div>
                     <h3 class="text-base font-bold text-white mb-2">Acesso em Qualquer Lugar</h3>
                     <p class="text-sm text-slate-400 leading-relaxed">Totalmente responsivo e otimizado para desktop, tablet e celular. Onde você estiver.</p>
-                    <div class="mt-5 flex items-center gap-1.5 text-xs font-medium text-amber-400">
+                    <div class="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-400">
                         <span>Saiba mais</span>
                         <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                     </div>
@@ -384,7 +338,7 @@
                 <span class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-widest mb-4">
                     Como Funciona
                 </span>
-                <h2 class="text-3xl sm:text-4xl font-black text-white">Configure em minutos.<br><span class="gradient-text">Use para sempre.</span></h2>
+                <h2 class="text-3xl sm:text-4xl font-black text-white">Configure em minutos.<br>Use para sempre.</h2>
             </div>
 
             <!-- Steps -->
@@ -393,10 +347,10 @@
                 <!-- Step 1 -->
                 <div class="relative text-center reveal step-line">
                     <div class="flex flex-col items-center">
-                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 mb-5">
-                            <i data-lucide="user-plus" class="w-6 h-6 text-white"></i>
+                        <div class="w-14 h-14 rounded-2xl border border-slate-700/20 flex items-center justify-center shadow-lg mb-5">
+                            <i data-lucide="user-plus" class="w-6 h-6 text-slate-400"></i>
                         </div>
-                        <div class="absolute -top-2 -right-1 md:right-auto md:-top-2 w-7 h-7 rounded-full bg-cyan-500/10 border-2 border-cyan-500/30 flex items-center justify-center text-xs font-black text-indigo-400">1</div>
+                        <div class="absolute -top-2 -right-1 md:right-auto md:-top-2 w-7 h-7 rounded-full bg-slate-500/10 border-2 border-slate-500/30 flex items-center justify-center text-xs font-black text-slate-400">1</div>
                         <h3 class="text-lg font-bold text-white mb-2">Crie sua conta</h3>
                         <p class="text-sm text-slate-400 leading-relaxed">Cadastre-se no DaviFlow em menos de 1 minuto. Sem cartão de crédito.</p>
                     </div>
@@ -405,10 +359,10 @@
                 <!-- Step 2 -->
                 <div class="relative text-center reveal step-line">
                     <div class="flex flex-col items-center">
-                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/25 mb-5">
-                            <i data-lucide="clipboard-list" class="w-6 h-6 text-white"></i>
+                        <div class="w-14 h-14 rounded-2xl border border-slate-700/20 flex items-center justify-center shadow-lg mb-5">
+                            <i data-lucide="clipboard-list" class="w-6 h-6 text-slate-400"></i>
                         </div>
-                        <div class="absolute -top-2 -right-1 md:right-auto md:-top-2 w-7 h-7 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center text-xs font-black text-emerald-400">2</div>
+                        <div class="absolute -top-2 -right-1 md:right-auto md:-top-2 w-7 h-7 rounded-full bg-slate-500/10 border-2 border-slate-500/30 flex items-center justify-center text-xs font-black text-slate-400">2</div>
                         <h3 class="text-lg font-bold text-white mb-2">Cadastre seus clientes</h3>
                         <p class="text-sm text-slate-400 leading-relaxed">Adicione seus clientes e defina status e planos personalizados em segundos.</p>
                     </div>
@@ -417,10 +371,10 @@
                 <!-- Step 3 -->
                 <div class="relative text-center reveal">
                     <div class="flex flex-col items-center">
-                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25 mb-5">
-                            <i data-lucide="trending-up" class="w-6 h-6 text-white"></i>
+                        <div class="w-14 h-14 rounded-2xl border border-slate-700/20 flex items-center justify-center shadow-lg mb-5">
+                            <i data-lucide="trending-up" class="w-6 h-6 text-slate-400"></i>
                         </div>
-                        <div class="absolute -top-2 -right-1 md:right-auto md:-top-2 w-7 h-7 rounded-full bg-purple-500/10 border-2 border-purple-500/30 flex items-center justify-center text-xs font-black text-purple-400">3</div>
+                        <div class="absolute -top-2 -right-1 md:right-auto md:-top-2 w-7 h-7 rounded-full bg-slate-500/10 border-2 border-slate-500/30 flex items-center justify-center text-xs font-black text-slate-400">3</div>
                         <h3 class="text-lg font-bold text-white mb-2">Acompanhe o crescimento</h3>
                         <p class="text-sm text-slate-400 leading-relaxed">Visualize métricas precisas e tome decisões inteligentes para o seu negócio.</p>
                     </div>
@@ -431,7 +385,7 @@
             <!-- CTA after steps -->
             <div class="mt-14 text-center reveal">
                 <button onclick="openModal('modal-register')"
-                    class="inline-flex items-center gap-2 px-8 py-4 text-base font-bold text-slate-900 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-cyan-300 hover:to-emerald-300 rounded-2xl btn-glow transition-all duration-200">
+                    class="inline-flex items-center gap-2 px-8 py-4 text-base font-bold text-slate-900 bg-indigo-600 rounded-2xl transition-all duration-200">
                     <i data-lucide="rocket" class="w-5 h-5"></i>
                     Começar gratuitamente agora
                 </button>
@@ -443,16 +397,16 @@
     <!-- =====================================================
          ABOUT SECTION
          ===================================================== -->
-    <section id="about" class="relative py-20 sm:py-28 px-4 z-10">
+    <section id="about" class="relative py-24 sm:py-28 px-4 z-10">
         <div class="max-w-4xl mx-auto">
             <div class="glass-card rounded-3xl p-8 sm:p-14 text-center reveal" style="border: 1px solid rgba(6,182,212,0.15); box-shadow: 0 0 80px rgba(6,182,212,0.05);">
-                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <div class="w-14 h-14 rounded-2xl bg-indigo-600/20 flex items-center justify-center mx-auto mb-6 shadow-lg">
                     <i data-lucide="zap" class="w-7 h-7 text-white"></i>
                 </div>
-                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-widest mb-6">
+                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full border border-slate-700/20 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-6">
                     Sobre o DaviFlow
                 </span>
-                <h2 class="text-2xl sm:text-3xl font-black text-white mb-6">Nossa missão é simples:<br><span class="gradient-text">menos caos, mais resultado.</span></h2>
+                <h2 class="text-2xl sm:text-3xl font-black text-white mb-6">Nossa missão é simples:<br><span class="text-indigo-400 font-medium">menos caos, mais resultado.</span></h2>
                 <p class="text-slate-300 leading-relaxed text-base sm:text-lg max-w-2xl mx-auto">
                     O DaviFlow nasceu com a missão de descomplicar a gestão operacional de pequenos negócios e profissionais independentes. Unindo simplicidade, alta performance e segurança de dados de nível corporativo, nossa plataforma transforma processos manuais em um fluxo de trabalho organizado e eficiente. Garantimos isolamento total das suas informações e uma interface desenhada para que você gaste menos tempo administrando e <strong class="text-indigo-400 font-semibold">mais tempo faturando.</strong>
                 </p>
@@ -486,11 +440,9 @@
         <div class="max-w-5xl mx-auto">
 
             <!-- Section Header -->
-            <div class="text-center mb-16 reveal">
-                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-widest mb-4">
-                    Preços
-                </span>
-                <h2 class="text-3xl sm:text-4xl font-black text-white">Simples, transparente,<br><span class="gradient-text">sem surpresas.</span></h2>
+            <div class="text-center mb-12 reveal">
+                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full border border-slate-700/20 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-4">Preços</span>
+                <h2 class="text-3xl sm:text-4xl font-black text-white">Simples, transparente,<br>sem surpresas.</h2>
                 <p class="mt-4 text-slate-400 max-w-md mx-auto">Comece grátis. Evolua quando quiser.</p>
             </div>
 
@@ -543,53 +495,51 @@
                 </div>
 
                 <!-- Pro Tier -->
-                <div class="glass-card rounded-3xl p-8 reveal pricing-highlight flex flex-col relative overflow-hidden" style="border-color: rgba(6,182,212,0.3);">
+                <div class="glass-card rounded-3xl p-8 reveal flex flex-col relative overflow-hidden">
                     <!-- Popular badge -->
-                    <div class="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-indigo-500 to-indigo-600 text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-full">
+                    <div class="absolute top-4 right-4 px-3 py-1 bg-indigo-600 rounded-full text-slate-900 text-xs font-bold uppercase tracking-wider">
                         Popular
                     </div>
-                    <!-- Subtle top glow -->
-                    <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent"></div>
 
                     <div class="mb-6">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 flex items-center justify-center mb-4">
-                            <i data-lucide="zap" class="w-5 h-5 text-indigo-400"></i>
+                        <div class="w-10 h-10 rounded-xl border border-slate-700/20 flex items-center justify-center mb-4">
+                            <i data-lucide="zap" class="w-5 h-5 text-slate-400"></i>
                         </div>
                         <h3 class="text-xl font-bold text-white">Pro</h3>
                         <p class="text-slate-400 text-sm mt-1">Para negócios em expansão.</p>
                     </div>
                     <div class="flex items-baseline gap-1 mb-8">
-                        <span class="text-5xl font-black gradient-text">R$29</span>
+                        <span class="text-5xl font-black text-indigo-600">R$29</span>
                         <span class="text-slate-500 font-medium">/mês</span>
                     </div>
                     <ul class="space-y-3 flex-1 mb-8">
                         <li class="flex items-center gap-3 text-sm text-slate-300">
-                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-400 flex-shrink-0"></i>
+                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-600 flex-shrink-0"></i>
                             <strong class="text-white">Clientes ilimitados</strong>
                         </li>
                         <li class="flex items-center gap-3 text-sm text-slate-300">
-                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-400 flex-shrink-0"></i>
+                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-600 flex-shrink-0"></i>
                             Painel de métricas avançado
                         </li>
                         <li class="flex items-center gap-3 text-sm text-slate-300">
-                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-400 flex-shrink-0"></i>
+                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-600 flex-shrink-0"></i>
                             Gestão completa e relatórios
                         </li>
                         <li class="flex items-center gap-3 text-sm text-slate-300">
-                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-400 flex-shrink-0"></i>
+                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-600 flex-shrink-0"></i>
                             Exportação CSV/PDF
                         </li>
                         <li class="flex items-center gap-3 text-sm text-slate-300">
-                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-400 flex-shrink-0"></i>
+                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-600 flex-shrink-0"></i>
                             Suporte prioritário 24/7
                         </li>
                         <li class="flex items-center gap-3 text-sm text-slate-300">
-                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-400 flex-shrink-0"></i>
+                            <i data-lucide="check-circle" class="w-4 h-4 text-indigo-600 flex-shrink-0"></i>
                             API de integração
                         </li>
                     </ul>
                     <button onclick="openModal('modal-register')"
-                        class="w-full py-3.5 text-sm font-bold text-slate-900 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-cyan-300 hover:to-emerald-300 rounded-2xl btn-glow transition-all duration-200">
+                        class="w-full py-3.5 text-sm font-bold text-slate-900 bg-indigo-600 rounded-2xl transition-all duration-200">
                         Começar com Pro
                     </button>
                 </div>
@@ -608,20 +558,20 @@
     <!-- =====================================================
          FINAL CTA BANNER
          ===================================================== -->
-    <section class="relative py-20 px-4 z-10">
+    <section class="relative py-24 px-4 z-10">
         <div class="max-w-4xl mx-auto">
             <div class="relative rounded-3xl p-10 sm:p-16 text-center overflow-hidden reveal"
-                 style="background: linear-gradient(135deg, rgba(6,182,212,0.12) 0%, rgba(16,185,129,0.08) 100%); border: 1px solid rgba(6,182,212,0.2);">
-                <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-emerald-500/5 rounded-3xl"></div>
-                <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent"></div>
+                 style="background: #1e293b; border: 1px solid rgba(100, 116, 139, 0.2);">
+                <div class="absolute inset-0 rounded-3xl overflow-hidden bg-indigo-600/10"></div>
+                <div class="absolute top-0 left-0 right-0 h-px bg-indigo-600/20"></div>
                 <div class="relative">
                     <h2 class="text-3xl sm:text-4xl font-black text-white mb-4">
-                        Pronto para organizar<br><span class="gradient-text">seu negócio de verdade?</span>
+                        Pronto para organizar<br><span class="text-indigo-400 font-medium">seu negócio de verdade?</span>
                     </h2>
                     <p class="text-slate-400 mb-8 text-lg max-w-xl mx-auto">Junte-se a centenas de profissionais que já largaram as planilhas para sempre.</p>
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <button onclick="openModal('modal-register')"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold text-slate-900 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-cyan-300 hover:to-emerald-300 rounded-2xl btn-glow transition-all duration-200">
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold text-slate-900 bg-indigo-600 rounded-2xl transition-all duration-200">
                             <i data-lucide="rocket" class="w-5 h-5"></i>
                             Criar Conta Grátis Agora
                         </button>
@@ -645,10 +595,10 @@
                 <!-- Brand Column -->
                 <div class="md:col-span-2">
                     <a href="#" class="flex items-center space-x-2.5 mb-4">
-                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center">
                             <i data-lucide="zap" class="w-4 h-4 text-white"></i>
                         </div>
-                        <span class="text-lg font-bold text-white">Davi<span class="gradient-text">Flow</span></span>
+                        <span class="text-lg font-bold text-white">Davi<span class="text-indigo-400 font-medium">Flow</span></span>
                     </a>
                     <p class="text-slate-400 text-sm leading-relaxed max-w-xs">
                         Gestão de clientes inteligente para freelancers e pequenos negócios. Simples, rápido e seguro.
@@ -711,18 +661,15 @@
         <!-- Backdrop -->
         <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeModal('modal-login')"></div>
 
-        <!-- Modal Box -->
+<!-- Modal Box -->
         <div class="relative w-full max-w-md animate-fade-in-up">
-            <div class="glass-card rounded-3xl overflow-hidden" style="border: 1px solid rgba(6,182,212,0.2); box-shadow: 0 25px 80px rgba(0,0,0,0.6);">
-                <!-- Glow top line -->
-                <div class="h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"></div>
-
+            <div class="glass-card rounded-3xl overflow-hidden" style="border: 1px solid rgba(100, 116, 139, 0.2); box-shadow: 0 25px 80px rgba(0,0,0,0.6);">
                 <div class="p-8">
                     <!-- Header -->
                     <div class="flex items-start justify-between mb-7">
                         <div>
                             <div class="flex items-center gap-2.5 mb-2">
-                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center">
+                                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
                                     <i data-lucide="zap" class="w-4 h-4 text-white"></i>
                                 </div>
                                 <span class="font-bold text-white text-lg">DaviFlow</span>
@@ -775,7 +722,7 @@
                         </div>
 
                         <button type="submit" id="btn-login-submit"
-                            class="w-full py-3.5 text-sm font-bold text-slate-900 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-cyan-300 hover:to-emerald-300 rounded-xl btn-glow transition-all duration-200 flex items-center justify-center gap-2">
+                            class="w-full py-3.5 text-sm font-bold text-slate-900 fg-indigo-600 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2">
                             <span id="btn-login-text">Entrar na minha conta</span>
                             <i data-lucide="arrow-right" class="w-4 h-4" id="btn-login-arrow"></i>
                             <i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="btn-login-spinner"></i>
@@ -804,15 +751,12 @@
         <!-- Modal Box -->
         <div class="relative w-full max-w-md animate-fade-in-up">
             <div class="glass-card rounded-3xl overflow-hidden" style="border: 1px solid rgba(16,185,129,0.2); box-shadow: 0 25px 80px rgba(0,0,0,0.6);">
-                <!-- Glow top line -->
-                <div class="h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent"></div>
-
                 <div class="p-8">
                     <!-- Header -->
                     <div class="flex items-start justify-between mb-7">
                         <div>
                             <div class="flex items-center gap-2.5 mb-2">
-                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center">
+                                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
                                     <i data-lucide="zap" class="w-4 h-4 text-white"></i>
                                 </div>
                                 <span class="font-bold text-white text-lg">DaviFlow</span>
@@ -899,7 +843,7 @@
                         </div>
 
                         <button type="submit" id="btn-register-submit"
-                            class="w-full py-3.5 text-sm font-bold text-slate-900 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-cyan-300 hover:to-emerald-300 rounded-xl btn-glow transition-all duration-200 flex items-center justify-center gap-2">
+                            class="w-full py-3.5 text-sm font-bold text-slate-900 bg-indigo-600 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2">
                             <span id="btn-register-text">Criar minha conta grátis</span>
                             <i data-lucide="arrow-right" class="w-4 h-4" id="btn-register-arrow"></i>
                             <i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="btn-register-spinner"></i>
