@@ -1073,5 +1073,31 @@
         </div>
     </div>
 
+    <!-- ====================================================
+         MODAL: SESSÃO ENCERRADA (LOGOUT)
+         ==================================================== -->
+    <div id="modal-logout" class="fixed inset-0 z-[150] hidden flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl w-full max-w-md p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box text-center scale-95 opacity-0">
+            <div class="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 flex items-center justify-center mx-auto mb-5 shadow-sm">
+                <i data-lucide="check-circle-2" class="w-8 h-8 text-indigo-600 dark:text-indigo-400"></i>
+            </div>
+
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Sessão Encerrada com Sucesso</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+                Você saiu da sua conta. Seus dados e cadastros foram salvos com segurança.
+            </p>
+
+            <div class="space-y-2.5">
+                <a href="/" class="w-full btn-primary py-3 flex items-center justify-center gap-2 font-semibold">
+                    <i data-lucide="home" class="w-4 h-4"></i>
+                    <span>Ir para a Página Inicial</span>
+                </a>
+                <button type="button" onclick="recarrregarParaLogin()" class="w-full btn-ghost py-3 font-semibold text-slate-600 dark:text-slate-300">
+                    Fazer Login Novamente
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

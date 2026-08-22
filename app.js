@@ -182,7 +182,11 @@ function salvarSessao(userId, token) {
 function encerrarSessao() {
     localStorage.removeItem('df_user_id');
     localStorage.removeItem('df_token');
-    window.location.reload();
+    abrirModal('modal-logout');
+}
+
+function recarrregarParaLogin() {
+    window.location.href = '/?login=true';
 }
 
 // ============================================================

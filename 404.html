@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 — Página não encontrada | DaviFlow</title>
+    <meta name="description" content="A página solicitada não foi encontrada no DaviFlow.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="h-full bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-slate-100 antialiased font-sans flex flex-col justify-between min-h-screen">
+
+    <!-- Header / Brand -->
+    <header class="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+        <a href="/" class="flex items-center space-x-2.5 group">
+            <div class="w-9 h-9 rounded-xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center shadow-md">
+                <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+            </div>
+            <span class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Davi<span class="text-indigo-600 dark:text-indigo-400">Flow</span></span>
+        </a>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col items-center justify-center px-4 py-12 text-center max-w-md mx-auto">
+        <div class="relative mb-6">
+            <!-- Subtle background ring -->
+            <div class="w-24 h-24 rounded-3xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 flex items-center justify-center shadow-sm">
+                <span class="text-4xl font-black text-indigo-600 dark:text-indigo-400 tracking-tighter">404</span>
+            </div>
+        </div>
+
+        <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-3">
+            Página Não Encontrada
+        </h1>
+
+        <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
+            A página que você está tentando acessar não existe, foi removida ou o endereço (URL) foi digitado incorretamente.
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+            <a href="/" class="w-full sm:w-auto flex-1 btn-primary py-3 flex items-center justify-center gap-2 font-semibold">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Voltar ao Início</span>
+            </a>
+            <a href="/dashboard.html" class="w-full sm:w-auto flex-1 btn-ghost py-3 flex items-center justify-center gap-2 font-semibold">
+                <i data-lucide="layout-dashboard" class="w-4 h-4 text-indigo-500"></i>
+                <span>Ir ao Painel</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-7xl mx-auto px-6 py-6 text-center text-xs text-slate-400 dark:text-slate-500">
+        &copy; 2026 DaviFlow &middot; Todos os direitos reservados.
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
