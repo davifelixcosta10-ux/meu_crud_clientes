@@ -236,10 +236,9 @@ function toggleTemaManual() {
 // 2. STATUS DA API
 // ============================================================
 async function verificarStatusAPI() {
-    const selectors = [
-        { badge: 'api-status-badge', dot: 'api-status-dot', text: 'api-status-text' },
-        { badge: 'api-status-badge-mobile', dot: 'api-status-dot-mobile', text: 'api-status-text-mobile' },
-    ];
+    const badgeEl = document.getElementById('api-status-badge');
+    const dotEl   = document.getElementById('api-status-dot');
+    const textEl  = document.getElementById('api-status-text');
 
     let isOnline = false;
     try {
@@ -257,26 +256,21 @@ async function verificarStatusAPI() {
         modoDemo = true;
     }
 
-    selectors.forEach(({ badge, dot, text }) => {
-        const badgeEl = document.getElementById(badge);
-        const dotEl   = document.getElementById(dot);
-        const textEl  = document.getElementById(text);
-        if (!badgeEl || !dotEl || !textEl) return;
+    if (!badgeEl || !dotEl || !textEl) return;
 
-        if (isOnline && !modoDemo) {
-            dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0';
-            badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-all duration-300';
-            textEl.textContent = 'Conectado';
-        } else if (modoDemo) {
-            dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0';
-            badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition-all duration-300';
-            textEl.textContent = 'Modo Local (Demo)';
-        } else {
-            dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0';
-            badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800 transition-all duration-300';
-            textEl.textContent = 'Desconectado';
-        }
-    });
+    if (isOnline && !modoDemo) {
+        dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0';
+        badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-all duration-300';
+        textEl.textContent = 'Conectado';
+    } else if (modoDemo) {
+        dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0';
+        badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition-all duration-300';
+        textEl.textContent = 'Modo Local (Demo)';
+    } else {
+        dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0';
+        badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800 transition-all duration-300';
+        textEl.textContent = 'Desconectado';
+    }
 
     if (window.lucide) lucide.createIcons();
 }
@@ -366,15 +360,6 @@ function atualizarMetricas(clientes) {
     const ativos   = clientes.filter(c => c.ativo).length;
     const inativos = total - ativos;
 
-    const countByPlan = {};
-    planosCache.forEach(p => { countByPlan[p.id] = 0; });
-    clientes.forEach(c => {
-        if (c.plano && countByPlan.hasOwnProperty(c.plano)) {
-            countByPlan[c.plano]++;
-        }
-    });
-    const semPlano = clientes.filter(c => !c.plano).length;
-
     const ativosPct   = total > 0 ? Math.round((ativos   / total) * 100) : 0;
     const inativosPct = total > 0 ? Math.round((inativos / total) * 100) : 0;
 
@@ -384,8 +369,45 @@ function atualizarMetricas(clientes) {
     document.getElementById('metric-ativos-pct').textContent  = `${ativosPct}%`;
     document.getElementById('metric-inativos-pct').textContent = `${inativosPct}%`;
 
-    const semPlanoEl = document.getElementById('metric-sem-plano');
-    if (semPlanoEl) semPlanoEl.textContent = semPlano;
+    // Renderizar métrica "Por Plano" dinamicamente conforme os planos reais do usuário
+    const container = document.getElementById('metric-planos-container');
+    if (container) {
+        container.innerHTML = '';
+
+        const counts = {};
+        planosCache.forEach(p => { counts[p.id] = 0; });
+        let semPlanoCount = 0;
+
+        clientes.forEach(c => {
+            if (c.plano && counts.hasOwnProperty(c.plano)) {
+                counts[c.plano]++;
+            } else {
+                semPlanoCount++;
+            }
+        });
+
+        planosCache.forEach(plano => {
+            const count = counts[plano.id] || 0;
+            const theme = PLAN_THEMES[plano.cor] || PLAN_THEMES.indigo;
+            const div = document.createElement('div');
+            div.className = `rounded-xl ${theme.bg} border ${theme.border} px-1.5 py-1 text-center flex-1 min-w-[55px]`;
+            div.innerHTML = `
+                <div class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide leading-none ${theme.text} mb-1 truncate">${escaparHTML(plano.nome.slice(0, 5))}</div>
+                <div class="text-sm font-black ${theme.text} tabular-nums leading-none">${count}</div>
+            `;
+            container.appendChild(div);
+        });
+
+        if (semPlanoCount > 0 || planosCache.length === 0) {
+            const div = document.createElement('div');
+            div.className = 'rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 px-1.5 py-1 text-center flex-1 min-w-[55px]';
+            div.innerHTML = `
+                <div class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide leading-none text-slate-500 dark:text-slate-400 mb-1 truncate">Livre</div>
+                <div class="text-sm font-black text-slate-600 dark:text-slate-300 tabular-nums leading-none">${semPlanoCount}</div>
+            `;
+            container.appendChild(div);
+        }
+    }
 }
 
 // ============================================================
@@ -432,7 +454,8 @@ function renderizarClientes(clientes) {
     emptyState.classList.add('hidden');
     emptyState.classList.remove('flex');
 
-    clientes.forEach(cliente => {
+    clientes.forEach((cliente, index) => {
+        const ordinal = `#${index + 1}`;
         const dataFormatada = formatarData(cliente.data_cadastro);
         const planoBadgeHTML = getPlanoBadgeHTML(cliente.plano);
         const statusBadgeHTML = getStatusBadgeHTML(cliente.ativo, cliente.id);
@@ -441,7 +464,7 @@ function renderizarClientes(clientes) {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors duration-150 group';
         tr.innerHTML = `
-            <td class="py-3 px-5 font-mono text-xs font-semibold text-slate-400 dark:text-slate-500">#${cliente.id}</td>
+            <td class="py-3 px-5 font-mono text-xs font-semibold text-slate-400 dark:text-slate-500">${ordinal}</td>
             <td class="py-3 px-5">
                 <div class="flex items-center gap-2.5 cursor-pointer" onclick="abrirModalDetalhes(${cliente.id})" title="Ver detalhes completos">
                     <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-black text-white shadow-sm"
@@ -496,7 +519,7 @@ function renderizarClientes(clientes) {
             </div>
             <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60">
                 <div>${planoBadgeHTML}</div>
-                <span class="text-[11px] text-slate-400 dark:text-slate-500 font-mono">#${cliente.id}</span>
+                <span class="text-[11px] text-slate-400 dark:text-slate-500 font-mono font-semibold">${ordinal}</span>
             </div>
             <div class="grid grid-cols-3 gap-1.5 pt-1">
                 <button onclick="abrirModalDetalhes(${cliente.id})"
