@@ -42,8 +42,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|[a-z0-9-]+\.vercel\.app)",
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
@@ -135,10 +135,10 @@ def signup(dados: UserSignUp):
         return {"mensagem": "Usuário cadastrado com sucesso", "user_id": res.user.id}
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro interno ao registrar usuário: {str(e)}",
+            detail="Erro interno ao registrar usuário.",
         )
 
 
@@ -147,17 +147,12 @@ def login(dados: UserLogin):
     """Autentica o usuário e retorna o access_token JWT."""
     try:
         res = autenticar_usuario(dados)
-    except Exception as e:
-        msg = str(e).lower()
-        if any(k in msg for k in ("invalid", "credentials", "wrong", "email", "password")):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="E-mail ou senha incorretos.",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+    except HTTPException:
+        raise
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro interno ao autenticar: {str(e)}",
+            detail="Erro interno ao autenticar.",
         )
 
     if not res.session or not res.session.user:
@@ -216,8 +211,8 @@ def patch_plano(plano_id: str | int, dados: PlanoUpdate, user_id: str = Depends(
         return plano
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao processar atualização do plano.")
 
 
 @app.delete("/api/planos/{plano_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Planos"])
@@ -228,8 +223,8 @@ def delete_plano(plano_id: str | int, user_id: str = Depends(obter_user_id)):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plano não encontrado.")
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao remover plano.")
 
 
 # ============================================================
@@ -255,10 +250,10 @@ def criar_cliente(dados: ClienteCreate, user_id: str = Depends(obter_user_id)):
         payload = dados.model_dump(mode="json")
         payload["data_cadastro"] = date.today().isoformat()
         return salvar_novo_cliente(payload, user_id)
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Erro ao criar cliente: {str(e)}",
+            detail="Erro ao criar cliente.",
         )
 
 
@@ -284,8 +279,8 @@ def atualizar_cliente(
         return cliente_atualizado
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao atualizar cliente.")
 
 
 @app.delete("/api/clientes/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Clientes"])
@@ -296,5 +291,5 @@ def deletar_cliente(cliente_id: str | int, user_id: str = Depends(obter_user_id)
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado.")
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao excluir cliente.")

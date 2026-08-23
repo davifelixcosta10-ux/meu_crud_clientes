@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr
+import re
+
+from pydantic import BaseModel, EmailStr, validator
 from typing import Optional, Union
 
 
@@ -11,6 +13,12 @@ class UserSignUp(BaseModel):
     password: str
     nome_completo: Optional[str] = None
     nome_empresa: Optional[str] = None
+
+    @validator("password")
+    def password_must_be_at_least_6_chars(cls, v):
+        if len(v) < 6:
+            raise ValueError("Senha deve ter no mínimo 6 caracteres.")
+        return v
 
 
 class UserLogin(BaseModel):
@@ -91,6 +99,47 @@ class Cliente(BaseModel):
     cidade: Optional[str] = None
     estado: Optional[str] = None           # Sigla: "SP", "RJ"...
 
+    @validator("cpf")
+    def cpf_must_have_valid_format(cls, v):
+        if v is None:
+            return v
+        # Remove non-digits
+        digits = re.sub(r'\D', '', v)
+        if len(digits) != 11:
+            raise ValueError("CPF deve ter 11 dígitos (apenas números).")
+        # Check if all digits are the same (invalid)
+        if len(set(digits)) == 1:
+            raise ValueError("CPF inválido.")
+        return v
+
+    @validator("rg")
+    def rg_must_have_valid_format(cls, v):
+        if v is None:
+            return v
+        # Basic format check: should have digits and a dash
+        digits = re.sub(r'\D', '', v)
+        if len(digits) < 7 or len(digits) > 12:
+            raise ValueError("RG com formato inválido.")
+        return v
+
+    @validator("telefone")
+    def telefone_must_have_valid_format(cls, v):
+        if v is None:
+            return v
+        digits = re.sub(r'\D', '', v)
+        if len(digits) < 10 or len(digits) > 15:
+            raise ValueError("Telefone com formato inválido.")
+        return v
+
+    @validator("data_nascimento")
+    def data_nascimento_must_be_iso_format(cls, v):
+        if v is None:
+            return v
+        # Basic ISO format check: YYYY-MM-DD
+        if not re.match(r'^\d{4}-\d{2}-\d{2}$', v):
+            raise ValueError("Data de nascimento deve estar no formato ISO (YYYY-MM-DD).")
+        return v
+
     class Config:
         from_attributes = True
 
@@ -119,6 +168,45 @@ class ClienteCreate(BaseModel):
     bairro: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None
+
+    @validator("cpf")
+    def cpf_must_have_valid_format(cls, v):
+        if v is None:
+            return v
+        digits = re.sub(r'\D', '', v)
+        if len(digits) != 11:
+            raise ValueError("CPF deve ter 11 dígitos (apenas números).")
+        if len(set(digits)) == 1:
+            raise ValueError("CPF inválido.")
+        return v
+
+    @validator("rg")
+    def rg_must_have_valid_format(cls, v):
+        if v is None:
+            return v
+        digits = re.sub(r'\D', '', v)
+        if len(digits) < 7 or len(digits) > 12:
+            raise ValueError("RG com formato inválido.")
+        return v
+
+    @validator("telefone")
+    def telefone_must_have_valid_format(cls, v):
+        if v is None:
+            return v
+        digits = re.sub(r'\D', '', v)
+        if len(digits) < 10 or len(digits) > 15:
+            raise ValueError("Telefone com formato inválido.")
+        return v
+
+    @validator("data_nascimento")
+    def data_nascimento_must_be_iso_format(cls, v):
+        if v is None:
+            return v
+        if not re.match(r'^\d{4}-\d{2}-\d{2}$', v):
+            raise ValueError("Data de nascimento deve estar no formato ISO (YYYY-MM-DD).")
+        return v
+
+    # Password validator from UserSignUp won't apply here since there's no password in ClienteCreate
 
 
 class ClienteUpdate(BaseModel):
@@ -149,3 +237,40 @@ class ClienteUpdate(BaseModel):
     bairro: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None
+
+    @validator("cpf")
+    def cpf_must_have_valid_format(cls, v):
+        if v is None:
+            return v
+        digits = re.sub(r'\D', '', v)
+        if len(digits) != 11:
+            raise ValueError("CPF deve ter 11 dígitos (apenas números).")
+        if len(set(digits)) == 1:
+            raise ValueError("CPF inválido.")
+        return v
+
+    @validator("rg")
+    def rg_must_have_valid_format(cls, v):
+        if v is None:
+            return v
+        digits = re.sub(r'\D', '', v)
+        if len(digits) < 7 or len(digits) > 12:
+            raise ValueError("RG com formato inválido.")
+        return v
+
+    @validator("telefone")
+    def telefone_must_have_valid_format(cls, v):
+        if v is None:
+            return v
+        digits = re.sub(r'\D', '', v)
+        if len(digits) < 10 or len(digits) > 15:
+            raise ValueError("Telefone com formato inválido.")
+        return v
+
+    @validator("data_nascimento")
+    def data_nascimento_must_be_iso_format(cls, v):
+        if v is None:
+            return v
+        if not re.match(r'^\d{4}-\d{2}-\d{2}$', v):
+            raise ValueError("Data de nascimento deve estar no formato ISO (YYYY-MM-DD).")
+        return v
