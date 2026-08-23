@@ -891,7 +891,7 @@ async function toggleStatusCliente(id, novoStatus) {
         clientesCache[index].ativo = novoStatus;
         atualizarMetricas(clientesCache);
         filtrarTabela();
-        exibirToast(`Cliente #${id} ${novoStatus ? 'ativado' : 'inativado'}! (Local)`, 'sucesso');
+        exibirToast(`Cliente #${clientesCache[index].id} ${novoStatus ? 'ativado' : 'inativado'}! (Local)`, 'sucesso');
     }
 }
 
