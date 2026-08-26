@@ -843,9 +843,7 @@
         }
 
         
-        // Force reveal visible on load so elements are never hidden
         document.addEventListener("DOMContentLoaded", () => {
-            document.querySelectorAll(".reveal").forEach(el => el.classList.add("visible"));
             if (window.location.search.includes("login=true")) {
                 openModal("modal-login");
             }
