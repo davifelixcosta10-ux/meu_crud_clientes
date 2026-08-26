@@ -1,26 +1,70 @@
+"""
+===================================================================
+DaviFlow API — Modelos Pydantic (Validação e Serialização)
+===================================================================
+Este módulo define todos os modelos de dados usados na API.
+Pydantic v2 fornece validação automática, serialização JSON e documentação OpenAPI.
+
+Estrutura:
+1. Modelos de Autenticação (UserSignUp, UserLogin, TokenResponse)
+2. Modelos de Planos (PlanoCreate, PlanoUpdate, Plano)
+3. Modelos de Clientes (Cliente, ClienteCreate, ClienteUpdate)
+4. Validadores customizados (CPF módulo 11, RG, telefone, data_nascimento)
+
+Segurança:
+- EmailStr valida formato de e-mail RFC 5322
+- CPF validado com algoritmo módulo 11 (dígitos verificadores reais)
+- Senha mínima 6 caracteres
+- Todos os campos opcionais explícitos (None por padrão)
+"""
+
 import re
 
 from pydantic import BaseModel, EmailStr, validator
 from typing import Optional, Union
 
 
+# ============================================================
+# FUNÇÕES AUXILIARES DE VALIDAÇÃO
+# ============================================================
+
 def validar_cpf(cpf: str) -> bool:
-    """Valida CPF usando algoritmo módulo 11 (dígitos verificadores)."""
+    """
+    Valida CPF usando algoritmo módulo 11 (dígitos verificadores oficiais).
+    
+    Algoritmo:
+    1. Remove formatação (pontos, traços)
+    2. Verifica 11 dígitos numéricos
+    3. Bloqueia sequências inválidas (ex: 111.111.111-11)
+    4. Calcula 1º dígito: soma(dígito * peso) onde peso vai de 10 a 2
+       resto = (soma * 10) % 11; se 10 -> 0
+    5. Calcula 2º dígito: soma(dígito * peso) onde peso vai de 11 a 2
+       resto = (soma * 10) % 11; se 10 -> 0
+    
+    Args:
+        cpf: String com ou sem formatação (ex: "529.982.247-25" ou "52998224725")
+    
+    Returns:
+        True se CPF válido, False caso contrário
+        Retorna True para None/string vazia (campo opcional)
+    """
     if not cpf:
-        return True  # None/empty é opcional
+        return True  # None/empty é opcional - não bloqueia
     
     # Remove caracteres não numéricos
     digits = re.sub(r'\D', '', cpf)
     
-    # Deve ter 11 dígitos
+    # Deve ter exatamente 11 dígitos
     if len(digits) != 11:
         return False
     
     # Bloqueia sequências de dígitos iguais (ex: 111.111.111-11)
+    # CPFs válidos nunca têm todos os dígitos idênticos
     if len(set(digits)) == 1:
         return False
     
     # Calcula primeiro dígito verificador
+    # Pesos: 10, 9, 8, 7, 6, 5, 4, 3, 2 (para os 9 primeiros dígitos)
     soma = sum(int(digits[i]) * (10 - i) for i in range(9))
     resto = (soma * 10) % 11
     if resto == 10:
@@ -29,6 +73,7 @@ def validar_cpf(cpf: str) -> bool:
         return False
     
     # Calcula segundo dígito verificador
+    # Pesos: 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 (para os 10 primeiros dígitos)
     soma = sum(int(digits[i]) * (11 - i) for i in range(10))
     resto = (soma * 10) % 11
     if resto == 10:
@@ -40,7 +85,11 @@ def validar_cpf(cpf: str) -> bool:
 
 
 def cpf_validator(v):
-    """Validator Pydantic para CPF."""
+    """
+    Validator Pydantic para campo CPF.
+    Usado via @validator("cpf") nos modelos.
+    Levanta ValueError se inválido (Pydantic captura e retorna 422).
+    """
     if v is None:
         return v
     if not validar_cpf(v):
@@ -53,6 +102,16 @@ def cpf_validator(v):
 # ============================================================
 
 class UserSignUp(BaseModel):
+    """
+    Dados para cadastro de novo usuário.
+    
+    Validações automáticas:
+    - email: EmailStr (formato RFC 5322)
+    - password: mínimo 6 caracteres (validator customizado)
+    - nome_completo, nome_empresa: opcionais
+    
+    Usado em: POST /api/auth/signup
+    """
     email: EmailStr
     password: str
     nome_completo: Optional[str] = None
@@ -60,17 +119,34 @@ class UserSignUp(BaseModel):
 
     @validator("password")
     def password_must_be_at_least_6_chars(cls, v):
+        """Garante senha com pelo menos 6 caracteres (política mínima)."""
         if len(v) < 6:
             raise ValueError("Senha deve ter no mínimo 6 caracteres.")
         return v
 
 
 class UserLogin(BaseModel):
+    """
+    Dados para login de usuário existente.
+    
+    Usado em: POST /api/auth/login
+    """
     email: EmailStr
     password: str
 
 
 class TokenResponse(BaseModel):
+    """
+    Resposta de autenticação bem-sucedida.
+    
+    Campos:
+    - access_token: JWT do Supabase (expira em 1h por padrão)
+    - token_type: sempre "bearer" (padrão OAuth2)
+    - user_id: UUID do usuário autenticado
+    - email: e-mail do usuário (para exibição no frontend)
+    
+    Usado em: resposta de POST /api/auth/login
+    """
     access_token: str
     token_type: str = "bearer"
     user_id: str
@@ -82,15 +158,32 @@ class TokenResponse(BaseModel):
 # ============================================================
 
 class PlanoCreate(BaseModel):
-    """Dados para criar um plano personalizado do usuário."""
-    nome: str                          # Ex: "Mensal", "VIP", "Ouro"
-    cor: Optional[str] = "indigo"      # Slug: indigo, cyan, emerald, amber, rose, purple, slate, orange
-    descricao: Optional[str] = None    # Texto livre de descrição
-    valor: Optional[str] = None        # Ex: "R$ 150/mês" — texto livre
+    """
+    Dados para criar um plano personalizado do usuário.
+    
+    Campos:
+    - nome: obrigatório, ex: "Mensal", "VIP", "Ouro"
+    - cor: slug da cor para badge UI (indigo, cyan, emerald, amber, rose, purple, slate, orange)
+    - descricao: texto livre opcional
+    - valor: texto livre opcional, ex: "R$ 150/mês"
+    
+    Usado em: POST /api/planos
+    """
+    nome: str
+    cor: Optional[str] = "indigo"
+    descricao: Optional[str] = None
+    valor: Optional[str] = None
 
 
 class PlanoUpdate(BaseModel):
-    """Dados para atualização parcial de um plano."""
+    """
+    Dados para atualização parcial de um plano (PATCH).
+    
+    Todos os campos opcionais - apenas campos enviados são atualizados.
+    exclude_unset=True no endpoint garante isso.
+    
+    Usado em: PATCH /api/planos/{plano_id}
+    """
     nome: Optional[str] = None
     cor: Optional[str] = None
     descricao: Optional[str] = None
@@ -98,7 +191,14 @@ class PlanoUpdate(BaseModel):
 
 
 class Plano(BaseModel):
-    """Representação completa de um plano retornado pela API."""
+    """
+    Representação completa de um plano retornado pela API.
+    
+    Inclui ID e user_id (preenchidos pelo banco).
+    from_attributes=True permite criar instância a partir de ORM/row do Supabase.
+    
+    Usado em: resposta de GET/POST/PATCH /api/planos
+    """
     id: Union[int, str]
     user_id: str
     nome: str
@@ -115,7 +215,15 @@ class Plano(BaseModel):
 # ============================================================
 
 class Cliente(BaseModel):
-    """Representação completa de um cliente retornado pela API."""
+    """
+    Representação completa de um cliente retornado pela API.
+    
+    Contém TODOS os campos (básicos + opcionais).
+    id e user_id são preenchidos pelo banco (opcionais aqui para criação).
+    from_attributes=True permite criar instância a partir de row do Supabase.
+    
+    Usado em: resposta de GET/POST/PATCH /api/clientes
+    """
     id: Optional[Union[int, str]] = None
     user_id: Optional[str] = None
     # Dados básicos
@@ -145,13 +253,18 @@ class Cliente(BaseModel):
 
     @validator("cpf")
     def cpf_must_have_valid_format(cls, v):
+        """Valida CPF com algoritmo módulo 11 (dígitos verificadores reais)."""
         return cpf_validator(v)
 
     @validator("rg")
     def rg_must_have_valid_format(cls, v):
+        """
+        Validação básica de RG.
+        Apenas verifica se tem entre 7-12 dígitos numéricos.
+        Formato exato varia por estado brasileiro.
+        """
         if v is None:
             return v
-        # Basic format check: should have digits and a dash
         digits = re.sub(r'\D', '', v)
         if len(digits) < 7 or len(digits) > 12:
             raise ValueError("RG com formato inválido.")
@@ -159,6 +272,10 @@ class Cliente(BaseModel):
 
     @validator("telefone")
     def telefone_must_have_valid_format(cls, v):
+        """
+        Validação básica de telefone brasileiro.
+        Aceita 10-15 dígitos (DDD + número, com ou sem 9 do celular).
+        """
         if v is None:
             return v
         digits = re.sub(r'\D', '', v)
@@ -168,9 +285,12 @@ class Cliente(BaseModel):
 
     @validator("data_nascimento")
     def data_nascimento_must_be_iso_format(cls, v):
+        """
+        Valida formato ISO 8601: YYYY-MM-DD.
+        Não valida se data é passada/futura - apenas formato.
+        """
         if v is None:
             return v
-        # Basic ISO format check: YYYY-MM-DD
         if not re.match(r'^\d{4}-\d{2}-\d{2}$', v):
             raise ValueError("Data de nascimento deve estar no formato ISO (YYYY-MM-DD).")
         return v
@@ -180,7 +300,16 @@ class Cliente(BaseModel):
 
 
 class ClienteCreate(BaseModel):
-    """Dados recebidos do frontend para criação de um novo cliente."""
+    """
+    Dados recebidos do frontend para criação de um novo cliente.
+    
+    DIFERENÇA do Cliente: não tem id, user_id, data_cadastro (preenchidos pelo backend).
+    Campos obrigatórios: nome, email
+    Defaults: ativo=True, plano="basico"
+    Validações: CPF, RG, telefone, data_nascimento (mesmos validators do Cliente)
+    
+    Usado em: POST /api/clientes (body da request)
+    """
     nome: str
     email: EmailStr
     ativo: Optional[bool] = True
@@ -234,14 +363,17 @@ class ClienteCreate(BaseModel):
             raise ValueError("Data de nascimento deve estar no formato ISO (YYYY-MM-DD).")
         return v
 
-    # Password validator from UserSignUp won't apply here since there's no password in ClienteCreate
-
 
 class ClienteUpdate(BaseModel):
-    """Dados para atualização parcial (PATCH) de um cliente.
-
-    Todos os campos são opcionais. Valores False e 0 são válidos
-    e devem ser propagados ao banco (filtro usa `is not None`).
+    """
+    Dados para atualização parcial (PATCH) de um cliente.
+    
+    TODOS os campos são opcionais (Optional).
+    Importante: usa `is not None` no endpoint (não `if v`) para preservar
+    valores falsy válidos como ativo=False, valor_plano=0.0, etc.
+    Validadores reaproveitados do Cliente/ClienteCreate.
+    
+    Usado em: PATCH /api/clientes/{cliente_id} (body da request)
     """
     nome: Optional[str] = None
     email: Optional[EmailStr] = None

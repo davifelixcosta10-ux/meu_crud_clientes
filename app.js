@@ -1,16 +1,61 @@
-// ============================================================
-// DaviFlow — App Principal (Dashboard Administrativo v1.4)
-// ============================================================
+/**
+ * ===================================================================
+ * DaviFlow — Dashboard Administrativo (app.js v1.4)
+ * ===================================================================
+ * Frontend Vanilla JS do painel /dashboard.html.
+ *
+ * Arquitetura:
+ * - SPA sem framework: manipulação direta do DOM, sem build step
+ * - Estado em memória: clientesCache[], planosCache[], modoDemo
+ * - Comunicação: REST via fetch() para FastAPI (/api/*) + Supabase
+ * - Autenticação: JWT Bearer no header Authorization (localStorage df_token)
+ * - Fallback demo: IS_LOCAL ativa CLIENTES_DEMO se API offline (nunca em prod)
+ *
+ * Seções (19 no total):
+ *  0. Configuração (IS_LOCAL, API_BASE_URL, PLANOS_DEFAULT, CLIENTES_DEMO)
+ *  1. Tema dark/light (localStorage + prefers-color-scheme)
+ *  2. Status da API (badge Conectado/Demo/Desconectado, polling 15s)
+ *  3. Planos - carregar e cache
+ *  4. Clientes - carregar, métricas, fallback demo local
+ *  5. Métricas (total, ativos, inativos, por plano)
+ *  6. Filtragem e renderização (tabela desktop + cards mobile)
+ *  7. Toggle de seções colapsáveis (Contato, Pessoais, Endereço)
+ *  8. Busca CEP via ViaCEP (com sanitização anti-XSS)
+ *  9-11. Modais: Criar, Editar, Toggle de Status
+ *  12-13. Detalhes do cliente, Gerenciamento de planos
+ *  14. Exportação CSV
+ *  15-16. Cards de seleção de plano, Validações de formulário
+ *  17-19. Máscaras, Modais utilitários, Toast notifications
+ *
+ * Segurança:
+ * - escaparHTML() em TODA interpolação de dados do usuário (previne XSS)
+ * - validarCPF() com módulo 11 no frontend (espelho do backend)
+ * - fetchAuth() centraliza header Authorization e trata 401 -> redirect login
+ * - ViaCEP sanitizado (remove < > " ' & e limita 200 chars)
+ * - CLIENTES_DEMO só existe se IS_LOCAL (não vaza PII em produção)
+ * - Token nunca exposto no DOM, apenas em header Authorization
+ *
+ * Performance / Mobile:
+ * - Lazy render: filtrarTabela() só re-renderiza após filtro/busca
+ * - Debounce implícito: oninput no search, onchange nos selects
+ * - Tailwind CDN + CSS vars (sem JS pesado)
+ * - Modais com overscroll-behavior: contain e max-height 92vh no mobile
+ * - FAB (Floating Action Button) só em < sm para criar cliente rápido
+ */
 
-// Detecta automaticamente se está rodando localmente ou na Vercel
+// --- Detecção de ambiente ---
+// IS_LOCAL = true apenas em localhost / 127.0.0.1 / file:// (desenvolvimento)
+// Em produção (vercel.app) IS_LOCAL é false -> CLIENTES_DEMO = [] e modoDemo não usa mock
 const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
 
+// Base URL da API: local usa 127.0.0.1:8000, produção usa origin atual (/api via Vercel rewrite)
 const API_BASE_URL = IS_LOCAL
     ? 'http://127.0.0.1:8000/api'
     : `${window.location.origin}/api`;
 
 // ============================================================
-// CONFIGURAÇÃO DE PLANOS DEFAULT (fallback offline)
+// 0. PLANOS DEFAULT — fallback visual quando API offline ou lista vazia
+//    Usado como cache inicial; substituído por dados reais em carregarPlanos()
 // ============================================================
 const PLANOS_DEFAULT = [
     {
@@ -36,8 +81,10 @@ const PLANOS_DEFAULT = [
     }
 ];
 
-// MOCK DATA para testes locais / offline quando a API não estiver conectada
-// APENAS em desenvolvimento local — NUNCA em produção
+// Mock de clientes para desenvolvimento local/offline.
+// IMPORTANTE: só é populado quando IS_LOCAL === true (veja acima).
+// Em produção (Vercel) este array é [] -> não expõe PII fictícia no bundle.
+// Ativado apenas em carregarClientes() quando fetch falha E IS_LOCAL é true.
 const CLIENTES_DEMO = IS_LOCAL ? [
     {
         id: 1,
@@ -94,7 +141,9 @@ let planosCache = [...PLANOS_DEFAULT];
 let clienteParaDeletarId = null;
 let modoDemo = false;
 
-// Mapa de cores para badges e estilos visuais dos planos
+// Mapa de tema por cor de plano — usado em badges, métricas e cards de seleção.
+// Cada entrada define: bg, text, border, dot, activeBorder, activeBg (Tailwind classes)
+// Cores disponíveis: indigo, cyan, emerald, amber, rose, purple, slate, orange
 const MAPA_CORES_PLANO = {
     indigo: {
         bg: 'bg-indigo-50 dark:bg-indigo-950/40',
@@ -163,7 +212,11 @@ const MAPA_CORES_PLANO = {
 };
 
 // ============================================================
-// AUTENTICAÇÃO E SESSÃO
+// AUTENTICAÇÃO E SESSÃO — JWT via Supabase Auth
+// - obterUserId(): lê df_user_id do localStorage (para métricas/debug)
+// - obterAuthHeaders(): exige df_token válido, lança erro se ausente (segurança)
+// - fetchAuth(): wrapper que injeta headers, trata 401 -> limpa sessão + redirect
+// - salvarSessao()/encerrarSessao(): ciclo de vida do token
 // ============================================================
 function obterUserId() {
     return localStorage.getItem('df_user_id') || '';
@@ -180,7 +233,9 @@ function obterAuthHeaders() {
     };
 }
 
-// Wrapper para fetch autenticado que trata erro 401/expiração de token
+// Wrapper autenticado: injeta Authorization Bearer, trata expiração/invalidade
+// Se 401, limpa localStorage e redireciona para /?login=true (re-autenticar)
+// Também captura throw de obterAuthHeaders() quando token ausente
 async function fetchAuth(url, options = {}) {
     try {
         const headers = obterAuthHeaders();
@@ -223,7 +278,11 @@ function recarrregarParaLogin() {
 }
 
 // ============================================================
-// INICIALIZAÇÃO
+// INICIALIZAÇÃO — bootstrap do dashboard
+// - configurarTema(): aplica dark/light do localStorage ou prefers-color-scheme
+// - inicializarApp(): carrega planos + clientes (ordem importa: planos primeiro)
+// - verificarStatusAPI(): badge Conectado/Demo/Desconectado + polling 15s
+// - ESC fecha todos os modais abertos
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     configurarTema();
@@ -252,8 +311,9 @@ async function inicializarApp() {
 }
 
 // ============================================================
-// 1. TEMA DARK / LIGHT
-// ============================================================
+// 1. TEMA DARK / LIGHT — persiste em localStorage.theme
+//    Toggle manual em #theme-toggle; ícone moon/sun via Tailwind dark:
+/// ============================================================
 function configurarTema() {
     const prefereDark = localStorage.getItem('theme') === 'dark' ||
         (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -266,7 +326,9 @@ function toggleTemaManual() {
 }
 
 // ============================================================
-// 2. STATUS DA API
+// 2. STATUS DA API — health check + detecção de modoDemo
+//    Tenta GET /health; se falhar tenta GET /clientes (auth); se exceção -> modoDemo
+//    Atualiza badge/dot/text com cores emerald/amber/rose
 // ============================================================
 async function verificarStatusAPI() {
     const badgeEl = document.getElementById('api-status-badge');
@@ -313,7 +375,9 @@ async function verificarStatusAPI() {
 }
 
 // ============================================================
-// 3. CARREGAR E GERENCIAR PLANOS (API + CACHE)
+// 3. PLANOS — carregar do backend e popular cache + UI
+//    GET /planos via fetchAuth; fallback para PLANOS_DEFAULT se vazio/erro
+//    Após carregar: inicializa filtro <select> e cards de seleção nos modais
 // ============================================================
 async function carregarPlanos() {
     try {
@@ -356,7 +420,9 @@ function inicializarFiltroPlanos() {
 }
 
 // ============================================================
-// 4. CARREGAR CLIENTES
+// 4. CLIENTES — carregar do backend, fallback demo local apenas se IS_LOCAL
+//    GET /clientes via fetchAuth; em erro: modoDemo=true, usa CLIENTES_DEMO só se IS_LOCAL
+//    Atualiza métricas e re-renderiza tabela/cards
 // ============================================================
 async function carregarClientes() {
     mostrarLoading(true);
@@ -388,7 +454,9 @@ async function carregarClientes() {
 }
 
 // ============================================================
-// 5. MÉTRICAS DADOS
+// 5. MÉTRICAS — calcula totais e renderiza cards (total, ativos, inativos, por plano)
+//    Usa clientesCache + planosCache; cada plano ganha badge com MAPA_CORES_PLANO
+//    Sem plano também é contabilizado em badge "Livre"
 // ============================================================
 function atualizarMetricas(clientes) {
     const total    = clientes.length;
@@ -446,7 +514,10 @@ function atualizarMetricas(clientes) {
 }
 
 // ============================================================
-// 6. FILTRAGEM E RENDERIZAÇÃO DA TABELA
+// 6. FILTRAGEM E RENDERIZAÇÃO — busca textual + filtros de plano/status
+//    - filtrarTabela(): filtra clientesCache por termo, plano e status -> renderizarClientes()
+//    - renderizarClientes(): gera <tr> desktop e .client-card mobile; usa escaparHTML em tudo
+//    Empty state quando 0 resultados; re-cria ícones Lucide ao final
 // ============================================================
 function filtrarTabela() {
     const termo        = document.getElementById('search-input').value.toLowerCase().trim();
@@ -578,7 +649,11 @@ function renderizarClientes(clientes) {
 }
 
 // ============================================================
-// BADGES E FORMATADORES
+// BADGES E FORMATADORES — helpers visuais puros (sem side effects)
+// - getPlanoBadgeHTML(): badge colorido por plano (via MAPA_CORES_PLANO)
+// - getStatusBadgeHTML(): botão Ativo/Inativo que faz toggle ao clicar
+// - avatarInitials()/avatarGradient(): iniciais e gradiente determinístico por nome
+// - formatarData(): YYYY-MM-DD -> DD/MM/YYYY
 // ============================================================
 function getPlanoBadgeHTML(planoId) {
     if (!planoId) {
@@ -636,7 +711,8 @@ function formatarData(rawDate) {
 }
 
 // ============================================================
-// 7. TOGGLE DE SEÇÕES COLAPSÁVEIS
+// 7. SEÇÕES COLAPSÁVEIS — Contato, Dados Pessoais, Endereço nos modais
+//    toggleSection(key): mostra/esconde #key-section e rotaciona chevron
 // ============================================================
 function toggleSection(key) {
     const secao   = document.getElementById(`${key}-section`);
@@ -655,7 +731,8 @@ function toggleContatoSection(ctx) {
 }
 
 // ============================================================
-// 8. BUSCA AUTOMÁTICA DE CEP (ViaCEP)
+// 8. VIA CEP — busca endereço por CEP com sanitização anti-XSS
+//    Sanitiza resposta (remove < > " ' &), valida campos e preenche logradouro/bairro/cidade/uf
 // ============================================================
 async function buscarCEP(cep, ctx) {
     const cepLimpo = cep.replace(/\D/g, '');
@@ -703,7 +780,9 @@ async function buscarCEP(cep, ctx) {
 }
 
 // ============================================================
-// 9. MODAL NOVO CLIENTE
+// 9. MODAL NOVO CLIENTE — criar cliente (POST /clientes)
+//    abrirModalCriar(): reset form, ativa status, limpa plano, abre modal
+//    salvarNovoCliente(): valida, monta payload, tenta API via fetchAuth, fallback modoDemo
 // ============================================================
 function abrirModalCriar() {
     const form = document.getElementById('form-criar');
@@ -792,7 +871,8 @@ async function salvarNovoCliente(event) {
 }
 
 // ============================================================
-// 10. MODAL EDITAR CLIENTE
+// 10. MODAL EDITAR CLIENTE — PATCH /clientes/{id}
+//     abrirModalEditar(): preenche form com dados do cache; salvarEdicaoCliente(): valida + PATCH
 // ============================================================
 function abrirModalEditar(id) {
     const cliente = clientesCache.find(c => String(c.id) === String(id));
@@ -909,7 +989,7 @@ async function salvarEdicaoCliente(event) {
 }
 
 // ============================================================
-// 11. TOGGLE RÁPIDO DE STATUS
+// 11. TOGGLE RÁPIDO DE STATUS — alterna ativo/inativo direto na tabela (PATCH {ativo})
 // ============================================================
 async function toggleStatusCliente(id, novoStatus) {
     try {
@@ -940,7 +1020,7 @@ async function toggleStatusCliente(id, novoStatus) {
 }
 
 // ============================================================
-// 12. MODAL DETALHES DO CLIENTE
+// 12. MODAL DETALHES — somente leitura, renderiza todos os campos do cliente em seções
 // ============================================================
 function abrirModalDetalhes(id) {
     const cliente = clientesCache.find(c => String(c.id) === String(id));
@@ -1025,7 +1105,8 @@ function fecharModalDetalhes() {
 }
 
 // ============================================================
-// 13. MODAL GERENCIAMENTO DE PLANOS
+// 13. GERENCIAMENTO DE PLANOS — CRUD de planos (POST/PATCH/DELETE /planos)
+//     Lista, color picker, edição inline, fallback modoDemo
 // ============================================================
 function abrirModalPlanos() {
     renderizarListaPlanosGerenciamento();
@@ -1185,7 +1266,7 @@ async function deletarPlanoCustom(id) {
 }
 
 // ============================================================
-// 14. EXPORTAÇÃO PARA CSV
+// 14. EXPORTAÇÃO CSV — gera CSV com BOM (\uFEFF), escapa aspas, download via Blob URL
 // ============================================================
 function exportarCSV() {
     if (clientesCache.length === 0) {
@@ -1238,7 +1319,9 @@ function exportarCSV() {
 }
 
 // ============================================================
-// 15. RENDERIZAÇÃO DOS CARDS DE SELEÇÃO DE PLANO
+// 15. CARDS DE SELEÇÃO DE PLANO — usados nos modais Criar/Editar
+//     renderizarCardsPlanoModal(): cria botões por plano; selecionarPlanoCard(): marca ativo
+//     Estado salvo em input hidden #ctx-plano-value; toggle de seção com setPlanoToggle()
 // ============================================================
 function renderizarCardsPlanoModal(ctx) {
     const container = document.getElementById(`${ctx}-plano-cards`);
@@ -1352,7 +1435,8 @@ function togglePlanoSection(ctx) {
 }
 
 // ============================================================
-// 16. VALIDAÇÕES DE FORMULÁRIO
+// 16. VALIDAÇÕES — nome, email (regex), CPF (módulo 11), telefone
+//     Exibe erro inline com shake + borda rose; scrolla para primeiro erro
 // ============================================================
 function validarFormulario(ctx) {
     let valido = true;
@@ -1471,7 +1555,7 @@ function limparErrosForm(formId) {
 }
 
 // ============================================================
-// 17. MÁSCARAS DE ENTRADA
+// 17. MÁSCARAS — formatação ao digitar: telefone (XX) XXXXX-XXXX, CPF, RG, CEP
 // ============================================================
 function mascaraTelefone(input) {
     let v = input.value.replace(/\D/g, '').slice(0, 11);
@@ -1508,7 +1592,8 @@ function mascaraCEP(input) {
 }
 
 // ============================================================
-// 18. UTILITÁRIOS DE MODAL
+// 18. MODAIS — utilitários genéricos: abrirModal/fecharModal com animação scale
+//     + helpers específicos: deletar, loading, escaparHTML
 // ============================================================
 function abrirModal(modalId) {
     const modal = document.getElementById(modalId);
@@ -1628,7 +1713,9 @@ function escaparHTML(str) {
 }
 
 // ============================================================
-// 19. SISTEMA DE TOAST NOTIFICATIONS
+// 19. TOASTS — notificações auto-dismiss (4.2s) com barra de progresso e tipos
+//     tipos: sucesso (emerald), erro (rose), info (indigo)
+//     escaparHTML na mensagem para prevenir XSS via toast
 // ============================================================
 function exibirToast(mensagem, tipo = 'sucesso') {
     const container = document.getElementById('toast-container');

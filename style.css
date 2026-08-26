@@ -1,7 +1,26 @@
-/* ============================================================
-   DaviFlow — Design System & Custom Utilities
-   Landing Page + Dashboard Admin
-   ============================================================ */
+/**
+ * ===================================================================
+ * DaviFlow — Design System (style.css)
+ * ===================================================================
+ * Folha única para Landing Page (index.html) + Dashboard (dashboard.html).
+ *
+ * Estrutura:
+ *  1. Base (scroll, tap-highlight, iOS 16px anti-zoom, modal mobile)
+ *  2. Tokens CSS vars (:root light / .dark) — cores, sombras, radius
+ *  3. Scrollbars customizadas
+ *  4. Dashboard: form, botões, metric cards, toggles, color dots, modais, cards
+ *  5. Landing: animações fadeInUp, reveal, feature-card hover, navbar
+ *
+ * Tokens principais:
+ *  --dash-accent (#4f46e5 indigo-600 light / #6366f1 dark)
+ *  --dash-surface / --dash-border / --dash-text-*
+ *  --dash-shadow-sm/md e --dash-radius (0.75rem)
+ *
+ * Notas:
+ * - Evita @apply para manter compatibilidade com CDN Tailwind
+ * - Animações usam cubic-bezier(0.16,1,0.3,1) (easeOutExpo-like)
+ * - Mobile: 16px em inputs evita zoom iOS; modais viram bottom-sheet
+ */
 
 /* --- Smooth Scroll & Touch Optimizations --- */
 html {
