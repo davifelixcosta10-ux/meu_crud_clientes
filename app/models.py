@@ -4,6 +4,50 @@ from pydantic import BaseModel, EmailStr, validator
 from typing import Optional, Union
 
 
+def validar_cpf(cpf: str) -> bool:
+    """Valida CPF usando algoritmo módulo 11 (dígitos verificadores)."""
+    if not cpf:
+        return True  # None/empty é opcional
+    
+    # Remove caracteres não numéricos
+    digits = re.sub(r'\D', '', cpf)
+    
+    # Deve ter 11 dígitos
+    if len(digits) != 11:
+        return False
+    
+    # Bloqueia sequências de dígitos iguais (ex: 111.111.111-11)
+    if len(set(digits)) == 1:
+        return False
+    
+    # Calcula primeiro dígito verificador
+    soma = sum(int(digits[i]) * (10 - i) for i in range(9))
+    resto = (soma * 10) % 11
+    if resto == 10:
+        resto = 0
+    if resto != int(digits[9]):
+        return False
+    
+    # Calcula segundo dígito verificador
+    soma = sum(int(digits[i]) * (11 - i) for i in range(10))
+    resto = (soma * 10) % 11
+    if resto == 10:
+        resto = 0
+    if resto != int(digits[10]):
+        return False
+    
+    return True
+
+
+def cpf_validator(v):
+    """Validator Pydantic para CPF."""
+    if v is None:
+        return v
+    if not validar_cpf(v):
+        raise ValueError("CPF inválido. Verifique os dígitos verificadores.")
+    return v
+
+
 # ============================================================
 # MODELOS DE AUTENTICAÇÃO
 # ============================================================
@@ -101,16 +145,7 @@ class Cliente(BaseModel):
 
     @validator("cpf")
     def cpf_must_have_valid_format(cls, v):
-        if v is None:
-            return v
-        # Remove non-digits
-        digits = re.sub(r'\D', '', v)
-        if len(digits) != 11:
-            raise ValueError("CPF deve ter 11 dígitos (apenas números).")
-        # Check if all digits are the same (invalid)
-        if len(set(digits)) == 1:
-            raise ValueError("CPF inválido.")
-        return v
+        return cpf_validator(v)
 
     @validator("rg")
     def rg_must_have_valid_format(cls, v):
@@ -171,14 +206,7 @@ class ClienteCreate(BaseModel):
 
     @validator("cpf")
     def cpf_must_have_valid_format(cls, v):
-        if v is None:
-            return v
-        digits = re.sub(r'\D', '', v)
-        if len(digits) != 11:
-            raise ValueError("CPF deve ter 11 dígitos (apenas números).")
-        if len(set(digits)) == 1:
-            raise ValueError("CPF inválido.")
-        return v
+        return cpf_validator(v)
 
     @validator("rg")
     def rg_must_have_valid_format(cls, v):
@@ -240,14 +268,7 @@ class ClienteUpdate(BaseModel):
 
     @validator("cpf")
     def cpf_must_have_valid_format(cls, v):
-        if v is None:
-            return v
-        digits = re.sub(r'\D', '', v)
-        if len(digits) != 11:
-            raise ValueError("CPF deve ter 11 dígitos (apenas números).")
-        if len(set(digits)) == 1:
-            raise ValueError("CPF inválido.")
-        return v
+        return cpf_validator(v)
 
     @validator("rg")
     def rg_must_have_valid_format(cls, v):

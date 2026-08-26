@@ -2,6 +2,13 @@
 // DaviFlow — App Principal (Dashboard Administrativo v1.4)
 // ============================================================
 
+// Detecta automaticamente se está rodando localmente ou na Vercel
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+
+const API_BASE_URL = IS_LOCAL
+    ? 'http://127.0.0.1:8000/api'
+    : `${window.location.origin}/api`;
+
 // ============================================================
 // CONFIGURAÇÃO DE PLANOS DEFAULT (fallback offline)
 // ============================================================
@@ -30,7 +37,8 @@ const PLANOS_DEFAULT = [
 ];
 
 // MOCK DATA para testes locais / offline quando a API não estiver conectada
-const CLIENTES_DEMO = [
+// APENAS em desenvolvimento local — NUNCA em produção
+const CLIENTES_DEMO = IS_LOCAL ? [
     {
         id: 1,
         nome: "Ana Beatriz Silva",
@@ -79,12 +87,7 @@ const CLIENTES_DEMO = [
         cpf: "456.789.123-22",
         data_cadastro: "2026-08-10"
     }
-];
-
-// Detecta automaticamente se está rodando localmente ou na Vercel
-const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
-    ? 'http://127.0.0.1:8000/api'
-    : `${window.location.origin}/api`;
+] : [];
 
 let clientesCache = [];
 let planosCache = [...PLANOS_DEFAULT];
@@ -167,11 +170,41 @@ function obterUserId() {
 }
 
 function obterAuthHeaders() {
-    const token = localStorage.getItem('df_token') || obterUserId();
+    const token = localStorage.getItem('df_token');
+    if (!token) {
+        throw new Error('Token de autenticação não encontrado. Faça login novamente.');
+    }
     return {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     };
+}
+
+// Wrapper para fetch autenticado que trata erro 401/expiração de token
+async function fetchAuth(url, options = {}) {
+    try {
+        const headers = obterAuthHeaders();
+        const response = await fetch(url, {
+            ...options,
+            headers: { ...headers, ...options.headers }
+        });
+
+        // Se token expirado ou inválido (401), limpa sessão e redireciona
+        if (response.status === 401) {
+            localStorage.removeItem('df_token');
+            localStorage.removeItem('df_user_id');
+            window.location.href = '/?login=true';
+            return;
+        }
+
+        return response;
+    } catch (error) {
+        if (error.message.includes('Token de autenticação não encontrado')) {
+            window.location.href = '/?login=true';
+            return;
+        }
+        throw error;
+    }
 }
 
 function salvarSessao(userId, token) {
@@ -247,11 +280,8 @@ async function verificarStatusAPI() {
         if (res.ok) {
             isOnline = true;
         } else {
-            const res2 = await fetch(`${API_BASE_URL}/clientes`, {
-                method: 'GET',
-                headers: obterAuthHeaders()
-            });
-            isOnline = res2.ok || res2.status === 200 || res2.status === 401;
+            const res2 = await fetchAuth(`${API_BASE_URL}/clientes`, { method: 'GET' });
+            isOnline = res2 && (res2.ok || res2.status === 200 || res2.status === 401);
         }
     } catch (_) {
         wasException = true;
@@ -287,10 +317,8 @@ async function verificarStatusAPI() {
 // ============================================================
 async function carregarPlanos() {
     try {
-        const response = await fetch(`${API_BASE_URL}/planos`, {
-            method: 'GET',
-            headers: obterAuthHeaders()
-        });
+        const response = await fetchAuth(`${API_BASE_URL}/planos`, { method: 'GET' });
+        if (!response) return; // Redirect handled by fetchAuth
 
         if (response.ok) {
             const data = await response.json();
@@ -333,10 +361,8 @@ function inicializarFiltroPlanos() {
 async function carregarClientes() {
     mostrarLoading(true);
     try {
-        const response = await fetch(`${API_BASE_URL}/clientes`, {
-            method: 'GET',
-            headers: obterAuthHeaders()
-        });
+        const response = await fetchAuth(`${API_BASE_URL}/clientes`, { method: 'GET' });
+        if (!response) return; // Redirect handled by fetchAuth
 
         if (!response.ok) throw new Error(`Erro ${response.status}`);
         const data = await response.json();
@@ -347,9 +373,11 @@ async function carregarClientes() {
     } catch (error) {
         console.warn('API/Banco offline. Ativando modo de demonstração local:', error);
         modoDemo = true;
-        if (clientesCache.length === 0) {
+        if (clientesCache.length === 0 && IS_LOCAL) {
             clientesCache = [...CLIENTES_DEMO];
             exibirToast('Modo Local (Demo) ativado para testes interativos.', 'info');
+        } else if (clientesCache.length === 0) {
+            exibirToast('Sem conexão com o servidor. Verifique sua internet.', 'erro');
         }
         atualizarMetricas(clientesCache);
         filtrarTabela();
@@ -645,10 +673,26 @@ async function buscarCEP(cep, ctx) {
             return;
         }
 
-        document.getElementById(`${ctx}-logradouro`).value = data.logradouro || '';
-        document.getElementById(`${ctx}-bairro`).value     = data.bairro || '';
-        document.getElementById(`${ctx}-cidade`).value     = data.localidade || '';
-        document.getElementById(`${ctx}-estado`).value     = data.uf || '';
+        // Validação e sanitização da resposta ViaCEP (prevenção supply chain)
+        const sanitize = (val) => {
+            if (!val || typeof val !== 'string') return '';
+            // Remove caracteres perigosos, mantém apenas alfanuméricos, espaços e pontuação básica
+            return val.replace(/[<>\"'&]/g, '').substring(0, 200);
+        };
+
+        // Valida campos esperados
+        const expectedFields = ['logradouro', 'bairro', 'localidade', 'uf'];
+        const hasValidData = expectedFields.some(f => data[f] && typeof data[f] === 'string');
+        
+        if (!hasValidData) {
+            exibirToast('Resposta do CEP inválida.', 'erro');
+            return;
+        }
+
+        document.getElementById(`${ctx}-logradouro`).value = sanitize(data.logradouro);
+        document.getElementById(`${ctx}-bairro`).value     = sanitize(data.bairro);
+        document.getElementById(`${ctx}-cidade`).value     = sanitize(data.localidade);
+        document.getElementById(`${ctx}-estado`).value     = sanitize(data.uf);
 
         exibirToast('Endereço preenchido automaticamente via CEP!', 'sucesso');
     } catch (e) {
@@ -714,11 +758,11 @@ async function salvarNovoCliente(event) {
 
     try {
         if (!modoDemo) {
-            const response = await fetch(`${API_BASE_URL}/clientes`, {
+            const response = await fetchAuth(`${API_BASE_URL}/clientes`, {
                 method: 'POST',
-                headers: obterAuthHeaders(),
                 body: JSON.stringify(novoCliente),
             });
+            if (!response) return; // Redirect handled by fetchAuth
 
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
@@ -830,11 +874,11 @@ async function salvarEdicaoCliente(event) {
 
     try {
         if (!modoDemo) {
-            const response = await fetch(`${API_BASE_URL}/clientes/${id}`, {
+            const response = await fetchAuth(`${API_BASE_URL}/clientes/${id}`, {
                 method: 'PATCH',
-                headers: obterAuthHeaders(),
                 body: JSON.stringify(clienteAtualizado),
             });
+            if (!response) return; // Redirect handled by fetchAuth
 
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
@@ -870,11 +914,11 @@ async function salvarEdicaoCliente(event) {
 async function toggleStatusCliente(id, novoStatus) {
     try {
         if (!modoDemo) {
-            const response = await fetch(`${API_BASE_URL}/clientes/${id}`, {
+            const response = await fetchAuth(`${API_BASE_URL}/clientes/${id}`, {
                 method: 'PATCH',
-                headers: obterAuthHeaders(),
                 body: JSON.stringify({ ativo: novoStatus })
             });
+            if (!response) return; // Redirect handled by fetchAuth
 
             if (!response.ok) throw new Error(`Erro ao alterar status`);
 
@@ -1079,11 +1123,11 @@ async function salvarPlanoCustom(event) {
             const url    = id ? `${API_BASE_URL}/planos/${id}` : `${API_BASE_URL}/planos`;
             const method = id ? 'PATCH' : 'POST';
 
-            const response = await fetch(url, {
+            const response = await fetchAuth(url, {
                 method,
-                headers: obterAuthHeaders(),
                 body: JSON.stringify(payload)
             });
+            if (!response) return; // Redirect handled by fetchAuth
 
             if (!response.ok) throw new Error(`Erro ao salvar plano`);
 
@@ -1117,10 +1161,10 @@ async function deletarPlanoCustom(id) {
 
     try {
         if (!modoDemo) {
-            const response = await fetch(`${API_BASE_URL}/planos/${id}`, {
+            const response = await fetchAuth(`${API_BASE_URL}/planos/${id}`, {
                 method: 'DELETE',
-                headers: obterAuthHeaders()
             });
+            if (!response) return; // Redirect handled by fetchAuth
 
             if (!response.ok) throw new Error(`Erro ao excluir plano`);
 
@@ -1518,10 +1562,10 @@ async function confirmarExclusao() {
 
     try {
         if (!modoDemo) {
-            const response = await fetch(`${API_BASE_URL}/clientes/${id}`, {
+            const response = await fetchAuth(`${API_BASE_URL}/clientes/${id}`, {
                 method: 'DELETE',
-                headers: obterAuthHeaders()
             });
+            if (!response) return; // Redirect handled by fetchAuth
 
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
