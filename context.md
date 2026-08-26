@@ -75,8 +75,11 @@ app/
 - **Demo Mode**: `IS_LOCAL` controla `CLIENTES_DEMO`; produção nunca expõe mock PII
 
 ### Styling (style.css)
-- **Dashboard**: Form, buttons, metric cards, toggles, modais
-- **Landing**: Animações e efeitos visuais
+- **Design Tokens**: CSS vars `--dash-*` (light/dark), accent indigo-600 (#4f46e5)
+- **Dashboard**: Form, buttons (primary/ghost/danger), metric cards, toggles, color dots, modais, client cards
+- **Landing**: `fadeInUp` + stagger, `.reveal` via IntersectionObserver, `feature-card` hover, `navbar-scrolled` blur
+- **Removido**: `.gradient-text`, `.btn-glow`, blob, shimmer, `.pricing-highlight`, `.step-line`, pulse-slow
+- **Documentado**: Header explicando estrutura, tokens, animações cubic-bezier(0.16,1,0.3,1)
 
 ### JavaScript (app.js)
 - **Cabeçalho documentado**: Arquitetura SPA, 19 seções, segurança, performance
@@ -92,11 +95,41 @@ app/
 - **Columns - clientes**: user_id, nome, email, plano, ativo, data_cadastro, telefone, cpf, rg, data_nascimento, genero, empresa, cargo, observacoes, cep, logradouro, numero, complemento, bairro, cidade, estado
 - **Columns - planos**: user_id, nome, cor, descricao, valor
 
-## Alterações Recentes (2026-08-26)
-- Seção `#pricing` removida + links "Preços" no navbar/footer
-- Páginas legais novas: `privacidade.html` (LGPD) e `termos.html`
-- Favicon adicionado em todas as páginas
-- Correção de animação scroll reveal
+## Recent Refactoring — Redesign Profissional (2026-08-26)
+**Goal**: Remover vibecoding, atingir visual corporate sóbrio + correções de segurança + legal + docs
+
+### Landing Page (index.html)
+- Removida seção `#pricing` completa + links "Preços" no navbar (desktop/mobile) e footer
+- Hero redesenhado: headline "Gestão de clientes sem planilhas.", copy enxuta, CTAs indigo-600, mockup com browser chrome, social proof com sistema online / +500 / 99.9%
+- Features: 4 → 3 cards (Gestão Centralizada, Métricas em Tempo Real, Segurança Corporativa), sem "Saiba mais", ícones indigo-400
+- How It Works: removido `.step-line`, badges indigo-600 sólidos, copy simplificada, CTA indigo
+- About: novo layout 3 pilares (Segurança por Design, Performance Real, Feito para Escalar) + borda indigo
+- CTA Final: borda indigo, botão hover indigo-500
+- Modais login/register: bordas indigo 15%, focus indigo, checkbox/links indigo, typo `fg-` → `bg-` corrigido
+- Favicon SVG inline (indigo + check) em index/dashboard/404/privacidade/termos
+- Tailwind config limpo: removido cyan/emerald e animation pulse-slow
+- Animação: removido `forced visible` no DOMContentLoaded que quebrava scroll reveal; agora reveal funciona via IntersectionObserver
+- Comentário header HTML adicionado
+
+### Dashboard (dashboard.html)
+- Header logo: `from-cyan-to-emerald` → `bg-indigo-600` sólido
+- Metric cards: Total blue → indigo, Por Plano purple → indigo
+- Toolbar: search focus ring cyan → indigo, ícones planos/export emerald → slate
+- FAB mobile: gradient cyan-emerald → indigo-600
+- Modais: headers padronizados indigo-600/15 (criar/editar), já indigo em planos/logout
+- Color picker: 8 cores mantidas (indigo/cyan/emerald/amber/rose/purple/slate/orange)
+- Footer expandido com links Política/Termos
+- Comentário header HTML adicionado
+
+### Páginas Legais (novas)
+- `privacidade.html`: 11 seções LGPD (coleta, uso, armazenamento RLS/JWT/bcrypt/TLS, compartilhamento, direitos Art. 18, retenção, cookies, subprocessadores, transferência internacional, alterações, contato DPO)
+- `termos.html`: 15 seções (aceitação, descrição, elegibilidade, cobrança gratuito → futuro pago com aviso 30d, uso aceitável, dados, IP, disponibilidade, suspensão, isenção, limitação, indenização, foro SP, disposições, contato)
+- Links atualizados em index footer, 404 footer, dashboard footer, modal register checkbox
+
+### Style (style.css)
+- Removido: `.pricing-highlight`, `.step-line::after`, pulse-slow
+- Documentado header com estrutura e tokens
+- Mantido: fadeInUp, stagger, reveal, feature-card hover, navbar-scrolled
 
 ### Segurança (auditoria `seguranca-test` + correções)
 - **CRÍTICO 1**: `extrair_user_id` com base64 sem validar assinatura → substituído por `supabase.auth.get_user(token)` async (valida assinatura JWKS, expiração, revogação); endpoints viraram `async`
