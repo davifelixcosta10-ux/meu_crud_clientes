@@ -169,6 +169,25 @@ app/
 - **Security headers**: Bearer JWT obrigatório, CORS restrito, rate limit auth
 - **Security tests**: CPF módulo 11, imports, rotas — todos passando (2026-08-26)
 
+## Roadmap — Próximas Funcionalidades (Aprovado 2026-08-26)
+> Baseado em benchmark de Agendor, RD Station, Pipedrive, HubSpot, Salesforce. Questionário 8/8 aprovado como "completo".
+> Detalhe completo em `plan.md`. Fase 1 e 2 totalmente aprovadas; Fase 3 é backlog.
+
+| Fase | Feature | Tabelas / Colunas Novas | Valor para freela |
+|---|---|---|---|
+| 1A | **Kanban completo** (etapas configuráveis, drag & drop) | `etapas`, `clientes.etapa_id` | Ver fluxo sem planilha |
+| 1B | **Atividades + lembretes** (timeline, badge atrasado) | `atividades` | Nunca perder follow-up |
+| 1C | **Tags + filtros salvos** | `tags`, `cliente_tags`, `filtros_salvos` | Segmentar VIP/região |
+| 1D | **Cobrança leve** (vencimento, status, receita prevista) | `clientes.valor_plano, vencimento_dia, status_pagamento` | Controlar atrasados |
+| 1E | **Import CSV + Excel** (preview, mapeamento) | `POST /api/clientes/import` | Trazer planilha em 1 clique |
+| 2A | **Relatórios completos** (conversão, churn, LTV, receita + gráficos) | endpoints agregação | Decidir com dados |
+| 2B | **Templates WhatsApp** (wa.me + mensagens por plano/etapa) | `templates_whatsapp` | Atender em 1 toque |
+| 2C | **Automações** (inativo 30d → tarefa, vence 3d → alerta) | `automacoes` + cron | Rotina no piloto automático |
+| 3 | Escala (multi-usuário, Calendar, Zapier, anexos, API, PWA, Stripe) | backlog | Crescer sem trocar de sistema |
+
+**Site**: Landing ganha dobras Pipeline Kanban + Rotina (timeline/WhatsApp); Dashboard ganha toggle Tabela|Kanban (SortableJS), timeline no drawer, barra de tags, métricas Follow-ups/Receita/Churn, botão Importar, gráficos Chart.js.
+**Exclusões**: Nenhuma das 8 features foi rejeitada; PIX/boleto real e multi-usuário ficam para Fase 3.
+
 ## Quick Start
 1. Set env vars: `SUPABASE_URL`, `SUPABASE_KEY` (e opcional `ALLOWED_ORIGINS`)
 2. Install: `pip install -r requirements.txt`
@@ -176,3 +195,4 @@ app/
 4. Open `index.html` — frontend conecta em `/api` (detecta local vs Vercel)
 5. Full dashboard em `/dashboard.html` (requer auth; sem token redirect para `/?login=true`)
 6. Páginas legais: `/privacidade.html`, `/termos.html`
+7. Roadmap detalhado: `plan.md`
