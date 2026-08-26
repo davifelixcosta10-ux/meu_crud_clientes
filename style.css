@@ -372,19 +372,6 @@ html {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
-.pricing-highlight {
-    box-shadow: 0 0 0 1px rgba(6,182,212,0.5), 0 20px 60px rgba(6,182,212,0.1);
-}
-
-.step-line::after {
-    content: ''; display: block; position: absolute;
-    top: 22px; left: calc(50% + 28px);
-    width: calc(100% - 56px); height: 2px;
-    background: #475569;
-    border-radius: 2px;
-}
-@media (max-width: 767px) { .step-line::after { display: none; } }
-
 .navbar-scrolled {
     background: rgba(15, 23, 42, 0.93) !important;
     backdrop-filter: blur(16px);
