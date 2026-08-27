@@ -1295,6 +1295,7 @@ async function carregarClientes() {
         renderizarKanban();
     } catch (error) {
         console.warn('API/Banco offline. Ativando modo de demonstração local:', error);
+        console.error('Detalhe do erro:', error.message, error.stack);
         const isAuthError = String(error.message).includes('401') || String(error.message).includes('Token');
         if (isAuthError && !IS_LOCAL) {
             // Sessão expirada ou sem login em produção: redireciona silenciosamente, sem toast de "sem conexão"
@@ -1313,7 +1314,7 @@ async function carregarClientes() {
             if (String(error.message).includes('Failed to fetch') || error.name === 'TypeError') {
                 exibirToast('Sem conexão com o servidor. Verifique sua internet.', 'erro');
             } else {
-                exibirToast('Erro ao carregar clientes. Tente recarregar.', 'erro');
+                exibirToast(`Erro ao carregar clientes: ${error.message} (tente recarregar)`, 'erro');
             }
         }
         atualizarMetricas(clientesCache);
