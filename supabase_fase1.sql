@@ -40,7 +40,7 @@ create index if not exists idx_clientes_vencimento on clientes(user_id, vencimen
 create table if not exists atividades (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  cliente_id uuid not null references clientes(id) on delete cascade,
+  cliente_id bigint not null references clientes(id) on delete cascade,
   tipo text not null check (tipo in ('ligacao','reuniao','nota','whatsapp','email','tarefa')),
   data date not null,
   concluida boolean not null default false,
@@ -72,7 +72,7 @@ create policy "tags_user_isolation" on tags
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create table if not exists cliente_tags (
-  cliente_id uuid not null references clientes(id) on delete cascade,
+  cliente_id bigint not null references clientes(id) on delete cascade,
   tag_id uuid not null references tags(id) on delete cascade,
   created_at timestamptz not null default now(),
   primary key (cliente_id, tag_id)
