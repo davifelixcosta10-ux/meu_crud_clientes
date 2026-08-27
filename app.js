@@ -1295,6 +1295,14 @@ async function carregarClientes() {
         renderizarKanban();
     } catch (error) {
         console.warn('API/Banco offline. Ativando modo de demonstração local:', error);
+        const isAuthError = String(error.message).includes('401') || String(error.message).includes('Token');
+        if (isAuthError && !IS_LOCAL) {
+            // Sessão expirada ou sem login em produção: redireciona silenciosamente, sem toast de "sem conexão"
+            localStorage.removeItem('df_token');
+            localStorage.removeItem('df_user_id');
+            window.location.href = '/?login=true';
+            return;
+        }
         modoDemo = true;
         if (clientesCache.length === 0 && IS_LOCAL) {
             clientesCache = [...CLIENTES_DEMO];
@@ -1302,7 +1310,11 @@ async function carregarClientes() {
             clientesCache.forEach(c => { c._tags = c._tags || []; c.etapa_id = c.etapa_id || null; });
             exibirToast('Modo Local (Demo) ativado para testes interativos.', 'info');
         } else if (clientesCache.length === 0) {
-            exibirToast('Sem conexão com o servidor. Verifique sua internet.', 'erro');
+            if (String(error.message).includes('Failed to fetch') || error.name === 'TypeError') {
+                exibirToast('Sem conexão com o servidor. Verifique sua internet.', 'erro');
+            } else {
+                exibirToast('Erro ao carregar clientes. Tente recarregar.', 'erro');
+            }
         }
         atualizarMetricas(clientesCache);
         filtrarTabela();
