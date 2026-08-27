@@ -1526,6 +1526,23 @@
     </div>
 
     <!-- ====================================================
+         MODAL: CONFIRMAÇÃO GENÉRICA (substitui confirm() do navegador)
+         ==================================================== -->
+    <div id="modal-confirm" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box scale-95 opacity-0 text-center">
+            <div id="confirm-icon" class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="alert-triangle" class="w-6 h-6 text-amber-600 dark:text-amber-400"></i>
+            </div>
+            <h3 id="confirm-title" class="text-base font-bold text-slate-900 dark:text-white mb-2">Confirmar ação</h3>
+            <p id="confirm-message" class="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">Tem certeza que deseja continuar?</p>
+            <div class="flex gap-3">
+                <button type="button" id="btn-confirm-cancel" onclick="fecharModalConfirm()" class="flex-1 btn-ghost">Cancelar</button>
+                <button type="button" id="btn-confirm-ok" class="flex-1 btn-danger">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
          MODAL: SESSÃO ENCERRADA (LOGOUT)
          ==================================================== -->
     <div id="modal-logout" class="fixed inset-0 z-[150] hidden flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">

@@ -710,20 +710,36 @@ async function salvarEtapa(event) {
     inicializarFiltroEtapas(); renderizarEtapasSelects(); renderizarKanban(); renderizarListaEtapasGerenciamento(); resetarFormEtapa();
     exibirToast('Etapa salva! (Local)', 'sucesso');
 }
+function confirmarAcao(titulo, mensagem, aoConfirmar) {
+    document.getElementById('confirm-title').textContent = titulo;
+    document.getElementById('confirm-message').textContent = mensagem;
+    const btnOk = document.getElementById('btn-confirm-ok');
+    const novoBtnOk = btnOk.cloneNode(true);
+    btnOk.parentNode.replaceChild(novoBtnOk, btnOk);
+    novoBtnOk.addEventListener('click', () => {
+        fecharModalConfirm();
+        aoConfirmar();
+    });
+    if (window.lucide) lucide.createIcons();
+    abrirModal('modal-confirm');
+}
+function fecharModalConfirm() { fecharModal('modal-confirm'); }
+
 async function deletarEtapa(id) {
-    if (!confirm('Excluir esta etapa? Clientes ficarão sem etapa.')) return;
-    try {
-        if (!modoDemo) {
-            const resp = await fetchAuth(`${API_BASE_URL}/etapas/${id}`, { method: 'DELETE' });
-            if (!resp) return;
-            if (!resp.ok) throw new Error('Erro ao excluir');
-            exibirToast('Etapa removida!', 'sucesso');
-            await carregarEtapas();
-            return;
-        }
-    } catch(e) { console.warn(e); }
-    etapasCache = etapasCache.filter(x => String(x.id)!==String(id));
-    inicializarFiltroEtapas(); renderizarEtapasSelects(); renderizarKanban(); renderizarListaEtapasGerenciamento();
+    confirmarAcao('Excluir etapa?', 'Clientes nesta etapa ficarão sem etapa. Deseja continuar?', async () => {
+        try {
+            if (!modoDemo) {
+                const resp = await fetchAuth(`${API_BASE_URL}/etapas/${id}`, { method: 'DELETE' });
+                if (!resp) return;
+                if (!resp.ok) throw new Error('Erro ao excluir');
+                exibirToast('Etapa removida!', 'sucesso');
+                await carregarEtapas();
+                return;
+            }
+        } catch(e) { console.warn(e); }
+        etapasCache = etapasCache.filter(x => String(x.id)!==String(id));
+        inicializarFiltroEtapas(); renderizarEtapasSelects(); renderizarKanban(); renderizarListaEtapasGerenciamento();
+    });
 }
 async function carregarTags() {
     try {
@@ -836,19 +852,20 @@ async function salvarTag(event) {
     inicializarFiltroTags(); renderizarTagsSelects(); renderizarListaTagsGerenciamento(); resetarFormTag();
 }
 async function deletarTag(id) {
-    if (!confirm('Excluir esta tag?')) return;
-    try {
-        if (!modoDemo) {
-            const resp = await fetchAuth(`${API_BASE_URL}/tags/${id}`, { method: 'DELETE' });
-            if (!resp) return;
-            if (!resp.ok) throw new Error('Erro');
-            exibirToast('Tag removida!', 'sucesso');
-            await carregarTags();
-            return;
-        }
-    } catch(e) { console.warn(e); }
-    tagsCache = tagsCache.filter(x => String(x.id)!==String(id));
-    inicializarFiltroTags(); renderizarTagsSelects(); renderizarListaTagsGerenciamento();
+    confirmarAcao('Excluir tag?', 'Esta ação não pode ser desfeita. Deseja continuar?', async () => {
+        try {
+            if (!modoDemo) {
+                const resp = await fetchAuth(`${API_BASE_URL}/tags/${id}`, { method: 'DELETE' });
+                if (!resp) return;
+                if (!resp.ok) throw new Error('Erro');
+                exibirToast('Tag removida!', 'sucesso');
+                await carregarTags();
+                return;
+            }
+        } catch(e) { console.warn(e); }
+        tagsCache = tagsCache.filter(x => String(x.id)!==String(id));
+        inicializarFiltroTags(); renderizarTagsSelects(); renderizarListaTagsGerenciamento();
+    });
 }
 async function carregarFiltrosSalvos() {
     try {
@@ -922,18 +939,19 @@ async function aplicarFiltroSalvo(id) {
     exibirToast('Filtro aplicado: '+f.nome, 'sucesso');
 }
 async function deletarFiltroSalvo(id) {
-    if (!confirm('Excluir filtro?')) return;
-    try {
-        if (!modoDemo) {
-            const resp = await fetchAuth(`${API_BASE_URL}/filtros/${id}`, { method: 'DELETE' });
-            if (!resp) return;
-            if (!resp.ok) throw new Error('Erro');
-            await carregarFiltrosSalvos();
-            return;
-        }
-    } catch(e) { console.warn(e); }
-    filtrosCache = filtrosCache.filter(x => String(x.id)!==String(id));
-    renderizarFiltrosSalvos();
+    confirmarAcao('Excluir filtro?', 'O filtro será removido permanentemente.', async () => {
+        try {
+            if (!modoDemo) {
+                const resp = await fetchAuth(`${API_BASE_URL}/filtros/${id}`, { method: 'DELETE' });
+                if (!resp) return;
+                if (!resp.ok) throw new Error('Erro');
+                await carregarFiltrosSalvos();
+                return;
+            }
+        } catch(e) { console.warn(e); }
+        filtrosCache = filtrosCache.filter(x => String(x.id)!==String(id));
+        renderizarFiltrosSalvos();
+    });
 }
 
 // ============================================================
@@ -1045,26 +1063,27 @@ async function toggleAtividadeConcluida(atividadeId, clienteId) {
     }
 }
 async function deletarAtividade(atividadeId, clienteId) {
-    if (!confirm('Excluir atividade?')) return;
-    try {
-        if (!modoDemo) {
-            const resp = await fetchAuth(`${API_BASE_URL}/atividades/${atividadeId}`, { method: 'DELETE' });
-            if (!resp) return;
-            if (!resp.ok) throw new Error('Erro');
-            exibirToast('Atividade excluída', 'sucesso');
+    confirmarAcao('Excluir atividade?', 'Esta atividade será removida.', async () => {
+        try {
+            if (!modoDemo) {
+                const resp = await fetchAuth(`${API_BASE_URL}/atividades/${atividadeId}`, { method: 'DELETE' });
+                if (!resp) return;
+                if (!resp.ok) throw new Error('Erro');
+                exibirToast('Atividade excluída', 'sucesso');
+                if (clienteId) abrirModalDetalhes(clienteId);
+                atualizarMetricas(clientesCache);
+                return;
+            }
+        } catch(e) { console.warn(e); }
+        // Fallback IS_LOCAL
+        const idx = atividadesCache.findIndex(a => String(a.id)===String(atividadeId));
+        if (idx !== -1) {
+            atividadesCache.splice(idx, 1);
+            exibirToast('Atividade excluída (Local)', 'sucesso');
             if (clienteId) abrirModalDetalhes(clienteId);
             atualizarMetricas(clientesCache);
-            return;
         }
-    } catch(e) { console.warn(e); }
-    // Fallback IS_LOCAL
-    const idx = atividadesCache.findIndex(a => String(a.id)===String(atividadeId));
-    if (idx !== -1) {
-        atividadesCache.splice(idx, 1);
-        exibirToast('Atividade excluída (Local)', 'sucesso');
-        if (clienteId) abrirModalDetalhes(clienteId);
-        atualizarMetricas(clientesCache);
-    }
+    });
 }
 
 // ============================================================
@@ -2226,31 +2245,31 @@ async function salvarPlanoCustom(event) {
 }
 
 async function deletarPlanoCustom(id) {
-    if (!confirm('Deseja realmente excluir este plano?')) return;
+    confirmarAcao('Excluir plano?', 'Este plano será removido permanentemente.', async () => {
+        try {
+            if (!modoDemo) {
+                const response = await fetchAuth(`${API_BASE_URL}/planos/${id}`, {
+                    method: 'DELETE',
+                });
+                if (!response) return;
 
-    try {
-        if (!modoDemo) {
-            const response = await fetchAuth(`${API_BASE_URL}/planos/${id}`, {
-                method: 'DELETE',
-            });
-            if (!response) return; // Redirect handled by fetchAuth
+                if (!response.ok) throw new Error(`Erro ao excluir plano`);
 
-            if (!response.ok) throw new Error(`Erro ao excluir plano`);
-
-            exibirToast('Plano removido com sucesso!', 'sucesso');
-            await carregarPlanos();
-            return;
+                exibirToast('Plano removido com sucesso!', 'sucesso');
+                await carregarPlanos();
+                return;
+            }
+        } catch (e) {
+            console.warn('Erro ao excluir plano no servidor:', e);
         }
-    } catch (e) {
-        console.warn('Erro ao excluir plano no servidor:', e);
-    }
 
-    planosCache = planosCache.filter(p => String(p.id) !== String(id));
-    inicializarFiltroPlanos();
-    renderizarCardsPlanoModal('criar');
-    renderizarCardsPlanoModal('editar');
-    renderizarListaPlanosGerenciamento();
-    exibirToast('Plano removido! (Modo Local)', 'sucesso');
+            planosCache = planosCache.filter(p => String(p.id) !== String(id));
+        inicializarFiltroPlanos();
+        renderizarCardsPlanoModal('criar');
+        renderizarCardsPlanoModal('editar');
+        renderizarListaPlanosGerenciamento();
+        exibirToast('Plano removido! (Modo Local)', 'sucesso');
+    });
 }
 
 // ============================================================
