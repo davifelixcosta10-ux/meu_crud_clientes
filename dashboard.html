@@ -45,6 +45,11 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Fase 1 — Libs (Kanban + Import) -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <!-- Application Script -->
     <script src="app.js" defer></script>
 
@@ -111,9 +116,9 @@
         </header>
 
         <!-- ================================================
-             METRICS
+             METRICS — Fase 1: + Atrasados (1B) e Receita (1D)
              ================================================ -->
-        <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <section class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
 
             <!-- Total -->
             <div class="metric-card">
@@ -170,6 +175,34 @@
                 </div>
             </div>
 
+            <!-- Follow-ups atrasados (Fase 1B) -->
+            <div class="metric-card">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Atrasados</span>
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-500/20">
+                        <i data-lucide="clock" class="w-4 h-4"></i>
+                    </div>
+                </div>
+                <div class="flex items-baseline justify-between">
+                    <span id="metric-atrasados" class="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 tabular-nums">0</span>
+                    <span class="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">follow-ups</span>
+                </div>
+            </div>
+
+            <!-- Receita prevista (Fase 1D) -->
+            <div class="metric-card">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Receita</span>
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-500/20">
+                        <i data-lucide="wallet" class="w-4 h-4"></i>
+                    </div>
+                </div>
+                <div class="flex items-baseline justify-between">
+                    <span id="metric-receita" class="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">R$ 0</span>
+                    <span class="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">prevista</span>
+                </div>
+            </div>
+
         </section>
 
         <!-- ================================================
@@ -201,6 +234,33 @@
                     <option value="inativo">Inativos</option>
                 </select>
 
+                <!-- Fase 1A — Filter Etapa -->
+                <select id="filter-etapa" onchange="filtrarTabela()"
+                    class="flex-1 sm:flex-none px-3 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer transition-all">
+                    <option value="">Todas Etapas</option>
+                </select>
+
+                <!-- Fase 1C — Filter Tag -->
+                <select id="filter-tag" onchange="filtrarTabela()"
+                    class="flex-1 sm:flex-none px-3 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer transition-all">
+                    <option value="">Todas Tags</option>
+                </select>
+
+                <button onclick="abrirModalEtapas()" type="button" class="btn-ghost whitespace-nowrap" title="Gerenciar Etapas (Kanban)">
+                    <i data-lucide="kanban" class="w-4 h-4 text-slate-500"></i>
+                    <span class="hidden md:inline">Etapas</span>
+                </button>
+
+                <button onclick="abrirModalTags()" type="button" class="btn-ghost whitespace-nowrap" title="Gerenciar Tags">
+                    <i data-lucide="tag" class="w-4 h-4 text-slate-500"></i>
+                    <span class="hidden md:inline">Tags</span>
+                </button>
+
+                <button onclick="abrirModalImport()" type="button" class="btn-ghost whitespace-nowrap" title="Importar CSV/Excel">
+                    <i data-lucide="upload" class="w-4 h-4 text-slate-500"></i>
+                    <span class="hidden md:inline">Importar</span>
+                </button>
+
                 <button onclick="abrirModalPlanos()" type="button" class="btn-ghost whitespace-nowrap" title="Gerenciar Planos">
                     <i data-lucide="award" class="w-4 h-4 text-slate-500"></i>
                     <span class="hidden md:inline">Planos</span>
@@ -216,6 +276,26 @@
                     <span class="hidden sm:inline">Novo Cliente</span>
                     <span class="sm:hidden">Novo</span>
                 </button>
+            </div>
+        </section>
+
+        <!-- VIEW TOGGLE — Tabela | Kanban -->
+        <section class="flex items-center justify-between gap-3">
+            <div class="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
+                <button id="btn-view-tabela" onclick="setViewMode('tabela')" type="button"
+                    class="px-4 py-1.5 text-xs font-bold rounded-lg bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white transition-all">
+                    <i data-lucide="table" class="w-3.5 h-3.5 inline mr-1"></i> Tabela
+                </button>
+                <button id="btn-view-kanban" onclick="setViewMode('kanban')" type="button"
+                    class="px-4 py-1.5 text-xs font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all">
+                    <i data-lucide="kanban" class="w-3.5 h-3.5 inline mr-1"></i> Kanban
+                </button>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="abrirModalFiltros()" type="button" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 border border-slate-200 dark:border-slate-700/60 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 transition-all">
+                    <i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Filtros salvos
+                </button>
+                <span id="kanban-count" class="text-xs text-slate-400 dark:text-slate-500 hidden">0 etapas</span>
             </div>
         </section>
 
@@ -339,6 +419,16 @@
                 </button>
             </div>
         </main>
+
+        <!-- KANBAN BOARD — Fase 1A (hidden até toggle) -->
+        <section id="kanban-board" class="hidden flex-1 flex-col bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm overflow-hidden" style="min-height: 320px;">
+            <div id="kanban-container" class="flex gap-4 p-4 overflow-x-auto flex-1 items-start">
+                <!-- Colunas renderizadas via JS: renderizarKanban() -->
+                <div class="flex items-center justify-center w-full py-16 text-sm text-slate-400 dark:text-slate-500">
+                    <i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> Carregando Kanban...
+                </div>
+            </div>
+        </section>
 
         <!-- FOOTER -->
         <footer class="text-center text-[11px] text-slate-400 dark:text-slate-600 py-3">
@@ -621,6 +711,69 @@
                         </div>
                     </div>
 
+                    <!-- Fase 1A — Etapa Kanban -->
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="kanban" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Etapa (Kanban)</span>
+                            </div>
+                            <a href="#" onclick="abrirModalEtapas(); return false;" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Gerenciar</a>
+                        </div>
+                        <div class="p-3 bg-slate-50/30 dark:bg-slate-800/20">
+                            <select id="criar-etapa" class="form-input">
+                                <option value="">Sem etapa</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Fase 1D — Financeiro -->
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="wallet" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Financeiro</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide flex-shrink-0">Opcional</span>
+                            </div>
+                        </div>
+                        <div class="p-3 space-y-3 bg-slate-50/30 dark:bg-slate-800/20">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="form-group">
+                                    <label for="criar-valor-plano" class="form-label">Valor do Plano</label>
+                                    <input type="text" id="criar-valor-plano" placeholder="Ex: R$ 150" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="criar-vencimento" class="form-label">Vencimento (dia)</label>
+                                    <input type="number" id="criar-vencimento" placeholder="1-31" min="1" max="31" class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="criar-status-pagamento" class="form-label">Status Pagamento</label>
+                                <select id="criar-status-pagamento" class="form-input">
+                                    <option value="">Não informado</option>
+                                    <option value="em_dia">Em dia</option>
+                                    <option value="atrasado">Atrasado</option>
+                                    <option value="isento">Isento</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fase 1C — Tags -->
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="tag" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Tags</span>
+                            </div>
+                            <a href="#" onclick="abrirModalTags(); return false;" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Gerenciar</a>
+                        </div>
+                        <div id="criar-tags-container" class="p-3 bg-slate-50/30 dark:bg-slate-800/20 flex flex-wrap gap-1.5 min-h-[2rem]">
+                            <!-- Checkboxes via JS -->
+                            <span class="text-xs text-slate-400">Nenhuma tag cadastrada</span>
+                        </div>
+                    </div>
+
                     <!-- Status Toggle -->
                     <div class="flex items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/60">
                         <div class="min-w-0">
@@ -890,6 +1043,68 @@
                         </div>
                     </div>
 
+                    <!-- Fase 1A — Etapa Kanban -->
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="kanban" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Etapa (Kanban)</span>
+                            </div>
+                            <a href="#" onclick="abrirModalEtapas(); return false;" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Gerenciar</a>
+                        </div>
+                        <div class="p-3 bg-slate-50/30 dark:bg-slate-800/20">
+                            <select id="editar-etapa" class="form-input">
+                                <option value="">Sem etapa</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Fase 1D — Financeiro -->
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="wallet" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Financeiro</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wide flex-shrink-0">Opcional</span>
+                            </div>
+                        </div>
+                        <div class="p-3 space-y-3 bg-slate-50/30 dark:bg-slate-800/20">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="form-group">
+                                    <label for="editar-valor-plano" class="form-label">Valor do Plano</label>
+                                    <input type="text" id="editar-valor-plano" placeholder="Ex: R$ 150" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editar-vencimento" class="form-label">Vencimento (dia)</label>
+                                    <input type="number" id="editar-vencimento" placeholder="1-31" min="1" max="31" class="form-input">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="editar-status-pagamento" class="form-label">Status Pagamento</label>
+                                <select id="editar-status-pagamento" class="form-input">
+                                    <option value="">Não informado</option>
+                                    <option value="em_dia">Em dia</option>
+                                    <option value="atrasado">Atrasado</option>
+                                    <option value="isento">Isento</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fase 1C — Tags -->
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40 gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="tag" class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0"></i>
+                                <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Tags</span>
+                            </div>
+                            <a href="#" onclick="abrirModalTags(); return false;" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Gerenciar</a>
+                        </div>
+                        <div id="editar-tags-container" class="p-3 bg-slate-50/30 dark:bg-slate-800/20 flex flex-wrap gap-1.5 min-h-[2rem]">
+                            <span class="text-xs text-slate-400">Nenhuma tag cadastrada</span>
+                        </div>
+                    </div>
+
                     <!-- Status Toggle -->
                     <div class="flex items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/60">
                         <div class="min-w-0">
@@ -1064,6 +1279,248 @@
                     <i data-lucide="pencil" class="w-4 h-4"></i>
                     <span>Editar Cliente</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         MODAL: GERENCIAR ETAPAS (Kanban) — Fase 1A
+         ==================================================== -->
+    <div id="modal-etapas" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl sm:rounded-2xl rounded-b-none sm:rounded-b-2xl w-full sm:max-w-lg shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box flex flex-col max-h-[92vh] sm:max-h-[90vh] sm:mx-4 scale-95 opacity-0">
+            <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 flex items-center justify-center">
+                        <i data-lucide="kanban" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Etapas (Kanban)</h3>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500">Arraste para reordenar • cor define a coluna</p>
+                    </div>
+                </div>
+                <button onclick="fecharModalEtapas()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="overflow-y-auto flex-1 px-5 sm:px-6 py-4 space-y-4">
+                <div id="lista-etapas-gerenciamento" class="space-y-2"></div>
+                <form id="form-etapa-salvar" onsubmit="salvarEtapa(event)" class="p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-800/30 space-y-3">
+                    <input type="hidden" id="etapa-id-editar" value="">
+                    <p id="titulo-form-etapa" class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Nova Etapa</p>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="col-span-2 form-group">
+                            <label for="etapa-nome" class="form-label">Nome *</label>
+                            <input type="text" id="etapa-nome" required placeholder="Ex: Lead, Proposta, Fechado" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="etapa-ordem" class="form-label">Ordem</label>
+                            <input type="number" id="etapa-ordem" placeholder="0" class="form-input">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Cor</label>
+                        <input type="hidden" id="etapa-cor-selecionada" value="indigo">
+                        <div class="flex items-center gap-2 pt-1" id="etapa-color-picker">
+                            <button type="button" onclick="selecionarCorEtapa('indigo')" class="color-dot bg-indigo-500 selected" data-color="indigo" title="Indigo"></button>
+                            <button type="button" onclick="selecionarCorEtapa('cyan')" class="color-dot bg-cyan-500" data-color="cyan" title="Cyan"></button>
+                            <button type="button" onclick="selecionarCorEtapa('emerald')" class="color-dot bg-emerald-500" data-color="emerald" title="Emerald"></button>
+                            <button type="button" onclick="selecionarCorEtapa('amber')" class="color-dot bg-amber-500" data-color="amber" title="Amber"></button>
+                            <button type="button" onclick="selecionarCorEtapa('rose')" class="color-dot bg-rose-500" data-color="rose" title="Rose"></button>
+                            <button type="button" onclick="selecionarCorEtapa('purple')" class="color-dot bg-purple-500" data-color="purple" title="Purple"></button>
+                            <button type="button" onclick="selecionarCorEtapa('slate')" class="color-dot bg-slate-500" data-color="slate" title="Slate"></button>
+                            <button type="button" onclick="selecionarCorEtapa('orange')" class="color-dot bg-orange-500" data-color="orange" title="Orange"></button>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-2">
+                        <button type="button" id="btn-cancelar-etapa" onclick="resetarFormEtapa()" class="btn-ghost hidden">Cancelar</button>
+                        <button type="submit" class="btn-primary"><i data-lucide="plus" class="w-4 h-4"></i><span>Salvar Etapa</span></button>
+                    </div>
+                </form>
+            </div>
+            <div class="flex items-center justify-end px-5 sm:px-6 py-3 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/20 rounded-b-2xl">
+                <button type="button" onclick="fecharModalEtapas()" class="btn-ghost">Concluído</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         MODAL: NOVA ATIVIDADE — Fase 1B
+         ==================================================== -->
+    <div id="modal-atividade" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box flex flex-col sm:mx-4 scale-95 opacity-0">
+            <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 flex items-center justify-center">
+                        <i data-lucide="clock" class="w-4 h-4 text-amber-600 dark:text-amber-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Nova Atividade</h3>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500">Follow-up para <span id="atividade-cliente-nome" class="font-semibold"></span></p>
+                    </div>
+                </div>
+                <button onclick="fecharModalAtividade()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="form-atividade" onsubmit="salvarAtividade(event)" class="px-5 sm:px-6 py-5 space-y-4">
+                <input type="hidden" id="atividade-cliente-id" value="">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="form-group">
+                        <label for="atividade-tipo" class="form-label">Tipo *</label>
+                        <select id="atividade-tipo" class="form-input">
+                            <option value="ligacao">Ligação</option>
+                            <option value="reuniao">Reunião</option>
+                            <option value="nota">Nota</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="email">E-mail</option>
+                            <option value="tarefa">Tarefa</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="atividade-data" class="form-label">Data *</label>
+                        <input type="date" id="atividade-data" required class="form-input">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="atividade-nota" class="form-label">Nota</label>
+                    <textarea id="atividade-nota" rows="3" placeholder="Descreva o follow-up..." class="form-input"></textarea>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/60">
+                    <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Concluída</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="atividade-concluida" class="sr-only peer">
+                        <div class="toggle-track"></div>
+                    </label>
+                </div>
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" onclick="fecharModalAtividade()" class="btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i data-lucide="plus" class="w-4 h-4"></i><span>Salvar</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         MODAL: GERENCIAR TAGS — Fase 1C
+         ==================================================== -->
+    <div id="modal-tags" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box flex flex-col max-h-[92vh] sm:mx-4 scale-95 opacity-0">
+            <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-500/10 border border-purple-200/60 dark:border-purple-500/20 flex items-center justify-center">
+                        <i data-lucide="tag" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Tags</h3>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500">Segmentação de clientes</p>
+                    </div>
+                </div>
+                <button onclick="fecharModalTags()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="overflow-y-auto flex-1 px-5 sm:px-6 py-4 space-y-4">
+                <div id="lista-tags-gerenciamento" class="space-y-2"></div>
+                <form id="form-tag-salvar" onsubmit="salvarTag(event)" class="p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-800/30 space-y-3">
+                    <input type="hidden" id="tag-id-editar" value="">
+                    <p id="titulo-form-tag" class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Nova Tag</p>
+                    <div class="form-group">
+                        <label for="tag-nome" class="form-label">Nome *</label>
+                        <input type="text" id="tag-nome" required placeholder="Ex: VIP, Recorrente" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Cor</label>
+                        <input type="hidden" id="tag-cor-selecionada" value="indigo">
+                        <div class="flex items-center gap-2 pt-1" id="tag-color-picker">
+                            <button type="button" onclick="selecionarCorTag('indigo')" class="color-dot bg-indigo-500 selected" data-color="indigo"></button>
+                            <button type="button" onclick="selecionarCorTag('emerald')" class="color-dot bg-emerald-500" data-color="emerald"></button>
+                            <button type="button" onclick="selecionarCorTag('amber')" class="color-dot bg-amber-500" data-color="amber"></button>
+                            <button type="button" onclick="selecionarCorTag('rose')" class="color-dot bg-rose-500" data-color="rose"></button>
+                            <button type="button" onclick="selecionarCorTag('purple')" class="color-dot bg-purple-500" data-color="purple"></button>
+                            <button type="button" onclick="selecionarCorTag('slate')" class="color-dot bg-slate-500" data-color="slate"></button>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-2">
+                        <button type="button" id="btn-cancelar-tag" onclick="resetarFormTag()" class="btn-ghost hidden">Cancelar</button>
+                        <button type="submit" class="btn-primary"><span>Salvar Tag</span></button>
+                    </div>
+                </form>
+            </div>
+            <div class="flex items-center justify-end px-5 sm:px-6 py-3 border-t bg-slate-50/50 dark:bg-slate-800/20 rounded-b-2xl">
+                <button type="button" onclick="fecharModalTags()" class="btn-ghost">Concluído</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         MODAL: FILTROS SALVOS — Fase 1C
+         ==================================================== -->
+    <div id="modal-filtros" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box flex flex-col sm:mx-4 scale-95 opacity-0">
+            <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 flex items-center justify-center">
+                        <i data-lucide="bookmark" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Filtros Salvos</h3>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500">Salve combinações de busca</p>
+                    </div>
+                </div>
+                <button onclick="fecharModalFiltros()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="px-5 sm:px-6 py-4 space-y-4 flex-1 overflow-y-auto">
+                <div class="flex gap-2">
+                    <input type="text" id="filtro-nome" placeholder="Nome do filtro (ex: VIP Atrasados)" class="form-input flex-1">
+                    <button onclick="salvarFiltroAtual()" type="button" class="btn-primary whitespace-nowrap"><i data-lucide="plus" class="w-4 h-4"></i> Salvar atual</button>
+                </div>
+                <div id="lista-filtros-salvos" class="space-y-2"></div>
+            </div>
+            <div class="flex items-center justify-end px-5 sm:px-6 py-3 border-t bg-slate-50/50 dark:bg-slate-800/20 rounded-b-2xl">
+                <button type="button" onclick="fecharModalFiltros()" class="btn-ghost">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         MODAL: IMPORTAR CLIENTES — Fase 1E
+         ==================================================== -->
+    <div id="modal-import" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl sm:rounded-2xl w-full sm:max-w-lg shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box flex flex-col max-h-[92vh] sm:mx-4 scale-95 opacity-0">
+            <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/20 flex items-center justify-center">
+                        <i data-lucide="upload" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Importar Clientes</h3>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500">CSV ou Excel (máx. 1000 linhas)</p>
+                    </div>
+                </div>
+                <button onclick="fecharModalImport()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="px-5 sm:px-6 py-5 space-y-4 flex-1 overflow-y-auto">
+                <div class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-6 text-center hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors">
+                    <input type="file" id="import-file-input" accept=".csv,.xlsx,.xls" class="hidden" onchange="handleImportFile(event)">
+                    <i data-lucide="file-spreadsheet" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 font-medium">Arraste o arquivo ou clique para selecionar</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Colunas esperadas: nome, email (obrigatórios)</p>
+                    <button onclick="document.getElementById('import-file-input').click()" type="button" class="btn-ghost mt-3">Selecionar arquivo</button>
+                </div>
+                <div id="import-preview" class="hidden">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Preview (5 primeiras linhas)</h4>
+                    <div id="import-preview-table" class="text-xs overflow-x-auto border rounded-xl"></div>
+                    <p id="import-count" class="text-xs text-slate-500 mt-2"></p>
+                </div>
+                <div id="import-result" class="hidden p-3 rounded-xl border text-sm"></div>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-5 sm:px-6 py-3 border-t bg-slate-50/50 dark:bg-slate-800/20 rounded-b-2xl">
+                <button type="button" onclick="fecharModalImport()" class="btn-ghost">Cancelar</button>
+                <button type="button" id="btn-import-confirm" onclick="confirmarImport()" class="btn-primary hidden"><i data-lucide="upload" class="w-4 h-4"></i><span>Importar</span></button>
             </div>
         </div>
     </div>
