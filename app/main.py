@@ -32,12 +32,22 @@ from app.models import (
     Cliente, ClienteCreate, ClienteUpdate,
     Plano, PlanoCreate, PlanoUpdate,
     UserSignUp, UserLogin, TokenResponse,
+    Etapa, EtapaCreate, EtapaUpdate,
+    Atividade, AtividadeCreate, AtividadeUpdate,
+    Tag, TagCreate, TagUpdate, ClienteTagCreate,
+    FiltroSalvo, FiltroSalvoCreate, ImportPreviewRequest,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
     atualizar_cliente_db, deletar_cliente_db,
     listar_planos, criar_plano, atualizar_plano, deletar_plano,
     registrar_usuario, autenticar_usuario, get_supabase_client,
+    listar_etapas, criar_etapa, atualizar_etapa, deletar_etapa,
+    listar_atividades, criar_atividade, atualizar_atividade, deletar_atividade,
+    listar_tags, criar_tag, atualizar_tag, deletar_tag,
+    listar_tags_cliente, vincular_tag_cliente, desvincular_tag_cliente,
+    listar_filtros_salvos, criar_filtro_salvo, deletar_filtro_salvo,
+    importar_clientes_bulk,
 )
 
 # --- Rate Limiter ---
@@ -286,6 +296,224 @@ async def delete_plano(plano_id: str | int, user_id: str = Depends(obter_user_id
         raise
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao remover plano.")
+
+
+# ============================================================
+# FASE 1A — ETAPAS (Kanban)
+# ============================================================
+
+@app.get("/api/etapas", response_model=list[Etapa], tags=["Etapas"])
+async def get_etapas(user_id: str = Depends(obter_user_id)):
+    """Lista etapas Kanban do usuário."""
+    try:
+        return listar_etapas(user_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar etapas.")
+
+
+@app.post("/api/etapas", response_model=Etapa, status_code=status.HTTP_201_CREATED, tags=["Etapas"])
+async def post_etapa(dados: EtapaCreate, user_id: str = Depends(obter_user_id)):
+    try:
+        return criar_etapa(dados.model_dump(mode="json"), user_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar etapa.")
+
+
+@app.patch("/api/etapas/{etapa_id}", response_model=Etapa, tags=["Etapas"])
+async def patch_etapa(etapa_id: str | int, dados: EtapaUpdate, user_id: str = Depends(obter_user_id)):
+    try:
+        campos = dados.model_dump(exclude_unset=True, mode="json")
+        if not campos:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo enviado.")
+        etapa = atualizar_etapa(etapa_id, campos, user_id)
+        if not etapa:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Etapa não encontrada.")
+        return etapa
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao atualizar etapa.")
+
+
+@app.delete("/api/etapas/{etapa_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Etapas"])
+async def delete_etapa_api(etapa_id: str | int, user_id: str = Depends(obter_user_id)):
+    try:
+        if not deletar_etapa(etapa_id, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Etapa não encontrada.")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao remover etapa.")
+
+
+# ============================================================
+# FASE 1B — ATIVIDADES (Follow-ups)
+# ============================================================
+
+@app.get("/api/atividades", response_model=list[Atividade], tags=["Atividades"])
+async def get_atividades(cliente_id: str | int | None = None, user_id: str = Depends(obter_user_id)):
+    try:
+        return listar_atividades(user_id, cliente_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar atividades.")
+
+
+@app.post("/api/atividades", response_model=Atividade, status_code=status.HTTP_201_CREATED, tags=["Atividades"])
+async def post_atividade(dados: AtividadeCreate, user_id: str = Depends(obter_user_id)):
+    try:
+        return criar_atividade(dados.model_dump(mode="json"), user_id)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao criar atividade: {str(e)[:200]}")
+
+
+@app.patch("/api/atividades/{atividade_id}", response_model=Atividade, tags=["Atividades"])
+async def patch_atividade(atividade_id: str | int, dados: AtividadeUpdate, user_id: str = Depends(obter_user_id)):
+    try:
+        campos = dados.model_dump(exclude_unset=True, mode="json")
+        if not campos:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo enviado.")
+        atv = atualizar_atividade(atividade_id, campos, user_id)
+        if not atv:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Atividade não encontrada.")
+        return atv
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao atualizar atividade.")
+
+
+@app.delete("/api/atividades/{atividade_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Atividades"])
+async def delete_atividade_api(atividade_id: str | int, user_id: str = Depends(obter_user_id)):
+    try:
+        if not deletar_atividade(atividade_id, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Atividade não encontrada.")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao remover atividade.")
+
+
+# ============================================================
+# FASE 1C — TAGS e FILTROS SALVOS
+# ============================================================
+
+@app.get("/api/tags", response_model=list[Tag], tags=["Tags"])
+async def get_tags(user_id: str = Depends(obter_user_id)):
+    try:
+        return listar_tags(user_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar tags.")
+
+
+@app.post("/api/tags", response_model=Tag, status_code=status.HTTP_201_CREATED, tags=["Tags"])
+async def post_tag(dados: TagCreate, user_id: str = Depends(obter_user_id)):
+    try:
+        return criar_tag(dados.model_dump(mode="json"), user_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar tag.")
+
+
+@app.patch("/api/tags/{tag_id}", response_model=Tag, tags=["Tags"])
+async def patch_tag(tag_id: str | int, dados: TagUpdate, user_id: str = Depends(obter_user_id)):
+    try:
+        campos = dados.model_dump(exclude_unset=True, mode="json")
+        if not campos:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo enviado.")
+        tag = atualizar_tag(tag_id, campos, user_id)
+        if not tag:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada.")
+        return tag
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao atualizar tag.")
+
+
+@app.delete("/api/tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Tags"])
+async def delete_tag_api(tag_id: str | int, user_id: str = Depends(obter_user_id)):
+    try:
+        if not deletar_tag(tag_id, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada.")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao remover tag.")
+
+
+@app.get("/api/clientes/{cliente_id}/tags", response_model=list[Tag], tags=["Tags"])
+async def get_tags_cliente(cliente_id: str | int, user_id: str = Depends(obter_user_id)):
+    try:
+        return listar_tags_cliente(cliente_id, user_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar tags do cliente.")
+
+
+@app.post("/api/clientes/{cliente_id}/tags", tags=["Tags"])
+async def post_vincular_tag(cliente_id: str | int, dados: ClienteTagCreate, user_id: str = Depends(obter_user_id)):
+    try:
+        ok = vincular_tag_cliente(cliente_id, dados.tag_id, user_id)
+        if not ok:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente ou tag não encontrados.")
+        return {"mensagem": "Tag vinculada com sucesso"}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao vincular tag.")
+
+
+@app.delete("/api/clientes/{cliente_id}/tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Tags"])
+async def delete_vinculo_tag(cliente_id: str | int, tag_id: str | int, user_id: str = Depends(obter_user_id)):
+    try:
+        if not desvincular_tag_cliente(cliente_id, tag_id, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vínculo não encontrado.")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao desvincular tag.")
+
+
+@app.get("/api/filtros", response_model=list[FiltroSalvo], tags=["Filtros"])
+async def get_filtros(user_id: str = Depends(obter_user_id)):
+    try:
+        return listar_filtros_salvos(user_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar filtros.")
+
+
+@app.post("/api/filtros", response_model=FiltroSalvo, status_code=status.HTTP_201_CREATED, tags=["Filtros"])
+async def post_filtro(dados: FiltroSalvoCreate, user_id: str = Depends(obter_user_id)):
+    try:
+        return criar_filtro_salvo(dados.model_dump(mode="json"), user_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar filtro.")
+
+
+@app.delete("/api/filtros/{filtro_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Filtros"])
+async def delete_filtro(filtro_id: str | int, user_id: str = Depends(obter_user_id)):
+    try:
+        if not deletar_filtro_salvo(filtro_id, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Filtro não encontrado.")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao remover filtro.")
+
+
+# ============================================================
+# FASE 1E — IMPORTAÇÃO BULK
+# ============================================================
+
+@app.post("/api/clientes/import", tags=["Clientes"])
+async def import_clientes(dados: ImportPreviewRequest, user_id: str = Depends(obter_user_id)):
+    """
+    Importa lista de clientes em lote (CSV/Excel já parseado no frontend).
+    Valida cada cliente com Pydantic e insere via RLS.
+    """
+    try:
+        resultado = importar_clientes_bulk(dados.clientes, user_id)
+        return resultado
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro na importação: {str(e)[:300]}")
 
 
 # ============================================================

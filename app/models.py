@@ -250,6 +250,11 @@ class Cliente(BaseModel):
     bairro: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None           # Sigla: "SP", "RJ"...
+    # Fase 1 — Kanban e Financeiro
+    etapa_id: Optional[Union[int, str]] = None  # FK para etapas (Kanban)
+    valor_plano: Optional[str] = None      # ex: "R$ 150" (informativo)
+    vencimento_dia: Optional[int] = None   # 1-31
+    status_pagamento: Optional[str] = None # em_dia | atrasado | isento
 
     @validator("cpf")
     def cpf_must_have_valid_format(cls, v):
@@ -295,6 +300,22 @@ class Cliente(BaseModel):
             raise ValueError("Data de nascimento deve estar no formato ISO (YYYY-MM-DD).")
         return v
 
+    @validator("vencimento_dia")
+    def vencimento_dia_must_be_valid(cls, v):
+        if v is None:
+            return v
+        if not 1 <= v <= 31:
+            raise ValueError("Vencimento deve ser entre 1 e 31.")
+        return v
+
+    @validator("status_pagamento")
+    def status_pagamento_must_be_valid(cls, v):
+        if v is None:
+            return v
+        if v not in ("em_dia", "atrasado", "isento"):
+            raise ValueError("status_pagamento deve ser em_dia, atrasado ou isento.")
+        return v
+
     class Config:
         from_attributes = True
 
@@ -332,6 +353,11 @@ class ClienteCreate(BaseModel):
     bairro: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None
+    # Fase 1 — Kanban e Financeiro
+    etapa_id: Optional[Union[int, str]] = None
+    valor_plano: Optional[str] = None
+    vencimento_dia: Optional[int] = None
+    status_pagamento: Optional[str] = None
 
     @validator("cpf")
     def cpf_must_have_valid_format(cls, v):
@@ -361,6 +387,22 @@ class ClienteCreate(BaseModel):
             return v
         if not re.match(r'^\d{4}-\d{2}-\d{2}$', v):
             raise ValueError("Data de nascimento deve estar no formato ISO (YYYY-MM-DD).")
+        return v
+
+    @validator("vencimento_dia")
+    def vencimento_dia_must_be_valid(cls, v):
+        if v is None:
+            return v
+        if not 1 <= v <= 31:
+            raise ValueError("Vencimento deve ser entre 1 e 31.")
+        return v
+
+    @validator("status_pagamento")
+    def status_pagamento_must_be_valid(cls, v):
+        if v is None:
+            return v
+        if v not in ("em_dia", "atrasado", "isento"):
+            raise ValueError("status_pagamento deve ser em_dia, atrasado ou isento.")
         return v
 
 
@@ -397,6 +439,11 @@ class ClienteUpdate(BaseModel):
     bairro: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None
+    # Fase 1 — Kanban e Financeiro
+    etapa_id: Optional[Union[int, str]] = None
+    valor_plano: Optional[str] = None
+    vencimento_dia: Optional[int] = None
+    status_pagamento: Optional[str] = None
 
     @validator("cpf")
     def cpf_must_have_valid_format(cls, v):
@@ -427,3 +474,183 @@ class ClienteUpdate(BaseModel):
         if not re.match(r'^\d{4}-\d{2}-\d{2}$', v):
             raise ValueError("Data de nascimento deve estar no formato ISO (YYYY-MM-DD).")
         return v
+    @validator("vencimento_dia")
+    def vencimento_dia_must_be_valid(cls, v):
+        if v is None:
+            return v
+        if not 1 <= v <= 31:
+            raise ValueError("Vencimento deve ser entre 1 e 31.")
+        return v
+
+    @validator("status_pagamento")
+    def status_pagamento_must_be_valid(cls, v):
+        if v is None:
+            return v
+        if v not in ("em_dia", "atrasado", "isento"):
+            raise ValueError("status_pagamento deve ser em_dia, atrasado ou isento.")
+        return v
+
+# ============================================================
+# MODELOS FASE 1 — Kanban, Atividades, Tags, Filtros Salvos
+# ============================================================
+
+class EtapaCreate(BaseModel):
+    """
+    Dados para criar uma etapa do Kanban.
+    - nome: obrigatório (ex: Lead, Proposta, Fechado)
+    - ordem: posição no quadro (0 = primeira coluna)
+    - cor: slug para UI (reusa MAPA_CORES_PLANO no frontend)
+    Usado em: POST /api/etapas
+    """
+    nome: str
+    ordem: Optional[int] = 0
+    cor: Optional[str] = "indigo"
+
+
+class EtapaUpdate(BaseModel):
+    """Atualização parcial de etapa (PATCH)."""
+    nome: Optional[str] = None
+    ordem: Optional[int] = None
+    cor: Optional[str] = None
+
+
+class Etapa(BaseModel):
+    """Representação completa de etapa retornada pela API."""
+    id: Union[int, str]
+    user_id: str
+    nome: str
+    ordem: int = 0
+    cor: Optional[str] = "indigo"
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AtividadeCreate(BaseModel):
+    """
+    Dados para criar atividade/follow-up vinculada a cliente.
+    - cliente_id: obrigatório (FK)
+    - tipo: ligacao | reuniao | nota | whatsapp | email | tarefa
+    - data: ISO YYYY-MM-DD ou YYYY-MM-DDTHH:MM
+    - concluida: default False
+    - nota: texto opcional
+    Usado em: POST /api/atividades
+    """
+    cliente_id: Union[int, str]
+    tipo: str
+    data: str
+    concluida: Optional[bool] = False
+    nota: Optional[str] = None
+
+    @validator("tipo")
+    def tipo_must_be_valid(cls, v):
+        allowed = {"ligacao", "reuniao", "nota", "whatsapp", "email", "tarefa"}
+        if v not in allowed:
+            raise ValueError(f"tipo deve ser um de: {', '.join(sorted(allowed))}")
+        return v
+
+    @validator("data")
+    def data_must_be_iso(cls, v):
+        if not re.match(r"^\d{4}-\d{2}-\d{2}", v):
+            raise ValueError("data deve ser ISO (YYYY-MM-DD ou YYYY-MM-DDTHH:MM)")
+        return v
+
+
+class AtividadeUpdate(BaseModel):
+    """Atualização parcial de atividade (PATCH)."""
+    tipo: Optional[str] = None
+    data: Optional[str] = None
+    concluida: Optional[bool] = None
+    nota: Optional[str] = None
+
+    @validator("tipo")
+    def tipo_must_be_valid(cls, v):
+        if v is None:
+            return v
+        allowed = {"ligacao", "reuniao", "nota", "whatsapp", "email", "tarefa"}
+        if v not in allowed:
+            raise ValueError(f"tipo deve ser um de: {', '.join(sorted(allowed))}")
+        return v
+
+    @validator("data")
+    def data_must_be_iso(cls, v):
+        if v is None:
+            return v
+        if not re.match(r"^\d{4}-\d{2}-\d{2}", v):
+            raise ValueError("data deve ser ISO (YYYY-MM-DD ou YYYY-MM-DDTHH:MM)")
+        return v
+
+
+class Atividade(BaseModel):
+    """Representação completa de atividade retornada pela API."""
+    id: Union[int, str]
+    user_id: str
+    cliente_id: Union[int, str]
+    tipo: str
+    data: str
+    concluida: bool = False
+    nota: Optional[str] = None
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TagCreate(BaseModel):
+    """
+    Dados para criar tag de segmentação.
+    - nome: obrigatório, único por usuário
+    - cor: slug para badge
+    Usado em: POST /api/tags
+    """
+    nome: str
+    cor: Optional[str] = "indigo"
+
+
+class TagUpdate(BaseModel):
+    nome: Optional[str] = None
+    cor: Optional[str] = None
+
+
+class Tag(BaseModel):
+    id: Union[int, str]
+    user_id: str
+    nome: str
+    cor: Optional[str] = "indigo"
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ClienteTagCreate(BaseModel):
+    """Vincula tag a cliente (POST /api/clientes/{id}/tags)."""
+    tag_id: Union[int, str]
+
+
+class FiltroSalvoCreate(BaseModel):
+    """
+    Filtro salvo pelo usuário (busca + filtros).
+    - nome: nome do filtro (ex: VIP Atrasados)
+    - query: dict com {termo, plano, status, tags, etapa_id, etc}
+    Usado em: POST /api/filtros
+    """
+    nome: str
+    query: dict
+
+
+class FiltroSalvo(BaseModel):
+    id: Union[int, str]
+    user_id: str
+    nome: str
+    query: dict
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ImportPreviewRequest(BaseModel):
+    """Payload para import preview (CSV/Excel já parseado no frontend)."""
+    clientes: list[dict]
