@@ -940,13 +940,30 @@ async function deletarFiltroSalvo(id) {
 // FASE 1B — ATIVIDADES (timeline + modal)
 // ============================================================
 async function carregarAtividades(clienteId) {
+    // Live Server sem backend: usa cache local
+    if (IS_LOCAL && modoDemo) {
+        if (clienteId) return atividadesCache.filter(a => String(a.cliente_id)===String(clienteId));
+        return [...atividadesCache];
+    }
     try {
         const url = clienteId ? `${API_BASE_URL}/atividades?cliente_id=${clienteId}` : `${API_BASE_URL}/atividades`;
         const resp = await fetchAuth(url, { method: 'GET' });
-        if (!resp || !resp.ok) return [];
+        if (!resp || !resp.ok) {
+            if (IS_LOCAL) {
+                if (clienteId) return atividadesCache.filter(a => String(a.cliente_id)===String(clienteId));
+                return [...atividadesCache];
+            }
+            return [];
+        }
         const data = await resp.json();
         return Array.isArray(data) ? data : [];
-    } catch(e) { return []; }
+    } catch(e) {
+        if (IS_LOCAL) {
+            if (clienteId) return atividadesCache.filter(a => String(a.cliente_id)===String(clienteId));
+            return [...atividadesCache];
+        }
+        return [];
+    }
 }
 function abrirModalAtividade(clienteId, clienteNome) {
     document.getElementById('atividade-cliente-id').value = clienteId;
@@ -980,10 +997,27 @@ async function salvarAtividade(event) {
                 const cliente = clientesCache.find(c => String(c.id)===String(cliente_id));
                 if (cliente) abrirModalDetalhes(cliente.id);
             }
+            // Atualiza cache para métrica
+            try { const r = await fetchAuth(`${API_BASE_URL}/atividades`, { method: 'GET' }); if (r && r.ok) atividadesCache = await r.json(); } catch(e) {}
             atualizarMetricas(clientesCache);
             return;
         }
-    } catch(e) { console.warn(e); exibirToast('Erro ao criar atividade', 'erro'); }
+    } catch(e) {
+        console.warn(e);
+        if (!IS_LOCAL) { exibirToast('Erro ao criar atividade', 'erro'); return; }
+        // Fallback IS_LOCAL sem backend: salva localmente
+    }
+    // Fallback Live Server / modoDemo (IS_LOCAL sem backend)
+    const nova = { id: 'atividade_'+Date.now(), user_id: 'local', cliente_id, tipo, data, nota, concluida, created_at: new Date().toISOString() };
+    atividadesCache.push(nova);
+    exibirToast('Atividade criada! (Local)', 'sucesso');
+    fecharModalAtividade();
+    const detalhesBody2 = document.getElementById('detalhes-body');
+    if (detalhesBody2 && !document.getElementById('modal-detalhes').classList.contains('hidden')) {
+        const cliente = clientesCache.find(c => String(c.id)===String(cliente_id));
+        if (cliente) abrirModalDetalhes(cliente.id);
+    }
+    atualizarMetricas(clientesCache);
 }
 async function toggleAtividadeConcluida(atividadeId, clienteId) {
     try {
@@ -997,9 +1031,18 @@ async function toggleAtividadeConcluida(atividadeId, clienteId) {
             atv.concluida = novo;
             exibirToast(novo ? 'Atividade concluída' : 'Atividade reaberta', 'sucesso');
             if (clienteId) abrirModalDetalhes(clienteId);
+            atualizarMetricas(clientesCache);
             return;
         }
     } catch(e) { console.warn(e); }
+    // Fallback IS_LOCAL / modoDemo
+    const atvLocal = atividadesCache.find(a => String(a.id)===String(atividadeId));
+    if (atvLocal) {
+        atvLocal.concluida = !atvLocal.concluida;
+        exibirToast(atvLocal.concluida ? 'Atividade concluída (Local)' : 'Atividade reaberta (Local)', 'sucesso');
+        if (clienteId) abrirModalDetalhes(clienteId);
+        atualizarMetricas(clientesCache);
+    }
 }
 async function deletarAtividade(atividadeId, clienteId) {
     if (!confirm('Excluir atividade?')) return;
@@ -1010,9 +1053,18 @@ async function deletarAtividade(atividadeId, clienteId) {
             if (!resp.ok) throw new Error('Erro');
             exibirToast('Atividade excluída', 'sucesso');
             if (clienteId) abrirModalDetalhes(clienteId);
+            atualizarMetricas(clientesCache);
             return;
         }
     } catch(e) { console.warn(e); }
+    // Fallback IS_LOCAL
+    const idx = atividadesCache.findIndex(a => String(a.id)===String(atividadeId));
+    if (idx !== -1) {
+        atividadesCache.splice(idx, 1);
+        exibirToast('Atividade excluída (Local)', 'sucesso');
+        if (clienteId) abrirModalDetalhes(clienteId);
+        atualizarMetricas(clientesCache);
+    }
 }
 
 // ============================================================
