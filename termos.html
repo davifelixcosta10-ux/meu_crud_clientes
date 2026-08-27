@@ -44,33 +44,17 @@
     <link rel="stylesheet" href="style.css">
 
     <style>
-        .legal-content {
-            max-width: 48rem;
-        }
-        .legal-content h2 {
-            @apply text-xl font-bold text-white mt-10 mb-4 pb-2 border-b border-slate-800;
-        }
-        .legal-content h3 {
-            @apply text-lg font-semibold text-slate-200 mt-8 mb-3;
-        }
-        .legal-content p {
-            @apply text-slate-400 leading-relaxed mb-4;
-        }
-        .legal-content ul {
-            @apply list-disc list-inside space-y-2 text-slate-400 mb-4;
-        }
-        .legal-content li {
-            @apply leading-relaxed;
-        }
-        .legal-content strong {
-            @apply text-white font-semibold;
-        }
-        .legal-content a {
-            @apply text-indigo-400 hover:text-indigo-300 transition-colors underline;
-        }
-        .legal-content .last-updated {
-            @apply text-sm text-slate-500 mb-8 pb-4 border-b border-slate-800;
-        }
+        .legal-content { max-width: 48rem; margin: 0 auto; }
+        .legal-content h2 { font-size: 1.25rem; font-weight: 700; color: #fff; margin-top: 2.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #1e293b; }
+        .legal-content h3 { font-size: 1.125rem; font-weight: 600; color: #e2e8f0; margin-top: 2rem; margin-bottom: 0.75rem; }
+        .legal-content p { color: #94a3b8; line-height: 1.7; margin-bottom: 1rem; }
+        .legal-content ul { list-style: disc; list-style-position: inside; color: #94a3b8; margin-bottom: 1rem; }
+        .legal-content li { line-height: 1.6; margin-bottom: 0.5rem; }
+        .legal-content strong { color: #fff; font-weight: 600; }
+        .legal-content a { color: #818cf8; text-decoration: underline; }
+        .legal-content a:hover { color: #a5b4fc; }
+        .legal-content .last-updated { font-size: 0.875rem; color: #64748b; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #1e293b; }
+        .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(71, 85, 105, 0.3); }
     </style>
 </head>
 <body class="bg-[#0f172a] text-slate-100 antialiased font-sans min-h-screen flex flex-col">
@@ -94,7 +78,7 @@
     <!-- Main Content -->
     <main class="flex-1 pt-32 pb-16 px-4">
         <div class="max-w-4xl mx-auto">
-            <div class="glass-card rounded-3xl p-8 sm:p-12 reveal">
+            <div class="glass-card rounded-3xl p-8 sm:p-12">
                 <!-- Header -->
                 <div class="text-center mb-10">
                     <div class="w-14 h-14 rounded-2xl bg-indigo-600/20 flex items-center justify-center mx-auto mb-6 shadow-lg">

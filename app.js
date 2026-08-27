@@ -352,14 +352,28 @@ async function verificarStatusAPI() {
     let wasException = false;
     try {
         const res = await fetch(`${API_BASE_URL}/health`, { method: 'GET' });
-        if (res.ok) {
-            isOnline = true;
-        } else {
-            const res2 = await fetchAuth(`${API_BASE_URL}/clientes`, { method: 'GET' });
-            isOnline = res2 && (res2.ok || res2.status === 200 || res2.status === 401);
+        if (!res.ok) throw new Error('health failed');
+        // Health OK: verifica também se o banco responde (via planos, leve)
+        try {
+            const res2 = await fetchAuth(`${API_BASE_URL}/planos`, { method: 'GET' });
+            if (!res2) {
+                // Sem token em produção: fetchAuth redireciona (null) → API está up, só falta auth
+                isOnline = true;
+            } else if (res2.ok || res2.status === 401 || res2.status === 403) {
+                isOnline = true;
+            } else if (res2.status >= 500) {
+                isOnline = false;
+            } else {
+                isOnline = true;
+            }
+        } catch (_) {
+            // IS_LOCAL sem token/banco local: health ok ainda significa online para Live Server
+            isOnline = IS_LOCAL ? true : false;
+            if (!IS_LOCAL) wasException = true;
         }
     } catch (_) {
         wasException = true;
+        isOnline = false;
     }
 
     if (wasException) {
