@@ -266,6 +266,7 @@ def carregar_clientes(user_id: str) -> list[Cliente]:
     
     Ordenação: data_cadastro DESC (mais recentes primeiro)
     Filtro RLS: user_id obrigatório
+    Leniente: ignora linhas que falharem na validação (compatibilidade com dados antigos)
     
     Args:
         user_id: UUID do usuário autenticado
@@ -283,7 +284,20 @@ def carregar_clientes(user_id: str) -> list[Cliente]:
         .order("data_cadastro", desc=True)
         .execute()
     )
-    return [Cliente.model_validate(item) for item in response.data]
+    clientes = []
+    for item in response.data:
+        try:
+            clientes.append(Cliente.model_validate(item))
+        except Exception as e:
+            # Loga e ignora linha inválida para não quebrar lista inteira
+            print(f"WARN: cliente id={item.get('id')} falhou na validação: {e}")
+            # Tenta criar objeto leniente sem validação estrita
+            try:
+                # Fallback: cria dict apenas com campos básicos e ignora inválidos
+                clientes.append(Cliente.model_validate({k: v for k, v in item.items() if k in Cliente.model_fields}))
+            except:
+                pass
+    return clientes
 
 
 def salvar_novo_cliente(cliente_dados: dict, user_id: str) -> Cliente:

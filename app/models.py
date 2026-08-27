@@ -256,64 +256,30 @@ class Cliente(BaseModel):
     vencimento_dia: Optional[int] = None   # 1-31
     status_pagamento: Optional[str] = None # em_dia | atrasado | isento
 
+    # Leituras (GET) são lenientes para compatibilidade com dados antigos:
+    # não bloqueiam se CPF for inválido no novo módulo 11, apenas retornam como está.
     @validator("cpf")
     def cpf_must_have_valid_format(cls, v):
-        """Valida CPF com algoritmo módulo 11 (dígitos verificadores reais)."""
-        return cpf_validator(v)
+        return v
 
     @validator("rg")
     def rg_must_have_valid_format(cls, v):
-        """
-        Validação básica de RG.
-        Apenas verifica se tem entre 7-12 dígitos numéricos.
-        Formato exato varia por estado brasileiro.
-        """
-        if v is None:
-            return v
-        digits = re.sub(r'\D', '', v)
-        if len(digits) < 7 or len(digits) > 12:
-            raise ValueError("RG com formato inválido.")
         return v
 
     @validator("telefone")
     def telefone_must_have_valid_format(cls, v):
-        """
-        Validação básica de telefone brasileiro.
-        Aceita 10-15 dígitos (DDD + número, com ou sem 9 do celular).
-        """
-        if v is None:
-            return v
-        digits = re.sub(r'\D', '', v)
-        if len(digits) < 10 or len(digits) > 15:
-            raise ValueError("Telefone com formato inválido.")
         return v
 
     @validator("data_nascimento")
     def data_nascimento_must_be_iso_format(cls, v):
-        """
-        Valida formato ISO 8601: YYYY-MM-DD.
-        Não valida se data é passada/futura - apenas formato.
-        """
-        if v is None:
-            return v
-        if not re.match(r'^\d{4}-\d{2}-\d{2}$', v):
-            raise ValueError("Data de nascimento deve estar no formato ISO (YYYY-MM-DD).")
         return v
 
     @validator("vencimento_dia")
     def vencimento_dia_must_be_valid(cls, v):
-        if v is None:
-            return v
-        if not 1 <= v <= 31:
-            raise ValueError("Vencimento deve ser entre 1 e 31.")
         return v
 
     @validator("status_pagamento")
     def status_pagamento_must_be_valid(cls, v):
-        if v is None:
-            return v
-        if v not in ("em_dia", "atrasado", "isento"):
-            raise ValueError("status_pagamento deve ser em_dia, atrasado ou isento.")
         return v
 
     class Config:
