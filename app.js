@@ -1758,11 +1758,14 @@ async function salvarNovoCliente(event) {
 
     // Fallback Modo Demo Local
     novoCliente.id = Date.now();
-    const tagsSelCriarLocal = [...document.querySelectorAll('#criar-tags-container .tag-checkbox:checked')].map(cb => cb.value);
-    if (tagsSelCriarLocal.length) novoCliente._tags = tagsSelCriarLocal;
+    try {
+        const tagsSelCriarLocal = [...document.querySelectorAll('#criar-tags-container .tag-checkbox:checked')].map(cb => cb.value);
+        if (tagsSelCriarLocal.length) novoCliente._tags = tagsSelCriarLocal;
+    } catch(e) {}
     clientesCache.unshift(novoCliente);
     atualizarMetricas(clientesCache);
     filtrarTabela();
+    renderizarKanban();
     exibirToast(`Cliente "${novoCliente.nome}" cadastrado! (Modo Local)`, 'sucesso');
     fecharModalCriar();
     setButtonLoading(btnSubmit, false, 'Cadastrar Cliente');
@@ -1910,17 +1913,28 @@ async function salvarEdicaoCliente(event) {
         }
     } catch (error) {
         console.warn('Falha na API backend. Salvando edição em modo local:', error);
-        exibirToast(error.message || 'Erro ao comunicar com a API.', 'erro');
+        // Não mostra erro aqui — fallback local ainda vai salvar
     }
 
-    // Fallback Modo Demo Local
-    const index = clientesCache.findIndex(c => String(c.id) === String(id));
-    if (index !== -1) {
-        const tagsSelEditarLocal = [...document.querySelectorAll('#editar-tags-container .tag-checkbox:checked')].map(cb => cb.value);
-        clientesCache[index] = { ...clientesCache[index], ...clienteAtualizado, _tags: tagsSelEditarLocal };
-        atualizarMetricas(clientesCache);
-        filtrarTabela();
-        exibirToast(`Cliente #${id} atualizado! (Modo Local)`, 'sucesso');
+    // Fallback Modo Demo Local (sempre executa se não retornou antes, inclusive em IS_LOCAL)
+    try {
+        const index = clientesCache.findIndex(c => String(c.id) === String(id));
+        if (index !== -1) {
+            let tagsSelEditarLocal = [];
+            try {
+                tagsSelEditarLocal = [...document.querySelectorAll('#editar-tags-container .tag-checkbox:checked')].map(cb => cb.value);
+            } catch(e) {}
+            clientesCache[index] = { ...clientesCache[index], ...clienteAtualizado, _tags: tagsSelEditarLocal };
+            atualizarMetricas(clientesCache);
+            filtrarTabela();
+            renderizarKanban();
+            exibirToast(`Cliente #${id} atualizado! ${modoDemo || IS_LOCAL ? '(Local)' : ''}`, 'sucesso');
+        } else {
+            exibirToast(`Cliente #${id} não encontrado no cache`, 'erro');
+        }
+    } catch (e) {
+        console.error('Erro no fallback local:', e);
+        exibirToast('Erro ao salvar localmente', 'erro');
     }
     fecharModalEditar();
     setButtonLoading(btnSubmit, false, 'Salvar Alterações');
