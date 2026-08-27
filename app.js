@@ -240,8 +240,8 @@ function obterAuthHeaders() {
 }
 
 // Wrapper autenticado: injeta Authorization Bearer, trata expiração/invalidade
-// Se 401, limpa localStorage e redireciona para /?login=true (re-autenticar)
-// Também captura throw de obterAuthHeaders() quando token ausente
+// Produção: 401 ou sem token => limpa e redireciona para /?login=true
+// Live Server (IS_LOCAL): sem token => lança erro para permitir fallback demo (não redireciona)
 async function fetchAuth(url, options = {}) {
     try {
         const headers = obterAuthHeaders();
@@ -250,8 +250,9 @@ async function fetchAuth(url, options = {}) {
             headers: { ...headers, ...options.headers }
         });
 
-        // Se token expirado ou inválido (401), limpa sessão e redireciona
         if (response.status === 401) {
+            // Em produção, força login; em local, deixa caller decidir fallback demo
+            if (IS_LOCAL) return response;
             localStorage.removeItem('df_token');
             localStorage.removeItem('df_user_id');
             window.location.href = '/?login=true';
@@ -261,6 +262,8 @@ async function fetchAuth(url, options = {}) {
         return response;
     } catch (error) {
         if (error.message.includes('Token de autenticação não encontrado')) {
+            // Live Server sem login => modo demo local, não redireciona
+            if (IS_LOCAL) throw error;
             window.location.href = '/?login=true';
             return;
         }
