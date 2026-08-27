@@ -334,6 +334,72 @@ html {
 }
 
 /* ============================================================
+   KANBAN — Fase 1A
+   ============================================================ */
+.kanban-column {
+    min-width: 280px;
+    max-width: 320px;
+    flex: 1 0 280px;
+    background-color: var(--dash-surface-2);
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 280px);
+}
+.kanban-column-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--dash-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    background-color: var(--dash-surface);
+    border-radius: var(--dash-radius) var(--dash-radius) 0 0;
+}
+.kanban-column-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 80px;
+}
+.kanban-card {
+    background-color: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    cursor: grab;
+    transition: border-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+    box-shadow: var(--dash-shadow-sm);
+}
+.kanban-card:hover {
+    border-color: var(--dash-accent);
+    box-shadow: var(--dash-shadow-md);
+    transform: translateY(-1px);
+}
+.kanban-card:active { cursor: grabbing; }
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: var(--dash-accent-light) !important;
+    border: 2px dashed var(--dash-accent) !important;
+}
+.sortable-chosen {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.kanban-empty {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    color: var(--dash-text-3);
+    font-size: 0.75rem;
+    border: 2px dashed var(--dash-border);
+    border-radius: 0.5rem;
+    background-color: var(--dash-surface);
+}
+
+/* ============================================================
    DASHBOARD: Section colapsável (Contato, Endereço, etc.)
    ============================================================ */
 .collapsible-chevron {

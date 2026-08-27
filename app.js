@@ -138,6 +138,12 @@ const CLIENTES_DEMO = IS_LOCAL ? [
 
 let clientesCache = [];
 let planosCache = [...PLANOS_DEFAULT];
+let etapasCache = [];
+let tagsCache = [];
+let atividadesCache = [];
+let filtrosCache = [];
+let importPreviewData = [];
+let viewMode = localStorage.getItem('daviflow_view') || 'tabela';
 let clienteParaDeletarId = null;
 let modoDemo = false;
 
@@ -234,8 +240,8 @@ function obterAuthHeaders() {
 }
 
 // Wrapper autenticado: injeta Authorization Bearer, trata expiração/invalidade
-// Se 401, limpa localStorage e redireciona para /?login=true (re-autenticar)
-// Também captura throw de obterAuthHeaders() quando token ausente
+// Produção: 401 ou sem token => limpa e redireciona para /?login=true
+// Live Server (IS_LOCAL): sem token => lança erro para permitir fallback demo (não redireciona)
 async function fetchAuth(url, options = {}) {
     try {
         const headers = obterAuthHeaders();
@@ -244,8 +250,9 @@ async function fetchAuth(url, options = {}) {
             headers: { ...headers, ...options.headers }
         });
 
-        // Se token expirado ou inválido (401), limpa sessão e redireciona
         if (response.status === 401) {
+            // Em produção, força login; em local, deixa caller decidir fallback demo
+            if (IS_LOCAL) return response;
             localStorage.removeItem('df_token');
             localStorage.removeItem('df_user_id');
             window.location.href = '/?login=true';
@@ -255,6 +262,8 @@ async function fetchAuth(url, options = {}) {
         return response;
     } catch (error) {
         if (error.message.includes('Token de autenticação não encontrado')) {
+            // Live Server sem login => modo demo local, não redireciona
+            if (IS_LOCAL) throw error;
             window.location.href = '/?login=true';
             return;
         }
@@ -306,7 +315,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function inicializarApp() {
     await carregarPlanos();
+    await carregarEtapas();
+    await carregarTags();
+    await carregarFiltrosSalvos();
     await carregarClientes();
+    setViewMode(viewMode, true);
     if (window.lucide) lucide.createIcons();
 }
 
@@ -420,6 +433,814 @@ function inicializarFiltroPlanos() {
 }
 
 // ============================================================
+// 3B. FASE 1A — ETAPAS (Kanban)
+// ============================================================
+async function carregarEtapas() {
+    try {
+        const response = await fetchAuth(`${API_BASE_URL}/etapas`, { method: 'GET' });
+        if (!response) return;
+        if (response.ok) {
+            const data = await response.json();
+            etapasCache = Array.isArray(data) ? data : [];
+        } else {
+            etapasCache = [];
+        }
+    } catch (e) {
+        etapasCache = [];
+    }
+    inicializarFiltroEtapas();
+    renderizarEtapasSelects();
+    renderizarKanban();
+    if (window.lucide) lucide.createIcons();
+}
+function inicializarFiltroEtapas() {
+    const select = document.getElementById('filter-etapa');
+    if (!select) return;
+    select.innerHTML = '<option value="">Todas Etapas</option>';
+    etapasCache.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.id;
+        opt.textContent = e.nome;
+        select.appendChild(opt);
+    });
+    const semOpt = document.createElement('option');
+    semOpt.value = '__sem_etapa__';
+    semOpt.textContent = 'Sem etapa';
+    select.appendChild(semOpt);
+}
+function renderizarEtapasSelects() {
+    ['criar-etapa', 'editar-etapa'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '<option value="">Sem etapa</option>';
+        etapasCache.forEach(e => {
+            const opt = document.createElement('option');
+            opt.value = e.id;
+            opt.textContent = e.nome;
+            sel.appendChild(opt);
+        });
+        sel.value = current;
+    });
+}
+function setViewMode(mode, skipSave) {
+    viewMode = mode;
+    if (!skipSave) localStorage.setItem('daviflow_view', mode);
+    const tabelaMain = document.querySelector('main');
+    const kanbanBoard = document.getElementById('kanban-board');
+    const btnTabela = document.getElementById('btn-view-tabela');
+    const btnKanban = document.getElementById('btn-view-kanban');
+    if (!tabelaMain || !kanbanBoard) return;
+    if (mode === 'kanban') {
+        tabelaMain.classList.add('hidden');
+        tabelaMain.classList.remove('flex');
+        kanbanBoard.classList.remove('hidden');
+        kanbanBoard.classList.add('flex');
+        btnTabela?.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border');
+        btnKanban?.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border', 'border-slate-200', 'dark:border-slate-600');
+        renderizarKanban();
+    } else {
+        kanbanBoard.classList.add('hidden');
+        kanbanBoard.classList.remove('flex');
+        tabelaMain.classList.remove('hidden');
+        tabelaMain.classList.add('flex');
+        btnKanban?.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border');
+        btnTabela?.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border');
+    }
+    if (window.lucide) lucide.createIcons();
+}
+function renderizarKanban() {
+    const container = document.getElementById('kanban-container');
+    const countEl = document.getElementById('kanban-count');
+    if (!container) return;
+    if (etapasCache.length === 0 && clientesCache.length === 0) {
+        container.innerHTML = '<div class="w-full text-center py-16 text-sm text-slate-400">Crie etapas para usar o Kanban</div>';
+        if (countEl) countEl.textContent = '0 etapas';
+        return;
+    }
+    const grupos = {};
+    etapasCache.forEach(e => grupos[e.id] = []);
+    const semEtapa = [];
+    clientesCache.forEach(c => {
+        const termo = document.getElementById('search-input').value.toLowerCase().trim();
+        const planoFiltro = document.getElementById('filter-plano').value;
+        const statusFiltro = document.getElementById('filter-status').value;
+        const tagFiltro = document.getElementById('filter-tag')?.value || '';
+        const haystack = [c.nome, c.email, c.telefone||'', c.empresa||''].join(' ').toLowerCase();
+        const matchBusca = !termo || haystack.includes(termo);
+        const matchPlano = !planoFiltro || String(c.plano)===String(planoFiltro) || (planoFiltro==='__sem_plano__'&&!c.plano);
+        const matchStatus = !statusFiltro || (statusFiltro==='ativo'?c.ativo:!c.ativo);
+        let matchTag = true;
+        if (tagFiltro) {
+            const tagIds = c._tags || [];
+            matchTag = tagIds.includes(tagFiltro);
+        }
+        if (!matchBusca || !matchPlano || !matchStatus || !matchTag) return;
+        if (c.etapa_id && grupos.hasOwnProperty(c.etapa_id)) grupos[c.etapa_id].push(c);
+        else semEtapa.push(c);
+    });
+    let html = '';
+    html += `<div class="kanban-column">
+        <div class="kanban-column-header">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Sem etapa</span>
+                <span class="px-1.5 py-0.5 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-500 rounded-full">${semEtapa.length}</span>
+            </div>
+        </div>
+        <div class="kanban-column-body" data-etapa-id="">
+            ${semEtapa.length ? semEtapa.map(c => kanbanCardHTML(c)).join('') : '<div class="kanban-empty">Arraste clientes aqui</div>'}
+        </div>
+    </div>`;
+    etapasCache.forEach(etapa => {
+        const estilo = MAPA_CORES_PLANO[etapa.cor] || MAPA_CORES_PLANO.indigo;
+        const clientes = grupos[etapa.id] || [];
+        html += `<div class="kanban-column">
+            <div class="kanban-column-header">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full ${estilo.dot}"></span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">${escaparHTML(etapa.nome)}</span>
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold ${estilo.bg} ${estilo.text} rounded-full">${clientes.length}</span>
+                </div>
+            </div>
+            <div class="kanban-column-body" data-etapa-id="${etapa.id}">
+                ${clientes.length ? clientes.map(c => kanbanCardHTML(c)).join('') : '<div class="kanban-empty">Arraste clientes aqui</div>'}
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+    if (countEl) countEl.textContent = `${etapasCache.length} etapas`;
+    container.querySelectorAll('.kanban-column-body').forEach(col => {
+        new Sortable(col, {
+            group: 'kanban',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            onEnd: async function(evt) {
+                const clienteId = evt.item.dataset.clienteId;
+                const newEtapaId = evt.to.dataset.etapaId || null;
+                if (!clienteId) return;
+                try {
+                    const resp = await fetchAuth(`${API_BASE_URL}/clientes/${clienteId}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ etapa_id: newEtapaId || null })
+                    });
+                    if (resp && resp.ok) {
+                        const idx = clientesCache.findIndex(c => String(c.id)===String(clienteId));
+                        if (idx !== -1) clientesCache[idx].etapa_id = newEtapaId || null;
+                        exibirToast('Etapa atualizada', 'sucesso');
+                    } else if (!modoDemo) {
+                        exibirToast('Erro ao mover card', 'erro');
+                        renderizarKanban();
+                    }
+                } catch (e) {
+                    const idx = clientesCache.findIndex(c => String(c.id)===String(clienteId));
+                    if (idx !== -1) clientesCache[idx].etapa_id = newEtapaId || null;
+                    renderizarKanban();
+                }
+                if (window.lucide) lucide.createIcons();
+            }
+        });
+    });
+    if (window.lucide) lucide.createIcons();
+}
+function kanbanCardHTML(cliente) {
+    const planoBadge = getPlanoBadgeHTML(cliente.plano);
+    const statusDot = cliente.ativo ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>' : '<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>';
+    const valor = cliente.valor_plano ? `<span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">${escaparHTML(cliente.valor_plano)}</span>` : '';
+    const venc = cliente.vencimento_dia ? `<span class="text-[10px] text-slate-400">Venc: ${cliente.vencimento_dia}</span>` : '';
+    const tags = (cliente._tags || []).slice(0,2).map(tid => {
+        const t = tagsCache.find(x => String(x.id)===String(tid));
+        if (!t) return '';
+        const estilo = MAPA_CORES_PLANO[t.cor] || MAPA_CORES_PLANO.slate;
+        return `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded-full ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(t.nome)}</span>`;
+    }).join(' ');
+    return `<div class="kanban-card" data-cliente-id="${cliente.id}" onclick="abrirModalDetalhes(${cliente.id})">
+        <div class="flex items-center gap-2 mb-1.5">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white" style="background:${avatarGradient(cliente.nome)}">${avatarInitials(cliente.nome)}</div>
+            <span class="text-xs font-bold text-slate-900 dark:text-white truncate">${escaparHTML(cliente.nome)}</span>
+            <span class="ml-auto flex items-center gap-1 text-[10px]">${statusDot}</span>
+        </div>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${escaparHTML(cliente.email)}</p>
+        <div class="flex items-center gap-1 mt-2 flex-wrap">${planoBadge} ${tags}</div>
+        <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+            <span class="text-[10px] text-slate-400">${valor} ${venc ? '· '+venc : ''}</span>
+            <i data-lucide="grip" class="w-3 h-3 text-slate-300"></i>
+        </div>
+    </div>`;
+}
+function abrirModalEtapas() { renderizarListaEtapasGerenciamento(); resetarFormEtapa(); abrirModal('modal-etapas'); }
+function fecharModalEtapas() { fecharModal('modal-etapas'); }
+function renderizarListaEtapasGerenciamento() {
+    const container = document.getElementById('lista-etapas-gerenciamento');
+    if (!container) return;
+    container.innerHTML = '';
+    if (etapasCache.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhuma etapa. Crie a primeira!</p>';
+        return;
+    }
+    etapasCache.forEach(e => {
+        const estilo = MAPA_CORES_PLANO[e.cor] || MAPA_CORES_PLANO.indigo;
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 gap-3';
+        div.innerHTML = `<div class="flex items-center gap-3 min-w-0">
+            <span class="w-3 h-3 rounded-full ${estilo.dot} flex-shrink-0"></span>
+            <div class="min-w-0">
+                <span class="font-bold text-slate-900 dark:text-white text-sm">${escaparHTML(e.nome)}</span>
+                <span class="text-xs text-slate-400 ml-2">ordem ${e.ordem}</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0">
+            <button onclick="editarEtapaForm('${e.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all" title="Editar"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deletarEtapa('${e.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-all" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>`;
+        container.appendChild(div);
+    });
+    if (window.lucide) lucide.createIcons();
+}
+function selecionarCorEtapa(cor) {
+    document.getElementById('etapa-cor-selecionada').value = cor;
+    document.querySelectorAll('#etapa-color-picker .color-dot').forEach(b => b.classList.toggle('selected', b.dataset.color===cor));
+}
+function resetarFormEtapa() {
+    document.getElementById('etapa-id-editar').value = '';
+    document.getElementById('etapa-nome').value = '';
+    document.getElementById('etapa-ordem').value = '';
+    document.getElementById('titulo-form-etapa').textContent = 'Nova Etapa';
+    document.getElementById('btn-cancelar-etapa').classList.add('hidden');
+    selecionarCorEtapa('indigo');
+}
+function editarEtapaForm(id) {
+    const e = etapasCache.find(x => String(x.id)===String(id));
+    if (!e) return;
+    document.getElementById('etapa-id-editar').value = e.id;
+    document.getElementById('etapa-nome').value = e.nome;
+    document.getElementById('etapa-ordem').value = e.ordem;
+    document.getElementById('titulo-form-etapa').textContent = 'Editar Etapa: '+e.nome;
+    document.getElementById('btn-cancelar-etapa').classList.remove('hidden');
+    selecionarCorEtapa(e.cor||'indigo');
+}
+async function salvarEtapa(event) {
+    event.preventDefault();
+    const id = document.getElementById('etapa-id-editar').value;
+    const nome = document.getElementById('etapa-nome').value.trim();
+    const ordem = parseInt(document.getElementById('etapa-ordem').value) || 0;
+    const cor = document.getElementById('etapa-cor-selecionada').value;
+    if (!nome) return;
+    const payload = { nome, ordem, cor };
+    try {
+        if (!modoDemo) {
+            const url = id ? `${API_BASE_URL}/etapas/${id}` : `${API_BASE_URL}/etapas`;
+            const method = id ? 'PATCH' : 'POST';
+            const resp = await fetchAuth(url, { method, body: JSON.stringify(payload) });
+            if (!resp) return;
+            if (!resp.ok) throw new Error('Erro ao salvar etapa');
+            exibirToast('Etapa salva!', 'sucesso');
+            await carregarEtapas();
+            resetarFormEtapa();
+            return;
+        }
+    } catch(e) { console.warn(e); }
+    if (id) {
+        const idx = etapasCache.findIndex(x => String(x.id)===String(id));
+        if (idx!==-1) etapasCache[idx] = { ...etapasCache[idx], ...payload };
+    } else {
+        etapasCache.push({ id: 'etapa_'+Date.now(), user_id: 'local', ...payload, created_at: new Date().toISOString() });
+    }
+    inicializarFiltroEtapas(); renderizarEtapasSelects(); renderizarKanban(); renderizarListaEtapasGerenciamento(); resetarFormEtapa();
+    exibirToast('Etapa salva! (Local)', 'sucesso');
+}
+function confirmarAcao(titulo, mensagem, aoConfirmar) {
+    document.getElementById('confirm-title').textContent = titulo;
+    document.getElementById('confirm-message').textContent = mensagem;
+    const btnOk = document.getElementById('btn-confirm-ok');
+    const novoBtnOk = btnOk.cloneNode(true);
+    btnOk.parentNode.replaceChild(novoBtnOk, btnOk);
+    novoBtnOk.addEventListener('click', () => {
+        fecharModalConfirm();
+        aoConfirmar();
+    });
+    if (window.lucide) lucide.createIcons();
+    abrirModal('modal-confirm');
+}
+function fecharModalConfirm() { fecharModal('modal-confirm'); }
+
+async function deletarEtapa(id) {
+    confirmarAcao('Excluir etapa?', 'Clientes nesta etapa ficarão sem etapa. Deseja continuar?', async () => {
+        try {
+            if (!modoDemo) {
+                const resp = await fetchAuth(`${API_BASE_URL}/etapas/${id}`, { method: 'DELETE' });
+                if (!resp) return;
+                if (!resp.ok) throw new Error('Erro ao excluir');
+                exibirToast('Etapa removida!', 'sucesso');
+                await carregarEtapas();
+                return;
+            }
+        } catch(e) { console.warn(e); }
+        etapasCache = etapasCache.filter(x => String(x.id)!==String(id));
+        inicializarFiltroEtapas(); renderizarEtapasSelects(); renderizarKanban(); renderizarListaEtapasGerenciamento();
+    });
+}
+async function carregarTags() {
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/tags`, { method: 'GET' });
+        if (!resp) return;
+        if (resp.ok) tagsCache = await resp.json();
+        else tagsCache = [];
+    } catch(e) { tagsCache = []; }
+    inicializarFiltroTags();
+    renderizarTagsSelects();
+}
+function inicializarFiltroTags() {
+    const sel = document.getElementById('filter-tag');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Todas Tags</option>';
+    tagsCache.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.nome;
+        sel.appendChild(opt);
+    });
+}
+function renderizarTagsSelects() {
+    ['criar-tags-container','editar-tags-container'].forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        if (tagsCache.length===0) {
+            container.innerHTML = '<span class="text-xs text-slate-400">Nenhuma tag cadastrada</span>';
+            return;
+        }
+        container.innerHTML = tagsCache.map(t => {
+            const estilo = MAPA_CORES_PLANO[t.cor] || MAPA_CORES_PLANO.slate;
+            return `<label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${estilo.border} ${estilo.bg} cursor-pointer hover:opacity-80 transition-opacity">
+                <input type="checkbox" value="${t.id}" class="tag-checkbox sr-only" data-tag-id="${t.id}">
+                <span class="w-2 h-2 rounded-full ${estilo.dot}"></span>
+                <span class="text-xs font-semibold ${estilo.text}">${escaparHTML(t.nome)}</span>
+            </label>`;
+        }).join('');
+    });
+    if (window.lucide) lucide.createIcons();
+}
+function abrirModalTags() { renderizarListaTagsGerenciamento(); resetarFormTag(); abrirModal('modal-tags'); }
+function fecharModalTags() { fecharModal('modal-tags'); }
+function renderizarListaTagsGerenciamento() {
+    const container = document.getElementById('lista-tags-gerenciamento');
+    if (!container) return;
+    container.innerHTML = '';
+    tagsCache.forEach(t => {
+        const estilo = MAPA_CORES_PLANO[t.cor] || MAPA_CORES_PLANO.slate;
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 gap-3';
+        div.innerHTML = `<div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full ${estilo.dot}"></span>
+            <span class="text-sm font-bold text-slate-900 dark:text-white">${escaparHTML(t.nome)}</span>
+        </div>
+        <div class="flex items-center gap-1">
+            <button onclick="editarTagForm('${t.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700/60"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deletarTag('${t.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>`;
+        container.appendChild(div);
+    });
+    if (window.lucide) lucide.createIcons();
+}
+function selecionarCorTag(cor) {
+    document.getElementById('tag-cor-selecionada').value = cor;
+    document.querySelectorAll('#tag-color-picker .color-dot').forEach(b => b.classList.toggle('selected', b.dataset.color===cor));
+}
+function resetarFormTag() {
+    document.getElementById('tag-id-editar').value = '';
+    document.getElementById('tag-nome').value = '';
+    document.getElementById('titulo-form-tag').textContent = 'Nova Tag';
+    document.getElementById('btn-cancelar-tag').classList.add('hidden');
+    selecionarCorTag('indigo');
+}
+function editarTagForm(id) {
+    const t = tagsCache.find(x => String(x.id)===String(id));
+    if (!t) return;
+    document.getElementById('tag-id-editar').value = t.id;
+    document.getElementById('tag-nome').value = t.nome;
+    document.getElementById('titulo-form-tag').textContent = 'Editar Tag: '+t.nome;
+    document.getElementById('btn-cancelar-tag').classList.remove('hidden');
+    selecionarCorTag(t.cor||'indigo');
+}
+async function salvarTag(event) {
+    event.preventDefault();
+    const id = document.getElementById('tag-id-editar').value;
+    const nome = document.getElementById('tag-nome').value.trim();
+    const cor = document.getElementById('tag-cor-selecionada').value;
+    if (!nome) return;
+    const payload = { nome, cor };
+    try {
+        if (!modoDemo) {
+            const url = id ? `${API_BASE_URL}/tags/${id}` : `${API_BASE_URL}/tags`;
+            const method = id ? 'PATCH' : 'POST';
+            const resp = await fetchAuth(url, { method, body: JSON.stringify(payload) });
+            if (!resp) return;
+            if (!resp.ok) throw new Error('Erro');
+            exibirToast('Tag salva!', 'sucesso');
+            await carregarTags();
+            resetarFormTag();
+            return;
+        }
+    } catch(e) { console.warn(e); }
+    if (id) {
+        const idx = tagsCache.findIndex(x => String(x.id)===String(id));
+        if (idx!==-1) tagsCache[idx] = { ...tagsCache[idx], ...payload };
+    } else {
+        tagsCache.push({ id: 'tag_'+Date.now(), user_id: 'local', ...payload });
+    }
+    inicializarFiltroTags(); renderizarTagsSelects(); renderizarListaTagsGerenciamento(); resetarFormTag();
+}
+async function deletarTag(id) {
+    confirmarAcao('Excluir tag?', 'Esta ação não pode ser desfeita. Deseja continuar?', async () => {
+        try {
+            if (!modoDemo) {
+                const resp = await fetchAuth(`${API_BASE_URL}/tags/${id}`, { method: 'DELETE' });
+                if (!resp) return;
+                if (!resp.ok) throw new Error('Erro');
+                exibirToast('Tag removida!', 'sucesso');
+                await carregarTags();
+                return;
+            }
+        } catch(e) { console.warn(e); }
+        tagsCache = tagsCache.filter(x => String(x.id)!==String(id));
+        inicializarFiltroTags(); renderizarTagsSelects(); renderizarListaTagsGerenciamento();
+    });
+}
+async function carregarFiltrosSalvos() {
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/filtros`, { method: 'GET' });
+        if (!resp) return;
+        if (resp.ok) filtrosCache = await resp.json();
+        else filtrosCache = [];
+    } catch(e) { filtrosCache = []; }
+    renderizarFiltrosSalvos();
+}
+function renderizarFiltrosSalvos() {
+    const container = document.getElementById('lista-filtros-salvos');
+    if (!container) return;
+    container.innerHTML = '';
+    if (filtrosCache.length===0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhum filtro salvo</p>';
+        return;
+    }
+    filtrosCache.forEach(f => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 gap-3';
+        div.innerHTML = `<div class="min-w-0">
+            <p class="text-sm font-bold text-slate-900 dark:text-white truncate">${escaparHTML(f.nome)}</p>
+            <p class="text-xs text-slate-400 truncate">${escaparHTML(JSON.stringify(f.query).slice(0,80))}</p>
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0">
+            <button onclick="aplicarFiltroSalvo('${f.id}')" class="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" title="Aplicar"><i data-lucide="play" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deletarFiltroSalvo('${f.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>`;
+        container.appendChild(div);
+    });
+    if (window.lucide) lucide.createIcons();
+}
+function abrirModalFiltros() { renderizarFiltrosSalvos(); abrirModal('modal-filtros'); }
+function fecharModalFiltros() { fecharModal('modal-filtros'); }
+async function salvarFiltroAtual() {
+    const nome = document.getElementById('filtro-nome').value.trim();
+    if (!nome) { exibirToast('Informe um nome para o filtro', 'erro'); return; }
+    const query = {
+        termo: document.getElementById('search-input').value,
+        plano: document.getElementById('filter-plano').value,
+        status: document.getElementById('filter-status').value,
+        etapa: document.getElementById('filter-etapa')?.value || '',
+        tag: document.getElementById('filter-tag')?.value || ''
+    };
+    try {
+        if (!modoDemo) {
+            const resp = await fetchAuth(`${API_BASE_URL}/filtros`, { method: 'POST', body: JSON.stringify({ nome, query }) });
+            if (!resp) return;
+            if (!resp.ok) throw new Error('Erro');
+            exibirToast('Filtro salvo!', 'sucesso');
+            document.getElementById('filtro-nome').value = '';
+            await carregarFiltrosSalvos();
+            return;
+        }
+    } catch(e) { console.warn(e); }
+    filtrosCache.push({ id: 'filtro_'+Date.now(), user_id: 'local', nome, query });
+    renderizarFiltrosSalvos();
+    document.getElementById('filtro-nome').value = '';
+}
+async function aplicarFiltroSalvo(id) {
+    const f = filtrosCache.find(x => String(x.id)===String(id));
+    if (!f) return;
+    document.getElementById('search-input').value = f.query.termo || '';
+    document.getElementById('filter-plano').value = f.query.plano || '';
+    document.getElementById('filter-status').value = f.query.status || '';
+    if (document.getElementById('filter-etapa')) document.getElementById('filter-etapa').value = f.query.etapa || '';
+    if (document.getElementById('filter-tag')) document.getElementById('filter-tag').value = f.query.tag || '';
+    fecharModalFiltros();
+    filtrarTabela();
+    exibirToast('Filtro aplicado: '+f.nome, 'sucesso');
+}
+async function deletarFiltroSalvo(id) {
+    confirmarAcao('Excluir filtro?', 'O filtro será removido permanentemente.', async () => {
+        try {
+            if (!modoDemo) {
+                const resp = await fetchAuth(`${API_BASE_URL}/filtros/${id}`, { method: 'DELETE' });
+                if (!resp) return;
+                if (!resp.ok) throw new Error('Erro');
+                await carregarFiltrosSalvos();
+                return;
+            }
+        } catch(e) { console.warn(e); }
+        filtrosCache = filtrosCache.filter(x => String(x.id)!==String(id));
+        renderizarFiltrosSalvos();
+    });
+}
+
+// ============================================================
+// FASE 1B — ATIVIDADES (timeline + modal)
+// ============================================================
+async function carregarAtividades(clienteId) {
+    // Live Server sem backend: usa cache local
+    if (IS_LOCAL && modoDemo) {
+        if (clienteId) return atividadesCache.filter(a => String(a.cliente_id)===String(clienteId));
+        return [...atividadesCache];
+    }
+    try {
+        const url = clienteId ? `${API_BASE_URL}/atividades?cliente_id=${clienteId}` : `${API_BASE_URL}/atividades`;
+        const resp = await fetchAuth(url, { method: 'GET' });
+        if (!resp || !resp.ok) {
+            if (IS_LOCAL) {
+                if (clienteId) return atividadesCache.filter(a => String(a.cliente_id)===String(clienteId));
+                return [...atividadesCache];
+            }
+            return [];
+        }
+        const data = await resp.json();
+        return Array.isArray(data) ? data : [];
+    } catch(e) {
+        if (IS_LOCAL) {
+            if (clienteId) return atividadesCache.filter(a => String(a.cliente_id)===String(clienteId));
+            return [...atividadesCache];
+        }
+        return [];
+    }
+}
+function abrirModalAtividade(clienteId, clienteNome) {
+    document.getElementById('atividade-cliente-id').value = clienteId;
+    document.getElementById('atividade-cliente-nome').textContent = clienteNome || '';
+    document.getElementById('atividade-tipo').value = 'ligacao';
+    document.getElementById('atividade-data').value = new Date().toISOString().split('T')[0];
+    document.getElementById('atividade-nota').value = '';
+    document.getElementById('atividade-concluida').checked = false;
+    abrirModal('modal-atividade');
+}
+function fecharModalAtividade() { fecharModal('modal-atividade'); }
+async function salvarAtividade(event) {
+    event.preventDefault();
+    const cliente_id = document.getElementById('atividade-cliente-id').value;
+    const tipo = document.getElementById('atividade-tipo').value;
+    const data = document.getElementById('atividade-data').value;
+    const nota = document.getElementById('atividade-nota').value.trim() || null;
+    const concluida = document.getElementById('atividade-concluida').checked;
+    if (!cliente_id || !tipo || !data) { exibirToast('Preencha cliente, tipo e data', 'erro'); return; }
+    const payload = { cliente_id, tipo, data, nota, concluida };
+    try {
+        if (!modoDemo) {
+            const resp = await fetchAuth(`${API_BASE_URL}/atividades`, { method: 'POST', body: JSON.stringify(payload) });
+            if (!resp) return;
+            if (!resp.ok) throw new Error('Erro ao criar atividade');
+            exibirToast('Atividade criada!', 'sucesso');
+            fecharModalAtividade();
+            // Recarrega timeline se modal detalhes aberto
+            const detalhesBody = document.getElementById('detalhes-body');
+            if (detalhesBody && !document.getElementById('modal-detalhes').classList.contains('hidden')) {
+                const cliente = clientesCache.find(c => String(c.id)===String(cliente_id));
+                if (cliente) abrirModalDetalhes(cliente.id);
+            }
+            // Atualiza cache para métrica
+            try { const r = await fetchAuth(`${API_BASE_URL}/atividades`, { method: 'GET' }); if (r && r.ok) atividadesCache = await r.json(); } catch(e) {}
+            atualizarMetricas(clientesCache);
+            return;
+        }
+    } catch(e) {
+        console.warn(e);
+        if (!IS_LOCAL) { exibirToast('Erro ao criar atividade', 'erro'); return; }
+        // Fallback IS_LOCAL sem backend: salva localmente
+    }
+    // Fallback Live Server / modoDemo (IS_LOCAL sem backend)
+    const nova = { id: 'atividade_'+Date.now(), user_id: 'local', cliente_id, tipo, data, nota, concluida, created_at: new Date().toISOString() };
+    atividadesCache.push(nova);
+    exibirToast('Atividade criada! (Local)', 'sucesso');
+    fecharModalAtividade();
+    const detalhesBody2 = document.getElementById('detalhes-body');
+    if (detalhesBody2 && !document.getElementById('modal-detalhes').classList.contains('hidden')) {
+        const cliente = clientesCache.find(c => String(c.id)===String(cliente_id));
+        if (cliente) abrirModalDetalhes(cliente.id);
+    }
+    atualizarMetricas(clientesCache);
+}
+async function toggleAtividadeConcluida(atividadeId, clienteId) {
+    try {
+        const atv = atividadesCache.find(a => String(a.id)===String(atividadeId));
+        if (!atv) return;
+        const novo = !atv.concluida;
+        if (!modoDemo) {
+            const resp = await fetchAuth(`${API_BASE_URL}/atividades/${atividadeId}`, { method: 'PATCH', body: JSON.stringify({ concluida: novo }) });
+            if (!resp) return;
+            if (!resp.ok) throw new Error('Erro');
+            atv.concluida = novo;
+            exibirToast(novo ? 'Atividade concluída' : 'Atividade reaberta', 'sucesso');
+            if (clienteId) abrirModalDetalhes(clienteId);
+            atualizarMetricas(clientesCache);
+            return;
+        }
+    } catch(e) { console.warn(e); }
+    // Fallback IS_LOCAL / modoDemo
+    const atvLocal = atividadesCache.find(a => String(a.id)===String(atividadeId));
+    if (atvLocal) {
+        atvLocal.concluida = !atvLocal.concluida;
+        exibirToast(atvLocal.concluida ? 'Atividade concluída (Local)' : 'Atividade reaberta (Local)', 'sucesso');
+        if (clienteId) abrirModalDetalhes(clienteId);
+        atualizarMetricas(clientesCache);
+    }
+}
+async function deletarAtividade(atividadeId, clienteId) {
+    confirmarAcao('Excluir atividade?', 'Esta atividade será removida.', async () => {
+        try {
+            if (!modoDemo) {
+                const resp = await fetchAuth(`${API_BASE_URL}/atividades/${atividadeId}`, { method: 'DELETE' });
+                if (!resp) return;
+                if (!resp.ok) throw new Error('Erro');
+                exibirToast('Atividade excluída', 'sucesso');
+                if (clienteId) abrirModalDetalhes(clienteId);
+                atualizarMetricas(clientesCache);
+                return;
+            }
+        } catch(e) { console.warn(e); }
+        // Fallback IS_LOCAL
+        const idx = atividadesCache.findIndex(a => String(a.id)===String(atividadeId));
+        if (idx !== -1) {
+            atividadesCache.splice(idx, 1);
+            exibirToast('Atividade excluída (Local)', 'sucesso');
+            if (clienteId) abrirModalDetalhes(clienteId);
+            atualizarMetricas(clientesCache);
+        }
+    });
+}
+
+// ============================================================
+// FASE 1E — IMPORT CSV/EXCEL
+// ============================================================
+function abrirModalImport() {
+    document.getElementById('import-preview').classList.add('hidden');
+    document.getElementById('import-result').classList.add('hidden');
+    document.getElementById('btn-import-confirm').classList.add('hidden');
+    document.getElementById('import-file-input').value = '';
+    importPreviewData = [];
+    document.getElementById('import-preview-table').innerHTML = '';
+    document.getElementById('import-count').textContent = '';
+    abrirModal('modal-import');
+}
+function fecharModalImport() { fecharModal('modal-import'); }
+function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'csv') {
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                if (results.errors.length) console.warn(results.errors);
+                importPreviewData = results.data.slice(0, 1000).map(row => {
+                    // Normaliza keys para lower
+                    const norm = {};
+                    Object.keys(row).forEach(k => norm[k.trim().toLowerCase()] = row[k]);
+                    return {
+                        nome: norm['nome'] || norm['name'] || '',
+                        email: norm['email'] || norm['e-mail'] || '',
+                        telefone: norm['telefone'] || norm['phone'] || '',
+                        empresa: norm['empresa'] || norm['company'] || '',
+                        cpf: norm['cpf'] || '',
+                        plano: norm['plano'] || 'basico',
+                        ativo: !(norm['ativo'] === 'false' || norm['ativo'] === '0')
+                    };
+                }).filter(r => r.nome && r.email);
+                renderImportPreview();
+            }
+        });
+    } else if (['xlsx','xls'].includes(ext)) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(ws, {header:1});
+            if (json.length < 2) { exibirToast('Arquivo vazio', 'erro'); return; }
+            const headers = json[0].map(h => String(h).trim().toLowerCase());
+            const rows = json.slice(1, 1001);
+            importPreviewData = rows.map(row => {
+                const obj = {};
+                headers.forEach((h,i) => obj[h] = row[i]);
+                return {
+                    nome: obj['nome'] || obj['name'] || '',
+                    email: obj['email'] || obj['e-mail'] || '',
+                    telefone: obj['telefone'] || obj['phone'] || '',
+                    empresa: obj['empresa'] || obj['company'] || '',
+                    cpf: obj['cpf'] || '',
+                    plano: obj['plano'] || 'basico',
+                    ativo: !(obj['ativo'] === 'false' || obj['ativo'] === '0')
+                };
+            }).filter(r => r.nome && r.email);
+            renderImportPreview();
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        exibirToast('Formato não suportado. Use CSV ou Excel.', 'erro');
+    }
+}
+function renderImportPreview() {
+    const preview = document.getElementById('import-preview');
+    const tableDiv = document.getElementById('import-preview-table');
+    const countEl = document.getElementById('import-count');
+    const btn = document.getElementById('btn-import-confirm');
+    if (importPreviewData.length === 0) {
+        tableDiv.innerHTML = '<p class="text-xs text-rose-500 p-3">Nenhum cliente válido (precisa nome e email)</p>';
+        countEl.textContent = '';
+        btn.classList.add('hidden');
+        preview.classList.remove('hidden');
+        return;
+    }
+    const headers = Object.keys(importPreviewData[0]);
+    let html = '<table class="w-full text-left border-collapse"><thead><tr class="bg-slate-50 dark:bg-slate-800">';
+    headers.forEach(h => html += `<th class="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b">${escaparHTML(h)}</th>`);
+    html += '</tr></thead><tbody>';
+    importPreviewData.slice(0,5).forEach(row => {
+        html += '<tr class="border-b border-slate-100 dark:border-slate-700/40">';
+        headers.forEach(h => html += `<td class="px-2 py-1.5 text-xs truncate max-w-[120px]">${escaparHTML(String(row[h]||''))}</td>`);
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    tableDiv.innerHTML = html;
+    countEl.textContent = `${importPreviewData.length} clientes prontos para importar (mostrando 5)`;
+    btn.classList.remove('hidden');
+    preview.classList.remove('hidden');
+    document.getElementById('import-result').classList.add('hidden');
+}
+async function confirmarImport() {
+    if (importPreviewData.length === 0) return;
+    const btn = document.getElementById('btn-import-confirm');
+    const resultDiv = document.getElementById('import-result');
+    setButtonLoading(btn, true, 'Importando...');
+    try {
+        if (!modoDemo) {
+            const resp = await fetchAuth(`${API_BASE_URL}/clientes/import`, {
+                method: 'POST',
+                body: JSON.stringify({ clientes: importPreviewData })
+            });
+            if (!resp) { setButtonLoading(btn,false,'Importar'); return; }
+            const data = await resp.json();
+            if (resp.ok) {
+                resultDiv.className = 'p-3 rounded-xl border text-sm bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300';
+                resultDiv.innerHTML = `✅ ${data.sucessos}/${data.total} importados. ${data.erros?.length ? data.erros.length+' erros (ver console)' : ''}`;
+                resultDiv.classList.remove('hidden');
+                exibirToast(`${data.sucessos} clientes importados!`, 'sucesso');
+                await carregarClientes();
+                setButtonLoading(btn,false,'Importar');
+                return;
+            } else {
+                throw new Error(data.detail || 'Erro na importação');
+            }
+        }
+    } catch(e) {
+        console.warn(e);
+        resultDiv.className = 'p-3 rounded-xl border text-sm bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300';
+        resultDiv.textContent = 'Erro: '+(e.message||'Falha na importação');
+        resultDiv.classList.remove('hidden');
+        setButtonLoading(btn,false,'Importar');
+        return;
+    }
+    // Fallback local
+    let sucessos = 0;
+    importPreviewData.forEach(row => {
+        try {
+            // Validação rápida
+            if (!row.nome || !row.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) return;
+            row.id = Date.now() + Math.random();
+            row.data_cadastro = new Date().toISOString().split('T')[0];
+            row.ativo = true;
+            clientesCache.unshift(row);
+            sucessos++;
+        } catch(e) {}
+    });
+    resultDiv.className = 'p-3 rounded-xl border text-sm bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300';
+    resultDiv.textContent = `✅ ${sucessos}/${importPreviewData.length} importados (Local)`;
+    resultDiv.classList.remove('hidden');
+    atualizarMetricas(clientesCache);
+    filtrarTabela();
+    exibirToast(`${sucessos} clientes importados! (Local)`, 'sucesso');
+    setButtonLoading(btn,false,'Importar');
+}
+
+// ============================================================
 // 4. CLIENTES — carregar do backend, fallback demo local apenas se IS_LOCAL
 //    GET /clientes via fetchAuth; em erro: modoDemo=true, usa CLIENTES_DEMO só se IS_LOCAL
 //    Atualiza métricas e re-renderiza tabela/cards
@@ -434,19 +1255,44 @@ async function carregarClientes() {
         const data = await response.json();
         clientesCache = data;
         modoDemo = false;
+        // Fase 1C — Carrega tags de cada cliente (paralelo, ignora erro)
+        try {
+            await Promise.all(clientesCache.map(async (c) => {
+                try {
+                    const r = await fetchAuth(`${API_BASE_URL}/clientes/${c.id}/tags`, { method: 'GET' });
+                    if (r && r.ok) {
+                        const tags = await r.json();
+                        c._tags = tags.map(t => String(t.id));
+                    } else {
+                        c._tags = [];
+                    }
+                } catch(e) { c._tags = []; }
+            }));
+        } catch(e) {}
+        // Fase 1B — Carrega atividades para métrica de atrasados (se houver)
+        try {
+            const rAtv = await fetchAuth(`${API_BASE_URL}/atividades`, { method: 'GET' });
+            if (rAtv && rAtv.ok) {
+                atividadesCache = await rAtv.json();
+            }
+        } catch(e) { atividadesCache = []; }
         atualizarMetricas(clientesCache);
         filtrarTabela();
+        renderizarKanban();
     } catch (error) {
         console.warn('API/Banco offline. Ativando modo de demonstração local:', error);
         modoDemo = true;
         if (clientesCache.length === 0 && IS_LOCAL) {
             clientesCache = [...CLIENTES_DEMO];
+            // Demo: adiciona _tags vazio e etapa_id null para não quebrar Kanban
+            clientesCache.forEach(c => { c._tags = c._tags || []; c.etapa_id = c.etapa_id || null; });
             exibirToast('Modo Local (Demo) ativado para testes interativos.', 'info');
         } else if (clientesCache.length === 0) {
             exibirToast('Sem conexão com o servidor. Verifique sua internet.', 'erro');
         }
         atualizarMetricas(clientesCache);
         filtrarTabela();
+        renderizarKanban();
         verificarStatusAPI();
     } finally {
         mostrarLoading(false);
@@ -471,6 +1317,30 @@ function atualizarMetricas(clientes) {
     document.getElementById('metric-inativos').textContent    = inativos;
     document.getElementById('metric-ativos-pct').textContent  = `${ativosPct}%`;
     document.getElementById('metric-inativos-pct').textContent = `${inativosPct}%`;
+
+    // Fase 1B/1D — Atrasados (follow-ups) e Receita prevista
+    // Atrasados: baseado em status_pagamento === 'atrasado' (simples) + atividades atrasadas se carregadas
+    let atrasados = clientes.filter(c => c.status_pagamento === 'atrasado').length;
+    // Se atividadesCache tiver atrasadas, soma também (evita duplicar, usa max)
+    if (atividadesCache && atividadesCache.length) {
+        const hoje = new Date().toISOString().split('T')[0];
+        const atrasadosAtiv = atividadesCache.filter(a => !a.concluida && a.data < hoje).length;
+        // Usa o maior entre os dois para não subnotificar
+        atrasados = Math.max(atrasados, atrasadosAtiv);
+    }
+    const atrasadosEl = document.getElementById('metric-atrasados');
+    if (atrasadosEl) atrasadosEl.textContent = atrasados;
+
+    // Receita prevista: soma valor_plano dos em_dia. Valor é string "R$ 150" -> parse float
+    let receita = 0;
+    clientes.forEach(c => {
+        if (c.status_pagamento === 'em_dia' && c.valor_plano) {
+            const num = parseFloat(String(c.valor_plano).replace(/[^\d,.-]/g, '').replace(',', '.'));
+            if (!isNaN(num)) receita += num;
+        }
+    });
+    const receitaEl = document.getElementById('metric-receita');
+    if (receitaEl) receitaEl.textContent = receita > 0 ? `R$ ${receita.toLocaleString('pt-BR', {minimumFractionDigits: 0})}` : 'R$ 0';
 
     // Renderizar métrica "Por Plano" dinamicamente conforme os planos reais do usuário
     const container = document.getElementById('metric-planos-container');
@@ -523,6 +1393,8 @@ function filtrarTabela() {
     const termo        = document.getElementById('search-input').value.toLowerCase().trim();
     const planoFiltro  = document.getElementById('filter-plano').value;
     const statusFiltro = document.getElementById('filter-status').value;
+    const etapaFiltro  = document.getElementById('filter-etapa')?.value || '';
+    const tagFiltro    = document.getElementById('filter-tag')?.value || '';
 
     const filtrados = clientesCache.filter(c => {
         const haystack = [
@@ -535,11 +1407,19 @@ function filtrarTabela() {
         const matchBusca  = !termo || haystack.includes(termo);
         const matchPlano  = !planoFiltro  || String(c.plano) === String(planoFiltro) || (planoFiltro === '__sem_plano__' && !c.plano);
         const matchStatus = !statusFiltro || (statusFiltro === 'ativo' ? c.ativo : !c.ativo);
+        const matchEtapa  = !etapaFiltro || String(c.etapa_id) === String(etapaFiltro) || (etapaFiltro === '__sem_etapa__' && !c.etapa_id);
+        let matchTag = true;
+        if (tagFiltro) {
+            const tagIds = c._tags || [];
+            matchTag = tagIds.includes(tagFiltro);
+        }
 
-        return matchBusca && matchPlano && matchStatus;
+        return matchBusca && matchPlano && matchStatus && matchEtapa && matchTag;
     });
 
     renderizarClientes(filtrados);
+    // Também atualiza Kanban se visível
+    if (viewMode === 'kanban') renderizarKanban();
 }
 
 function renderizarClientes(clientes) {
@@ -792,6 +1672,12 @@ function abrirModalCriar() {
     if (ativoCheckbox) ativoCheckbox.checked = true;
 
     setPlanoToggle('criar', false);
+    // Fase 1 — reset etapa, financeiro, tags
+    if (document.getElementById('criar-etapa')) document.getElementById('criar-etapa').value = '';
+    if (document.getElementById('criar-valor-plano')) document.getElementById('criar-valor-plano').value = '';
+    if (document.getElementById('criar-vencimento')) document.getElementById('criar-vencimento').value = '';
+    if (document.getElementById('criar-status-pagamento')) document.getElementById('criar-status-pagamento').value = '';
+    document.querySelectorAll('#criar-tags-container .tag-checkbox').forEach(cb => cb.checked = false);
     limparErrosForm('form-criar');
 
     abrirModal('modal-criar');
@@ -830,6 +1716,10 @@ async function salvarNovoCliente(event) {
         cidade:          document.getElementById('criar-cidade')?.value.trim()   || null,
         estado:          document.getElementById('criar-estado')?.value.trim().toUpperCase() || null,
         observacoes:     document.getElementById('criar-observacoes')?.value.trim() || null,
+        etapa_id:        document.getElementById('criar-etapa')?.value || null,
+        valor_plano:     document.getElementById('criar-valor-plano')?.value.trim() || null,
+        vencimento_dia:  document.getElementById('criar-vencimento')?.value ? parseInt(document.getElementById('criar-vencimento').value) : null,
+        status_pagamento: document.getElementById('criar-status-pagamento')?.value || null,
         data_cadastro:   new Date().toISOString().split('T')[0]
     };
 
@@ -849,6 +1739,12 @@ async function salvarNovoCliente(event) {
             }
 
             const clienteCriado = await response.json();
+            // Vincula tags selecionadas (Fase 1C)
+            const tagsSelCriar = [...document.querySelectorAll('#criar-tags-container .tag-checkbox:checked')].map(cb => cb.value);
+            for (const tagId of tagsSelCriar) {
+                try { await fetchAuth(`${API_BASE_URL}/clientes/${clienteCriado.id}/tags`, { method: 'POST', body: JSON.stringify({ tag_id: tagId }) }); } catch(e) {}
+            }
+            if (tagsSelCriar.length) clienteCriado._tags = tagsSelCriar;
             exibirToast(`Cliente "${clienteCriado.nome}" criado com sucesso!`, 'sucesso');
             fecharModalCriar();
             setButtonLoading(btnSubmit, false, 'Cadastrar Cliente');
@@ -862,9 +1758,14 @@ async function salvarNovoCliente(event) {
 
     // Fallback Modo Demo Local
     novoCliente.id = Date.now();
+    try {
+        const tagsSelCriarLocal = [...document.querySelectorAll('#criar-tags-container .tag-checkbox:checked')].map(cb => cb.value);
+        if (tagsSelCriarLocal.length) novoCliente._tags = tagsSelCriarLocal;
+    } catch(e) {}
     clientesCache.unshift(novoCliente);
     atualizarMetricas(clientesCache);
     filtrarTabela();
+    renderizarKanban();
     exibirToast(`Cliente "${novoCliente.nome}" cadastrado! (Modo Local)`, 'sucesso');
     fecharModalCriar();
     setButtonLoading(btnSubmit, false, 'Cadastrar Cliente');
@@ -910,6 +1811,27 @@ function abrirModalEditar(id) {
     if (document.getElementById('editar-estado'))      document.getElementById('editar-estado').value      = cliente.estado || '';
     if (document.getElementById('editar-observacoes')) document.getElementById('editar-observacoes').value = cliente.observacoes || '';
 
+    // Fase 1A — Etapa
+    if (document.getElementById('editar-etapa')) document.getElementById('editar-etapa').value = cliente.etapa_id || '';
+    // Fase 1D — Financeiro
+    if (document.getElementById('editar-valor-plano')) document.getElementById('editar-valor-plano').value = cliente.valor_plano || '';
+    if (document.getElementById('editar-vencimento')) document.getElementById('editar-vencimento').value = cliente.vencimento_dia || '';
+    if (document.getElementById('editar-status-pagamento')) document.getElementById('editar-status-pagamento').value = cliente.status_pagamento || '';
+    // Fase 1C — Tags (precisa tagsCache já carregado)
+    // Se cliente._tags não estiver preenchido, tenta buscar do backend (async, não bloqueia)
+    if (!cliente._tags && cliente.id) {
+        fetchAuth(`${API_BASE_URL}/clientes/${cliente.id}/tags`, { method: 'GET' }).then(r => r && r.ok ? r.json() : []).then(tags => {
+            cliente._tags = tags.map(t => String(t.id));
+            document.querySelectorAll('#editar-tags-container .tag-checkbox').forEach(cb => {
+                cb.checked = cliente._tags.includes(cb.value);
+            });
+        }).catch(()=>{});
+    }
+    const tagsCliente = cliente._tags || [];
+    document.querySelectorAll('#editar-tags-container .tag-checkbox').forEach(cb => {
+        cb.checked = tagsCliente.includes(cb.value);
+    });
+
     limparErrosForm('form-editar');
     abrirModal('modal-editar');
 }
@@ -948,6 +1870,10 @@ async function salvarEdicaoCliente(event) {
         cidade:          document.getElementById('editar-cidade')?.value.trim()   || null,
         estado:          document.getElementById('editar-estado')?.value.trim().toUpperCase() || null,
         observacoes:     document.getElementById('editar-observacoes')?.value.trim() || null,
+        etapa_id:        document.getElementById('editar-etapa')?.value || null,
+        valor_plano:     document.getElementById('editar-valor-plano')?.value.trim() || null,
+        vencimento_dia:  document.getElementById('editar-vencimento')?.value ? parseInt(document.getElementById('editar-vencimento').value) : null,
+        status_pagamento: document.getElementById('editar-status-pagamento')?.value || null,
     };
 
     setButtonLoading(btnSubmit, true, 'Salvando...');
@@ -964,6 +1890,20 @@ async function salvarEdicaoCliente(event) {
                 const errData = await response.json().catch(() => ({}));
                 throw new Error(errData.detail || `Erro ${response.status} ao atualizar.`);
             }
+            // Sincroniza tags (Fase 1C) — adiciona selecionadas, remove desselecionadas
+            const tagsSelEditar = [...document.querySelectorAll('#editar-tags-container .tag-checkbox:checked')].map(cb => cb.value);
+            const clienteAntigo = clientesCache.find(c => String(c.id)===String(id));
+            const tagsAntigas = clienteAntigo?._tags || [];
+            for (const tagId of tagsSelEditar) {
+                if (!tagsAntigas.includes(tagId)) {
+                    try { await fetchAuth(`${API_BASE_URL}/clientes/${id}/tags`, { method: 'POST', body: JSON.stringify({ tag_id: tagId }) }); } catch(e) {}
+                }
+            }
+            for (const tagId of tagsAntigas) {
+                if (!tagsSelEditar.includes(tagId)) {
+                    try { await fetchAuth(`${API_BASE_URL}/clientes/${id}/tags/${tagId}`, { method: 'DELETE' }); } catch(e) {}
+                }
+            }
 
             exibirToast(`Cliente #${id} atualizado com sucesso!`, 'sucesso');
             fecharModalEditar();
@@ -973,16 +1913,28 @@ async function salvarEdicaoCliente(event) {
         }
     } catch (error) {
         console.warn('Falha na API backend. Salvando edição em modo local:', error);
-        exibirToast(error.message || 'Erro ao comunicar com a API.', 'erro');
+        // Não mostra erro aqui — fallback local ainda vai salvar
     }
 
-    // Fallback Modo Demo Local
-    const index = clientesCache.findIndex(c => String(c.id) === String(id));
-    if (index !== -1) {
-        clientesCache[index] = { ...clientesCache[index], ...clienteAtualizado };
-        atualizarMetricas(clientesCache);
-        filtrarTabela();
-        exibirToast(`Cliente #${id} atualizado! (Modo Local)`, 'sucesso');
+    // Fallback Modo Demo Local (sempre executa se não retornou antes, inclusive em IS_LOCAL)
+    try {
+        const index = clientesCache.findIndex(c => String(c.id) === String(id));
+        if (index !== -1) {
+            let tagsSelEditarLocal = [];
+            try {
+                tagsSelEditarLocal = [...document.querySelectorAll('#editar-tags-container .tag-checkbox:checked')].map(cb => cb.value);
+            } catch(e) {}
+            clientesCache[index] = { ...clientesCache[index], ...clienteAtualizado, _tags: tagsSelEditarLocal };
+            atualizarMetricas(clientesCache);
+            filtrarTabela();
+            renderizarKanban();
+            exibirToast(`Cliente #${id} atualizado! ${modoDemo || IS_LOCAL ? '(Local)' : ''}`, 'sucesso');
+        } else {
+            exibirToast(`Cliente #${id} não encontrado no cache`, 'erro');
+        }
+    } catch (e) {
+        console.error('Erro no fallback local:', e);
+        exibirToast('Erro ao salvar localmente', 'erro');
     }
     fecharModalEditar();
     setButtonLoading(btnSubmit, false, 'Salvar Alterações');
@@ -1036,9 +1988,33 @@ function abrirModalDetalhes(id) {
     const statusHTML = cliente.ativo
         ? `<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">Ativo</span>`
         : `<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">Inativo</span>`;
+    const etapaObj = etapasCache.find(e => String(e.id)===String(cliente.etapa_id));
+    const etapaHTML2 = etapaObj ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).bg} ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).text} border ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).border}"><span class="w-1.5 h-1.5 rounded-full ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).dot}"></span>${escaparHTML(etapaObj.nome)}</span>` : '<span class="text-xs text-slate-400">Sem etapa</span>';
+    const financeiroHTML2 = (cliente.valor_plano || cliente.vencimento_dia || cliente.status_pagamento) ? `
+        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Financeiro</h4>
+            <div class="grid grid-cols-3 gap-2 text-xs">
+                ${cliente.valor_plano ? `<div><span class="text-slate-400">Valor:</span> <strong class="text-slate-800 dark:text-slate-200">${escaparHTML(cliente.valor_plano)}</strong></div>` : ''}
+                ${cliente.vencimento_dia ? `<div><span class="text-slate-400">Vencimento:</span> <strong class="text-slate-800 dark:text-slate-200">Dia ${cliente.vencimento_dia}</strong></div>` : ''}
+                ${cliente.status_pagamento ? `<div><span class="text-slate-400">Status:</span> <strong class="${cliente.status_pagamento==='atrasado'?'text-rose-600':cliente.status_pagamento==='em_dia'?'text-emerald-600':'text-slate-600'}">${escaparHTML(cliente.status_pagamento)}</strong></div>` : ''}
+            </div>
+        </div>` : '';
+    const tagsCliente2 = cliente._tags || [];
+    const tagsHTML2 = tagsCliente2.length ? `
+        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Tags</h4>
+            <div class="flex flex-wrap gap-1.5">
+                ${tagsCliente2.map(tid => {
+                    const t = tagsCache.find(x => String(x.id)===String(tid));
+                    if (!t) return '';
+                    const estilo = MAPA_CORES_PLANO[t.cor] || MAPA_CORES_PLANO.slate;
+                    return `<span class="px-2 py-0.5 text-xs font-bold rounded-full ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(t.nome)}</span>`;
+                }).join('')}
+            </div>
+        </div>` : '';
 
     body.innerHTML = `
-        <div class="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60">
+        <div class="grid grid-cols-3 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60">
             <div>
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</span>
                 <div class="mt-0.5">${statusHTML}</div>
@@ -1047,7 +2023,13 @@ function abrirModalDetalhes(id) {
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Plano</span>
                 <div class="mt-0.5">${planoHTML}</div>
             </div>
+            <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Etapa</span>
+                <div class="mt-0.5">${etapaHTML2}</div>
+            </div>
         </div>
+        ${financeiroHTML2}
+        ${tagsHTML2}
 
         <div class="space-y-2">
             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Contato & Documentos</h4>
@@ -1090,7 +2072,46 @@ function abrirModalDetalhes(id) {
             </p>
         </div>
         ` : ''}
+        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+            <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Atividades</h4>
+                <button onclick="abrirModalAtividade(${cliente.id}, '${escaparHTML(cliente.nome).replace(/'/g,"\\'")}')" class="px-2.5 py-1 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Nova</button>
+            </div>
+            <div id="detalhes-atividades" class="space-y-2">
+                <p class="text-xs text-slate-400">Carregando atividades...</p>
+            </div>
+        </div>
     `;
+
+    // Carrega timeline de atividades para este cliente
+    carregarAtividades(cliente.id).then(atividades => {
+        const atvContainer = document.getElementById('detalhes-atividades');
+        if (!atvContainer) return;
+        if (atividades.length === 0) {
+            atvContainer.innerHTML = '<p class="text-xs text-slate-400">Nenhuma atividade. Crie a primeira!</p>';
+            return;
+        }
+        atvContainer.innerHTML = atividades.map(a => {
+            const isAtrasada = !a.concluida && a.data < new Date().toISOString().split('T')[0];
+            const tipoIcon = {ligacao:'phone', reuniao:'users', nota:'file-text', whatsapp:'message-circle', email:'mail', tarefa:'check-square'}[a.tipo]||'file-text';
+            return `<div class="flex items-start gap-2 p-2.5 rounded-xl border ${isAtrasada ? 'border-amber-200 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-950/20' : 'border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/40'}">
+                <div class="w-7 h-7 rounded-lg ${a.concluida ? 'bg-emerald-100 text-emerald-600' : isAtrasada ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'} flex items-center justify-center flex-shrink-0"><i data-lucide="${tipoIcon}" class="w-3.5 h-3.5"></i></div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-900 dark:text-white capitalize">${escaparHTML(a.tipo)}</span>
+                        <span class="text-[11px] text-slate-400">${formatarData(a.data)}</span>
+                        ${a.concluida ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Concluída</span>' : isAtrasada ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 rounded-full">Atrasada</span>' : ''}
+                    </div>
+                    ${a.nota ? `<p class="text-xs text-slate-600 dark:text-slate-300 mt-1">${escaparHTML(a.nota)}</p>` : ''}
+                </div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <button onclick="toggleAtividadeConcluida('${a.id}', ${cliente.id})" class="p-1.5 rounded-lg ${a.concluida ? 'text-slate-400 hover:text-amber-600' : 'text-emerald-600 hover:bg-emerald-50'}"><i data-lucide="${a.concluida ? 'rotate-ccw' : 'check'}" class="w-3.5 h-3.5"></i></button>
+                    <button onclick="deletarAtividade('${a.id}', ${cliente.id})" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                </div>
+            </div>`;
+        }).join('');
+        if (window.lucide) lucide.createIcons();
+    });
 
     document.getElementById('btn-editar-de-detalhes').onclick = () => {
         fecharModalDetalhes();
@@ -1238,31 +2259,31 @@ async function salvarPlanoCustom(event) {
 }
 
 async function deletarPlanoCustom(id) {
-    if (!confirm('Deseja realmente excluir este plano?')) return;
+    confirmarAcao('Excluir plano?', 'Este plano será removido permanentemente.', async () => {
+        try {
+            if (!modoDemo) {
+                const response = await fetchAuth(`${API_BASE_URL}/planos/${id}`, {
+                    method: 'DELETE',
+                });
+                if (!response) return;
 
-    try {
-        if (!modoDemo) {
-            const response = await fetchAuth(`${API_BASE_URL}/planos/${id}`, {
-                method: 'DELETE',
-            });
-            if (!response) return; // Redirect handled by fetchAuth
+                if (!response.ok) throw new Error(`Erro ao excluir plano`);
 
-            if (!response.ok) throw new Error(`Erro ao excluir plano`);
-
-            exibirToast('Plano removido com sucesso!', 'sucesso');
-            await carregarPlanos();
-            return;
+                exibirToast('Plano removido com sucesso!', 'sucesso');
+                await carregarPlanos();
+                return;
+            }
+        } catch (e) {
+            console.warn('Erro ao excluir plano no servidor:', e);
         }
-    } catch (e) {
-        console.warn('Erro ao excluir plano no servidor:', e);
-    }
 
-    planosCache = planosCache.filter(p => String(p.id) !== String(id));
-    inicializarFiltroPlanos();
-    renderizarCardsPlanoModal('criar');
-    renderizarCardsPlanoModal('editar');
-    renderizarListaPlanosGerenciamento();
-    exibirToast('Plano removido! (Modo Local)', 'sucesso');
+            planosCache = planosCache.filter(p => String(p.id) !== String(id));
+        inicializarFiltroPlanos();
+        renderizarCardsPlanoModal('criar');
+        renderizarCardsPlanoModal('editar');
+        renderizarListaPlanosGerenciamento();
+        exibirToast('Plano removido! (Modo Local)', 'sucesso');
+    });
 }
 
 // ============================================================
