@@ -284,19 +284,22 @@ def carregar_clientes(user_id: str) -> list[Cliente]:
         .order("data_cadastro", desc=True)
         .execute()
     )
+    print(f"[DEBUG] carregar_clientes user_id={user_id} => {len(response.data)} linhas brutas")
     clientes = []
     for item in response.data:
         try:
             clientes.append(Cliente.model_validate(item))
         except Exception as e:
             # Loga e ignora linha inválida para não quebrar lista inteira
-            print(f"WARN: cliente id={item.get('id')} falhou na validação: {e}")
+            print(f"WARN: cliente id={item.get('id')} falhou na validação: {e} | dados={item}")
             # Tenta criar objeto leniente sem validação estrita
             try:
                 # Fallback: cria dict apenas com campos básicos e ignora inválidos
                 clientes.append(Cliente.model_validate({k: v for k, v in item.items() if k in Cliente.model_fields}))
-            except:
+            except Exception as e2:
+                print(f"WARN2: fallback também falhou id={item.get('id')}: {e2}")
                 pass
+    print(f"[DEBUG] carregar_clientes user_id={user_id} => {len(clientes)} após validação")
     return clientes
 
 
