@@ -2653,6 +2653,26 @@ function mascaraCEP(input) {
     input.value = v;
 }
 
+function mascaraValor(input) {
+    // Permite digitar direto sem precisar apagar "R$ 0,00": campo inicia vazio
+    // Digitar "200" -> "R$ 200" , "200,5" -> "R$ 200,5" , paste "R$ 1.500,00" -> "R$ 1.500,00" normalizado
+    let v = input.value.replace(/[^0-9,]/g, '');
+    // só uma vírgula
+    const firstComma = v.indexOf(',');
+    if (firstComma !== -1) {
+        v = v.slice(0, firstComma + 1) + v.slice(firstComma + 1).replace(/,/g, '');
+    }
+    // limita 2 casas decimais
+    if (firstComma !== -1) {
+        const dec = v.slice(firstComma + 1);
+        if (dec.length > 2) v = v.slice(0, firstComma + 3);
+    }
+    // limita tamanho total (evita overflow)
+    if (v.length > 13) v = v.slice(0, 13);
+    // adiciona prefixo R$ apenas se houver dígitos
+    input.value = v ? `R$ ${v}` : '';
+}
+
 // ============================================================
 // 18. MODAIS — utilitários genéricos: abrirModal/fecharModal com animação scale
 //     + helpers específicos: deletar, loading, escaparHTML

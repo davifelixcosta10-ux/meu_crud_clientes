@@ -749,7 +749,7 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="form-group">
                                     <label for="criar-valor-plano" class="form-label">Valor do Plano</label>
-                                    <input type="text" id="criar-valor-plano" placeholder="Ex: R$ 150" class="form-input">
+                                    <input type="text" id="criar-valor-plano" placeholder="Ex: R$ 150" inputmode="decimal" oninput="mascaraValor(this)" onfocus="this.select()" class="form-input">
                                 </div>
                                 <div class="form-group">
                                     <label for="criar-vencimento" class="form-label">Vencimento (dia)</label>
@@ -1081,7 +1081,7 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="form-group">
                                     <label for="editar-valor-plano" class="form-label">Valor do Plano</label>
-                                    <input type="text" id="editar-valor-plano" placeholder="Ex: R$ 150" class="form-input">
+                                    <input type="text" id="editar-valor-plano" placeholder="Ex: R$ 150" inputmode="decimal" oninput="mascaraValor(this)" onfocus="this.select()" class="form-input">
                                 </div>
                                 <div class="form-group">
                                     <label for="editar-vencimento" class="form-label">Vencimento (dia)</label>
