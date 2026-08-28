@@ -701,8 +701,20 @@ def importar_clientes_bulk(clientes: list[dict], user_id: str) -> dict:
                     payload[col] = cli[col]
             payload.setdefault("plano", "basico")
             payload.setdefault("ativo", True)
-            # Valida com Pydantic estrito (ClienteCreate) antes de inserir — previne CPF invalido em bulk
-            ClienteCreate.model_validate({k: v for k, v in payload.items() if k != "user_id"})
+            # Limpeza para constraints do banco (evita erro 23514 em import de dados antigos)
+            if "vencimento_dia" in payload:
+                try:
+                    vd = int(payload["vencimento_dia"])
+                    if not 1 <= vd <= 31:
+                        payload.pop("vencimento_dia", None)
+                    else:
+                        payload["vencimento_dia"] = vd
+                except (ValueError, TypeError):
+                    payload.pop("vencimento_dia", None)
+            if "status_pagamento" in payload and payload["status_pagamento"] not in ("em_dia", "atrasado", "isento"):
+                payload.pop("status_pagamento", None)
+            # Valida com Pydantic leniente (Cliente) para import — permite trazer CPF antigo invalido do export
+            Cliente.model_validate({**payload, "user_id": user_id})
             supabase.table("clientes").insert(payload).execute()
             sucessos += 1
         except Exception as e:

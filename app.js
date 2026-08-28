@@ -1127,17 +1127,47 @@ function handleImportFile(event) {
             complete: function(results) {
                 if (results.errors.length) console.warn(results.errors);
                 importPreviewData = results.data.slice(0, 1000).map(row => {
-                    // Normaliza keys para lower
+                    // Normaliza keys para lower, remove BOM e acentos básicos para compatibilidade com export
                     const norm = {};
-                    Object.keys(row).forEach(k => norm[k.trim().toLowerCase()] = row[k]);
+                    Object.keys(row).forEach(k => {
+                        const key = k.trim().toLowerCase().replace(/\uFEFF/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                        norm[key] = row[k];
+                    });
+                    // Helper para pegar primeiro valor existente entre várias chaves possíveis
+                    const pick = (...keys) => {
+                        for (const kk of keys) {
+                            const v = norm[kk];
+                            if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+                        }
+                        return '';
+                    };
+                    const statusRaw = pick('status', 'ativo', 'situacao');
+                    let ativo = true;
+                    if (statusRaw) {
+                        const s = statusRaw.toLowerCase();
+                        if (s === 'inativo' || s === 'false' || s === '0' || s === 'inativo' || s.includes('inativo')) ativo = false;
+                        else if (s === 'ativo' || s === 'true' || s === '1') ativo = true;
+                    }
                     return {
-                        nome: norm['nome'] || norm['name'] || '',
-                        email: norm['email'] || norm['e-mail'] || '',
-                        telefone: norm['telefone'] || norm['phone'] || '',
-                        empresa: norm['empresa'] || norm['company'] || '',
-                        cpf: norm['cpf'] || '',
-                        plano: norm['plano'] || 'basico',
-                        ativo: !(norm['ativo'] === 'false' || norm['ativo'] === '0')
+                        nome: pick('nome', 'name'),
+                        email: pick('email', 'e-mail'),
+                        telefone: pick('telefone', 'phone', 'celular', 'whatsapp'),
+                        cpf: pick('cpf'),
+                        rg: pick('rg'),
+                        empresa: pick('empresa', 'company'),
+                        cargo: pick('cargo', 'funcao', 'função'),
+                        data_nascimento: pick('data nascimento', 'data_nascimento', 'nascimento', 'datanascimento'),
+                        genero: pick('genero', 'gênero', 'sexo'),
+                        cep: pick('cep', 'codigo postal'),
+                        logradouro: pick('logradouro', 'rua', 'endereco', 'endereço'),
+                        numero: pick('numero', 'número', 'num'),
+                        complemento: pick('complemento'),
+                        bairro: pick('bairro'),
+                        cidade: pick('cidade', 'municipio', 'município'),
+                        estado: pick('estado', 'uf', 'estado'),
+                        observacoes: pick('observacoes', 'observações', 'obs', 'notas'),
+                        plano: pick('plano', 'plan') || 'basico',
+                        ativo: ativo
                     };
                 }).filter(r => r.nome && r.email);
                 renderImportPreview();
@@ -1151,19 +1181,46 @@ function handleImportFile(event) {
             const ws = wb.Sheets[wb.SheetNames[0]];
             const json = XLSX.utils.sheet_to_json(ws, {header:1});
             if (json.length < 2) { exibirToast('Arquivo vazio', 'erro'); return; }
-            const headers = json[0].map(h => String(h).trim().toLowerCase());
+            const headers = json[0].map(h => String(h).trim().toLowerCase().replace(/\uFEFF/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
             const rows = json.slice(1, 1001);
             importPreviewData = rows.map(row => {
                 const obj = {};
-                headers.forEach((h,i) => obj[h] = row[i]);
+                headers.forEach((h,i) => obj[h] = row[i] !== undefined && row[i] !== null ? String(row[i]).trim() : '');
+                const pick = (...keys) => {
+                    for (const kk of keys) {
+                        const kNorm = kk.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                        const v = obj[kNorm];
+                        if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+                    }
+                    return '';
+                };
+                const statusRaw = pick('status', 'ativo', 'situacao');
+                let ativo = true;
+                if (statusRaw) {
+                    const s = statusRaw.toLowerCase();
+                    if (s === 'inativo' || s === 'false' || s === '0' || s.includes('inativo')) ativo = false;
+                    else if (s === 'ativo' || s === 'true' || s === '1') ativo = true;
+                }
                 return {
-                    nome: obj['nome'] || obj['name'] || '',
-                    email: obj['email'] || obj['e-mail'] || '',
-                    telefone: obj['telefone'] || obj['phone'] || '',
-                    empresa: obj['empresa'] || obj['company'] || '',
-                    cpf: obj['cpf'] || '',
-                    plano: obj['plano'] || 'basico',
-                    ativo: !(obj['ativo'] === 'false' || obj['ativo'] === '0')
+                    nome: pick('nome', 'name'),
+                    email: pick('email', 'e-mail'),
+                    telefone: pick('telefone', 'phone', 'celular'),
+                    cpf: pick('cpf'),
+                    rg: pick('rg'),
+                    empresa: pick('empresa', 'company'),
+                    cargo: pick('cargo', 'funcao'),
+                    data_nascimento: pick('data nascimento', 'data_nascimento', 'nascimento'),
+                    genero: pick('genero', 'sexo'),
+                    cep: pick('cep'),
+                    logradouro: pick('logradouro', 'rua', 'endereco'),
+                    numero: pick('numero', 'num'),
+                    complemento: pick('complemento'),
+                    bairro: pick('bairro'),
+                    cidade: pick('cidade', 'municipio'),
+                    estado: pick('estado', 'uf'),
+                    observacoes: pick('observacoes', 'obs', 'notas'),
+                    plano: pick('plano', 'plan') || 'basico',
+                    ativo: ativo
                 };
             }).filter(r => r.nome && r.email);
             renderImportPreview();
