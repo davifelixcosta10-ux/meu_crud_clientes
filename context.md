@@ -186,6 +186,41 @@ supabase_fase1.sql # Migração Fase 1 (etapas, atividades, tags, cliente_tags, 
 - **Vercel travado em `chore: sync debug toast`**: `vercel.json` com `crons` (requer Pro) — removido — fix `4577736`
 - **Debug**: `7314d70` adicionou log `[DEBUG] carregar_clientes user_id=...` para diagnosticar lista vazia (user_id `dcfaf27f-fa5c-4a35-8c54-82263e5225f9` tinha 3 registros mas API retornava `[]` — causado pela validação estrita acima, resolvido com leniência)
 
+## Roadmap — Próximas Funcionalidades (Detalhado, Aprovado 2026-08-26)
+> Questionário 8/8 aprovado como "completo". Fase 1 (A-E) ✅ implementado em `teste/fase1` e `main`; Fase 2 (A-C) e Fase 3 são próximos passos. Detalhe completo também em `plan.md`.
+
+| Fase | Feature | Tabelas / Colunas Novas | Valor para freela |
+|---|---|---|---|
+| 1A | **Kanban completo** (etapas configuráveis, drag & drop) | `etapas`, `clientes.etapa_id` | Ver fluxo sem planilha |
+| 1B | **Atividades + lembretes** (timeline, badge atrasado) | `atividades` | Nunca perder follow-up |
+| 1C | **Tags + filtros salvos** | `tags`, `cliente_tags`, `filtros_salvos` | Segmentar VIP/região |
+| 1D | **Cobrança leve** (vencimento, status, receita prevista) | `clientes.valor_plano, vencimento_dia, status_pagamento` | Controlar atrasados |
+| 1E | **Import CSV + Excel** (preview, mapeamento) | `POST /api/clientes/import` | Trazer planilha em 1 clique |
+| 2A | **Relatórios completos** (conversão, churn, LTV, receita + gráficos) | endpoints agregação | Decidir com dados |
+| 2B | **Templates WhatsApp** (wa.me + mensagens por plano/etapa) | `templates_whatsapp` | Atender em 1 toque |
+| 2C | **Automações** (inativo 30d → tarefa, vence 3d → alerta) | `automacoes` + cron | Rotina no piloto automático |
+| 3 | Escala (multi-usuário, Calendar, Zapier, anexos, API, PWA, Stripe) | backlog | Crescer sem trocar de sistema |
+
+**Detalhe Fase 1A — Kanban**: Backend `etapas` + `clientes.etapa_id uuid FK`, CRUD `GET/POST/PATCH/DELETE /api/etapas`; Frontend `etapasCache`, `carregarEtapas()`, `renderizarKanban()` com `SortableJS`, `select#filter-etapa`, `style.css` `.kanban-*`.
+
+**Detalhe Fase 1B — Atividades**: Backend `atividades` (`cliente_id bigint` corrigido), CRUD `/api/atividades`; Frontend `atividadesCache`, modal Nova Atividade, timeline em Detalhes com badge Atrasada, métrica Atrasados, fallback `IS_LOCAL`.
+
+**Detalhe Fase 1C — Tags/Filtros**: Backend `tags` + `cliente_tags` + `filtros_salvos`, CRUD `/api/tags`, `/api/clientes/{id}/tags`, `/api/filtros`; Frontend `tagsCache`/`filtrosCache`, checkboxes em Criar/Editar, `filter-tag`, `filtrarTabela` com `matchTag`, Kanban mostra 2 tags.
+
+**Detalhe Fase 1D — Financeiro**: Backend colunas `valor_plano text, vencimento_dia int 1-31, status_pagamento text`; Frontend inputs `criar-valor-plano`/`vencimento`/`status`, `Detalhes` mostra Financeiro, `atualizarMetricas` soma Receita.
+
+**Detalhe Fase 1E — Import**: Backend `ImportPreviewRequest` + `POST /api/clientes/import` com `importar_clientes_bulk`; Frontend modal drag&drop com `PapaParse` (CSV) e `SheetJS` (Excel), preview 5 linhas, fallback local.
+
+**Detalhe Fase 2A — Relatórios**: `GET /api/relatorios/*` com `group by` + `Chart.js`/`Recharts`.
+
+**Detalhe Fase 2B — WhatsApp**: `templates_whatsapp` + `wa.me` com `encodeURIComponent`.
+
+**Detalhe Fase 2C — Automações**: `automacoes` + cron diário (Vercel Cron ou `pg_cron`).
+
+**Detalhe Fase 3 — Escala**: `org_id`, Calendar, Zapier, Storage, API keys, PWA, Stripe.
+
+**Critérios de Aceite Fase 1**: Kanban persiste após reload, atividade atrasada <1s, tag filtra e salva, vencimento calcula correto, import 100 linhas <2s, `node --check` + 12 testes backend passando.
+
 ## Tech Stack (Final)
 - **Language**: Python 3.12, HTML/CSS/JS
 - **Framework**: FastAPI 0.141, Tailwind CSS v3 CDN (com preconnect/preload)
