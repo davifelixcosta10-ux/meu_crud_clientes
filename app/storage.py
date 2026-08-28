@@ -23,6 +23,7 @@ Tabelas Supabase:
 """
 
 import os
+import re
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from app.models import Cliente, ClienteCreate, Plano, UserLogin, UserSignUp, Etapa, Atividade, Tag, FiltroSalvo
@@ -334,6 +335,22 @@ def salvar_novo_cliente(cliente_dados: dict, user_id: str) -> Cliente:
         if col in cliente_dados:
             payload_banco[col] = cliente_dados[col]
 
+    # Converte valor_plano "R$ 1.500,00" -> 1500.0 (DB é numeric, BR ou EN)
+    if "valor_plano" in payload_banco and payload_banco["valor_plano"] not in (None, ""):
+        vp = payload_banco["valor_plano"]
+        if isinstance(vp, str):
+            raw = vp.replace("R$", "").strip()
+            # Se tem vírgula, é BR: 1.500,00 -> 1500.00 ; senão mantém ponto como decimal
+            if "," in raw:
+                raw = raw.replace(".", "").replace(",", ".")
+            raw = re.sub(r"[^0-9.\-]", "", raw)
+            try:
+                payload_banco["valor_plano"] = float(raw) if raw else 0.0
+            except (ValueError, TypeError):
+                payload_banco.pop("valor_plano", None)
+        elif isinstance(vp, (int, float)):
+            payload_banco["valor_plano"] = float(vp)
+
     # Garante valor padrão de plano se não enviado
     payload_banco.setdefault("plano", "basico")
     # Garante valor padrão de ativo
@@ -375,6 +392,23 @@ def atualizar_cliente_db(cliente_id: int | str, cliente_dados: dict, user_id: st
     dados_filtrados = dict(cliente_dados)
     if not dados_filtrados:
         return None
+
+    # Converte valor_plano "R$ 1.500,00" -> 1500.0 para coluna numeric (BR/EN)
+    if "valor_plano" in dados_filtrados:
+        vp = dados_filtrados["valor_plano"]
+        if vp is None or vp == "":
+            dados_filtrados["valor_plano"] = 0.0
+        elif isinstance(vp, str):
+            raw = vp.replace("R$", "").strip()
+            if "," in raw:
+                raw = raw.replace(".", "").replace(",", ".")
+            raw = re.sub(r"[^0-9.\-]", "", raw)
+            try:
+                dados_filtrados["valor_plano"] = float(raw) if raw else 0.0
+            except (ValueError, TypeError):
+                dados_filtrados.pop("valor_plano", None)
+        elif isinstance(vp, (int, float)):
+            dados_filtrados["valor_plano"] = float(vp)
 
     response = (
         supabase.table("clientes")
@@ -713,6 +747,20 @@ def importar_clientes_bulk(clientes: list[dict], user_id: str) -> dict:
                     payload.pop("vencimento_dia", None)
             if "status_pagamento" in payload and payload["status_pagamento"] not in ("em_dia", "atrasado", "isento"):
                 payload.pop("status_pagamento", None)
+            # Converte valor_plano "R$ 1.500,00" -> 1500.0 para coluna numeric (BR/EN)
+            if "valor_plano" in payload and payload["valor_plano"] not in (None, ""):
+                vp = payload["valor_plano"]
+                if isinstance(vp, str):
+                    raw = vp.replace("R$", "").strip()
+                    if "," in raw:
+                        raw = raw.replace(".", "").replace(",", ".")
+                    raw = re.sub(r"[^0-9.\-]", "", raw)
+                    try:
+                        payload["valor_plano"] = float(raw) if raw else 0.0
+                    except (ValueError, TypeError):
+                        payload.pop("valor_plano", None)
+                elif isinstance(vp, (int, float)):
+                    payload["valor_plano"] = float(vp)
             # Valida com Pydantic leniente (Cliente) para import — permite trazer CPF antigo invalido do export
             Cliente.model_validate({**payload, "user_id": user_id})
             supabase.table("clientes").insert(payload).execute()
