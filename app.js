@@ -539,17 +539,19 @@ function renderizarKanban() {
         const termo = document.getElementById('search-input').value.toLowerCase().trim();
         const planoFiltro = document.getElementById('filter-plano').value;
         const statusFiltro = document.getElementById('filter-status').value;
+        const etapaFiltro = document.getElementById('filter-etapa')?.value || '';
         const tagFiltro = document.getElementById('filter-tag')?.value || '';
         const haystack = [c.nome, c.email, c.telefone||'', c.empresa||''].join(' ').toLowerCase();
         const matchBusca = !termo || haystack.includes(termo);
         const matchPlano = !planoFiltro || String(c.plano)===String(planoFiltro) || (planoFiltro==='__sem_plano__'&&!c.plano);
         const matchStatus = !statusFiltro || (statusFiltro==='ativo'?c.ativo:!c.ativo);
+        const matchEtapa = !etapaFiltro || String(c.etapa_id)===String(etapaFiltro) || (etapaFiltro==='__sem_etapa__'&&!c.etapa_id);
         let matchTag = true;
         if (tagFiltro) {
             const tagIds = c._tags || [];
             matchTag = tagIds.includes(tagFiltro);
         }
-        if (!matchBusca || !matchPlano || !matchStatus || !matchTag) return;
+        if (!matchBusca || !matchPlano || !matchStatus || !matchTag || !matchEtapa) return;
         if (c.etapa_id && grupos.hasOwnProperty(c.etapa_id)) grupos[c.etapa_id].push(c);
         else semEtapa.push(c);
     });
@@ -1358,11 +1360,18 @@ function atualizarMetricas(clientes) {
     const atrasadosEl = document.getElementById('metric-atrasados');
     if (atrasadosEl) atrasadosEl.textContent = atrasados;
 
-    // Receita prevista: soma valor_plano dos em_dia. Valor é string "R$ 150" -> parse float
+    // Receita prevista: soma valor_plano dos em_dia. Valor é string "R$ 1.500,00" -> parse float (BR)
     let receita = 0;
     clientes.forEach(c => {
         if (c.status_pagamento === 'em_dia' && c.valor_plano) {
-            const num = parseFloat(String(c.valor_plano).replace(/[^\d,.-]/g, '').replace(',', '.'));
+            let raw = String(c.valor_plano).replace(/[^\d,.-]/g, '');
+            let num;
+            if (raw.includes(',')) {
+                // BR: 1.500,00 -> 1500.00
+                num = parseFloat(raw.replace(/\./g, '').replace(',', '.'));
+            } else {
+                num = parseFloat(raw);
+            }
             if (!isNaN(num)) receita += num;
         }
     });
@@ -1932,7 +1941,8 @@ async function salvarEdicaoCliente(event) {
                 }
             }
 
-            exibirToast(`Cliente #${id} atualizado com sucesso!`, 'sucesso');
+            const ordinalOk = clientesCache.findIndex(c => String(c.id)===String(id)) + 1;
+            exibirToast(`Cliente "${clienteAtualizado.nome}" (#${ordinalOk || id}) atualizado com sucesso!`, 'sucesso');
             fecharModalEditar();
             setButtonLoading(btnSubmit, false, 'Salvar Alterações');
             carregarClientes();
@@ -1955,9 +1965,10 @@ async function salvarEdicaoCliente(event) {
             atualizarMetricas(clientesCache);
             filtrarTabela();
             renderizarKanban();
-            exibirToast(`Cliente #${id} atualizado! ${modoDemo || IS_LOCAL ? '(Local)' : ''}`, 'sucesso');
+            const ordLocal = index + 1;
+            exibirToast(`Cliente "${clienteAtualizado.nome}" (#${ordLocal}) atualizado! ${modoDemo || IS_LOCAL ? '(Local)' : ''}`, 'sucesso');
         } else {
-            exibirToast(`Cliente #${id} não encontrado no cache`, 'erro');
+            exibirToast(`Cliente não encontrado no cache`, 'erro');
         }
     } catch (e) {
         console.error('Erro no fallback local:', e);
@@ -1971,6 +1982,9 @@ async function salvarEdicaoCliente(event) {
 // 11. TOGGLE RÁPIDO DE STATUS — alterna ativo/inativo direto na tabela (PATCH {ativo})
 // ============================================================
 async function toggleStatusCliente(id, novoStatus) {
+    const cliToggle = clientesCache.find(c => String(c.id)===String(id));
+    const nomeToggle = cliToggle ? cliToggle.nome : '';
+    const ordToggle = cliToggle ? clientesCache.findIndex(c => String(c.id)===String(id))+1 : id;
     try {
         if (!modoDemo) {
             const response = await fetchAuth(`${API_BASE_URL}/clientes/${id}`, {
@@ -1981,7 +1995,7 @@ async function toggleStatusCliente(id, novoStatus) {
 
             if (!response.ok) throw new Error(`Erro ao alterar status`);
 
-            exibirToast(`Cliente #${id} ${novoStatus ? 'ativado' : 'inativado'}!`, 'sucesso');
+            exibirToast(`Cliente "${nomeToggle}" (#${ordToggle}) ${novoStatus ? 'ativado' : 'inativado'}!`, 'sucesso');
             carregarClientes();
             return;
         }
@@ -1994,7 +2008,7 @@ async function toggleStatusCliente(id, novoStatus) {
         clientesCache[index].ativo = novoStatus;
         atualizarMetricas(clientesCache);
         filtrarTabela();
-        exibirToast(`Cliente #${clientesCache[index].id} ${novoStatus ? 'ativado' : 'inativado'}! (Local)`, 'sucesso');
+        exibirToast(`Cliente "${clientesCache[index].nome}" (#${index+1}) ${novoStatus ? 'ativado' : 'inativado'}! (Local)`, 'sucesso');
     }
 }
 
@@ -2639,6 +2653,26 @@ function mascaraCEP(input) {
     input.value = v;
 }
 
+function mascaraValor(input) {
+    // Permite digitar direto sem precisar apagar "R$ 0,00": campo inicia vazio
+    // Digitar "200" -> "R$ 200" , "200,5" -> "R$ 200,5" , paste "R$ 1.500,00" -> "R$ 1.500,00" normalizado
+    let v = input.value.replace(/[^0-9,]/g, '');
+    // só uma vírgula
+    const firstComma = v.indexOf(',');
+    if (firstComma !== -1) {
+        v = v.slice(0, firstComma + 1) + v.slice(firstComma + 1).replace(/,/g, '');
+    }
+    // limita 2 casas decimais
+    if (firstComma !== -1) {
+        const dec = v.slice(firstComma + 1);
+        if (dec.length > 2) v = v.slice(0, firstComma + 3);
+    }
+    // limita tamanho total (evita overflow)
+    if (v.length > 13) v = v.slice(0, 13);
+    // adiciona prefixo R$ apenas se houver dígitos
+    input.value = v ? `R$ ${v}` : '';
+}
+
 // ============================================================
 // 18. MODAIS — utilitários genéricos: abrirModal/fecharModal com animação scale
 //     + helpers específicos: deletar, loading, escaparHTML
@@ -2705,7 +2739,9 @@ async function confirmarExclusao() {
                 throw new Error(errData.detail || `Erro ${response.status} ao excluir.`);
             }
 
-            exibirToast(`Cliente #${id} removido com sucesso!`, 'sucesso');
+            const cliDel = clientesCache.find(c => String(c.id)===String(id));
+            const ordDel = cliDel ? clientesCache.findIndex(c => String(c.id)===String(id))+1 : id;
+            exibirToast(`Cliente "${cliDel ? cliDel.nome : ''}" (#${ordDel}) removido com sucesso!`, 'sucesso');
             fecharModalDeletar();
             setButtonLoading(btnSubmit, false, 'Excluir Cliente');
             carregarClientes();
@@ -2716,10 +2752,13 @@ async function confirmarExclusao() {
         exibirToast(error.message || 'Erro ao comunicar com a API.', 'erro');
     }
 
+    const cliDelLocal = clientesCache.find(c => String(c.id)===String(id));
+    const ordLocalDel = cliDelLocal ? clientesCache.findIndex(c => String(c.id)===String(id))+1 : id;
+    const nomeLocalDel = cliDelLocal ? cliDelLocal.nome : '';
     clientesCache = clientesCache.filter(c => String(c.id) !== String(id));
     atualizarMetricas(clientesCache);
     filtrarTabela();
-    exibirToast(`Cliente #${id} removido! (Modo Local)`, 'sucesso');
+    exibirToast(`Cliente "${nomeLocalDel}" (#${ordLocalDel}) removido! (Modo Local)`, 'sucesso');
     fecharModalDeletar();
     setButtonLoading(btnSubmit, false, 'Excluir Cliente');
 }

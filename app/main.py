@@ -362,8 +362,8 @@ async def get_atividades(cliente_id: str | int | None = None, user_id: str = Dep
 async def post_atividade(dados: AtividadeCreate, user_id: str = Depends(obter_user_id)):
     try:
         return criar_atividade(dados.model_dump(mode="json"), user_id)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao criar atividade: {str(e)[:200]}")
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar atividade.")
 
 
 @app.patch("/api/atividades/{atividade_id}", response_model=Atividade, tags=["Atividades"])
@@ -512,8 +512,8 @@ async def import_clientes(dados: ImportPreviewRequest, user_id: str = Depends(ob
     try:
         resultado = importar_clientes_bulk(dados.clientes, user_id)
         return resultado
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro na importação: {str(e)[:300]}")
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro na importação.")
 
 
 # ============================================================

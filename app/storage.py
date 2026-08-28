@@ -25,7 +25,7 @@ Tabelas Supabase:
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from app.models import Cliente, Plano, UserLogin, UserSignUp, Etapa, Atividade, Tag, FiltroSalvo
+from app.models import Cliente, ClienteCreate, Plano, UserLogin, UserSignUp, Etapa, Atividade, Tag, FiltroSalvo
 
 
 # Carrega variáveis de ambiente de .env ou data/arquivos.env
@@ -369,9 +369,10 @@ def atualizar_cliente_db(cliente_id: int | str, cliente_dados: dict, user_id: st
     """
     supabase = get_supabase_client()
 
-    # IMPORTANTE: usa "is not None" para preservar valores falsy válidos
-    # como ativo=False, valor_plano=0.0, etc.
-    dados_filtrados = {k: v for k, v in cliente_dados.items() if v is not None}
+    # PATCH: mantém None para permitir limpar campos nullable (etapa_id, valor_plano, etc)
+    # exclude_unset no endpoint já garante que só campos enviados entram aqui
+    # Preserva falsy válidos como ativo=False, "" etc.
+    dados_filtrados = dict(cliente_dados)
     if not dados_filtrados:
         return None
 
@@ -493,6 +494,10 @@ def listar_atividades(user_id: str, cliente_id: int | str | None = None) -> list
 def criar_atividade(dados: dict, user_id: str) -> Atividade:
     """Cria atividade vinculada a cliente (valida cliente pertence ao user_id via RLS)."""
     supabase = get_supabase_client()
+    # Valida ownership do cliente antes de criar atividade (previne spoofing de cliente_id)
+    cli = supabase.table("clientes").select("id").eq("id", dados.get("cliente_id")).eq("user_id", user_id).execute()
+    if not cli.data:
+        raise ValueError("Cliente não encontrado ou não pertence ao usuário.")
     payload = {
         "user_id": user_id,
         "cliente_id": dados.get("cliente_id"),
@@ -696,8 +701,8 @@ def importar_clientes_bulk(clientes: list[dict], user_id: str) -> dict:
                     payload[col] = cli[col]
             payload.setdefault("plano", "basico")
             payload.setdefault("ativo", True)
-            # Valida com Pydantic antes de inserir
-            Cliente.model_validate({**payload, "user_id": user_id})
+            # Valida com Pydantic estrito (ClienteCreate) antes de inserir — previne CPF invalido em bulk
+            ClienteCreate.model_validate({k: v for k, v in payload.items() if k != "user_id"})
             supabase.table("clientes").insert(payload).execute()
             sucessos += 1
         except Exception as e:
