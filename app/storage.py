@@ -25,7 +25,7 @@ Tabelas Supabase:
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from app.models import Cliente, Plano, UserLogin, UserSignUp, Etapa, Atividade, Tag, FiltroSalvo
+from app.models import Cliente, ClienteCreate, Plano, UserLogin, UserSignUp, Etapa, Atividade, Tag, FiltroSalvo
 
 
 # Carrega variáveis de ambiente de .env ou data/arquivos.env
@@ -696,8 +696,8 @@ def importar_clientes_bulk(clientes: list[dict], user_id: str) -> dict:
                     payload[col] = cli[col]
             payload.setdefault("plano", "basico")
             payload.setdefault("ativo", True)
-            # Valida com Pydantic antes de inserir
-            Cliente.model_validate({**payload, "user_id": user_id})
+            # Valida com Pydantic estrito (ClienteCreate) antes de inserir — previne CPF invalido em bulk
+            ClienteCreate.model_validate({k: v for k, v in payload.items() if k != "user_id"})
             supabase.table("clientes").insert(payload).execute()
             sucessos += 1
         except Exception as e:

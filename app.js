@@ -539,17 +539,19 @@ function renderizarKanban() {
         const termo = document.getElementById('search-input').value.toLowerCase().trim();
         const planoFiltro = document.getElementById('filter-plano').value;
         const statusFiltro = document.getElementById('filter-status').value;
+        const etapaFiltro = document.getElementById('filter-etapa')?.value || '';
         const tagFiltro = document.getElementById('filter-tag')?.value || '';
         const haystack = [c.nome, c.email, c.telefone||'', c.empresa||''].join(' ').toLowerCase();
         const matchBusca = !termo || haystack.includes(termo);
         const matchPlano = !planoFiltro || String(c.plano)===String(planoFiltro) || (planoFiltro==='__sem_plano__'&&!c.plano);
         const matchStatus = !statusFiltro || (statusFiltro==='ativo'?c.ativo:!c.ativo);
+        const matchEtapa = !etapaFiltro || String(c.etapa_id)===String(etapaFiltro) || (etapaFiltro==='__sem_etapa__'&&!c.etapa_id);
         let matchTag = true;
         if (tagFiltro) {
             const tagIds = c._tags || [];
             matchTag = tagIds.includes(tagFiltro);
         }
-        if (!matchBusca || !matchPlano || !matchStatus || !matchTag) return;
+        if (!matchBusca || !matchPlano || !matchStatus || !matchTag || !matchEtapa) return;
         if (c.etapa_id && grupos.hasOwnProperty(c.etapa_id)) grupos[c.etapa_id].push(c);
         else semEtapa.push(c);
     });
