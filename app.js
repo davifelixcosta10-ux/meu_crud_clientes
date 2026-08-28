@@ -894,22 +894,49 @@ async function carregarFiltrosSalvos() {
 }
 function renderizarFiltrosSalvos() {
     const container = document.getElementById('lista-filtros-salvos');
+    const badge = document.getElementById('filtros-count-badge');
+    if (badge) {
+        if (filtrosCache.length > 0) {
+            badge.textContent = filtrosCache.length;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
     if (!container) return;
     container.innerHTML = '';
     if (filtrosCache.length===0) {
-        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhum filtro salvo</p>';
+        container.innerHTML = '<div class="text-center py-6"><p class="text-sm font-medium text-slate-600 dark:text-slate-300">Nenhum filtro salvo</p><p class="text-xs text-slate-400 mt-1">Dica: ajuste busca/plano/status/etapa/tag na toolbar e clique “Salvar atual”.</p></div>';
+        if (window.lucide) lucide.createIcons();
         return;
     }
     filtrosCache.forEach(f => {
+        const q = f.query || {};
+        const parts = [];
+        if (q.termo) parts.push(`“${q.termo}”`);
+        if (q.plano) {
+            const p = planosCache.find(x => String(x.id)===String(q.plano));
+            parts.push(p ? p.nome : q.plano);
+        }
+        if (q.status) parts.push(q.status==='ativo'?'Ativos':'Inativos');
+        if (q.etapa) {
+            const e = etapasCache.find(x => String(x.id)===String(q.etapa));
+            parts.push(e ? e.nome : (q.etapa==='__sem_etapa__'?'Sem etapa':q.etapa));
+        }
+        if (q.tag) {
+            const t = tagsCache.find(x => String(x.id)===String(q.tag));
+            parts.push(t ? `#${t.nome}` : q.tag);
+        }
+        const resumo = parts.length ? parts.join(' · ') : 'Sem filtros (todos)';
         const div = document.createElement('div');
         div.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 gap-3';
         div.innerHTML = `<div class="min-w-0">
             <p class="text-sm font-bold text-slate-900 dark:text-white truncate">${escaparHTML(f.nome)}</p>
-            <p class="text-xs text-slate-400 truncate">${escaparHTML(JSON.stringify(f.query).slice(0,80))}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${escaparHTML(resumo)}</p>
         </div>
         <div class="flex items-center gap-1 flex-shrink-0">
-            <button onclick="aplicarFiltroSalvo('${f.id}')" class="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" title="Aplicar"><i data-lucide="play" class="w-3.5 h-3.5"></i></button>
-            <button onclick="deletarFiltroSalvo('${f.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            <button onclick="aplicarFiltroSalvo('${f.id}')" class="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" title="Aplicar filtro"><i data-lucide="play" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deletarFiltroSalvo('${f.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
         </div>`;
         container.appendChild(div);
     });
