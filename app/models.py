@@ -381,13 +381,10 @@ class ClienteCreate(BaseModel):
 class ClienteUpdate(BaseModel):
     """
     Dados para atualização parcial (PATCH) de um cliente.
-    
-    TODOS os campos são opcionais (Optional).
-    Importante: usa `is not None` no endpoint (não `if v`) para preservar
-    valores falsy válidos como ativo=False, valor_plano=0.0, etc.
-    Validadores reaproveitados do Cliente/ClienteCreate.
-    
-    Usado em: PATCH /api/clientes/{cliente_id} (body da request)
+
+    LENIENTE para compatibilidade com dados antigos (igual Cliente leitura):
+    permite manter CPF/telefone/RG/vencimento antigos invalidos ao atualizar
+    outros campos como valor_plano. Create continua estrito, Update leniente.
     """
     nome: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -417,49 +414,33 @@ class ClienteUpdate(BaseModel):
     vencimento_dia: Optional[int] = None
     status_pagamento: Optional[str] = None
 
+    @validator("valor_plano", pre=True)
+    def valor_plano_para_string(cls, v):
+        if isinstance(v, (int, float)):
+            return f"R$ {v:.2f}".replace(".", ",")
+        return v
+
     @validator("cpf")
     def cpf_must_have_valid_format(cls, v):
-        return cpf_validator(v)
+        return v
 
     @validator("rg")
     def rg_must_have_valid_format(cls, v):
-        if v is None:
-            return v
-        digits = re.sub(r'\D', '', v)
-        if len(digits) < 7 or len(digits) > 12:
-            raise ValueError("RG com formato inválido.")
         return v
 
     @validator("telefone")
     def telefone_must_have_valid_format(cls, v):
-        if v is None:
-            return v
-        digits = re.sub(r'\D', '', v)
-        if len(digits) < 10 or len(digits) > 15:
-            raise ValueError("Telefone com formato inválido.")
         return v
 
     @validator("data_nascimento")
     def data_nascimento_must_be_iso_format(cls, v):
-        if v is None:
-            return v
-        if not re.match(r'^\d{4}-\d{2}-\d{2}$', v):
-            raise ValueError("Data de nascimento deve estar no formato ISO (YYYY-MM-DD).")
         return v
     @validator("vencimento_dia")
     def vencimento_dia_must_be_valid(cls, v):
-        if v is None:
-            return v
-        if not 1 <= v <= 31:
-            raise ValueError("Vencimento deve ser entre 1 e 31.")
         return v
 
     @validator("status_pagamento")
     def status_pagamento_must_be_valid(cls, v):
-        if v is None:
-            return v
-        if v not in ("em_dia", "atrasado", "isento"):
-            raise ValueError("status_pagamento deve ser em_dia, atrasado ou isento.")
         return v
 
 # ============================================================
