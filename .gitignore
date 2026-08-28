@@ -16,7 +16,6 @@ __pycache__/
 .idea/
 node_modules/
 
-# Documentos de instruções e contexto gerados
-instructions.md
-context.md
+# Documentos de instruções e contexto — agora versionados (branch workflow)
+# instructions.md e context.md são commitados para garantir Preview e histórico
 

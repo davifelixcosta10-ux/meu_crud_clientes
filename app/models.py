@@ -252,7 +252,7 @@ class Cliente(BaseModel):
     estado: Optional[str] = None           # Sigla: "SP", "RJ"...
     # Fase 1 — Kanban e Financeiro
     etapa_id: Optional[Union[int, str]] = None  # FK para etapas (Kanban)
-    valor_plano: Optional[str] = None
+    valor_plano: Optional[str] = None      # ex: "R$ 150" (informativo)
 
     @validator("valor_plano", pre=True)
     def valor_plano_para_string(cls, v):
@@ -327,53 +327,7 @@ class ClienteCreate(BaseModel):
     estado: Optional[str] = None
     # Fase 1 — Kanban e Financeiro
     etapa_id: Optional[Union[int, str]] = None
-class Cliente(BaseModel):
-    """
-    Representação completa de um cliente retornado pela API.
-    
-    Contém TODOS os campos (básicos + opcionais).
-    id e user_id são preenchidos pelo banco (opcionais aqui para criação).
-    from_attributes=True permite criar instância a partir de row do Supabase.
-    
-    Usado em: resposta de GET/POST/PATCH /api/clientes
-    """
-    id: Optional[Union[int, str]] = None
-    user_id: Optional[str] = None
-    # Dados básicos
-    nome: str
-    email: str
-    plano: Optional[str] = None        # ID/slug do plano vinculado
-    ativo: bool = True
-    data_cadastro: Optional[str] = None
-    # Contato
-    telefone: Optional[str] = None
-    cpf: Optional[str] = None
-    rg: Optional[str] = None
-    # Dados pessoais estendidos
-    data_nascimento: Optional[str] = None   # ISO: YYYY-MM-DD
-    genero: Optional[str] = None            # "M", "F", "Outro"
-    empresa: Optional[str] = None
-    cargo: Optional[str] = None
-    observacoes: Optional[str] = None
-    # Endereço
-    cep: Optional[str] = None
-    logradouro: Optional[str] = None
-    numero: Optional[str] = None
-    complemento: Optional[str] = None
-    bairro: Optional[str] = None
-    cidade: Optional[str] = None
-    estado: Optional[str] = None           # Sigla: "SP", "RJ"...
-    # Fase 1 — Kanban e Financeiro
-    etapa_id: Optional[Union[int, str]] = None  # FK para etapas (Kanban)
     valor_plano: Optional[str] = None
-
-    @validator("valor_plano", pre=True)
-    def valor_plano_para_string(cls, v):
-        if isinstance(v, (int, float)):
-            return f"R$ {v:.2f}".replace(".", ",")
-        return v
-    vencimento_dia: Optional[int] = None   # 1-31
-    status_pagamento: Optional[str] = None # em_dia | atrasado | isento
     vencimento_dia: Optional[int] = None
     status_pagamento: Optional[str] = None
 
@@ -459,56 +413,7 @@ class ClienteUpdate(BaseModel):
     estado: Optional[str] = None
     # Fase 1 — Kanban e Financeiro
     etapa_id: Optional[Union[int, str]] = None
-class Cliente(BaseModel):
-    """
-    Representação completa de um cliente retornado pela API.
-    
-    Contém TODOS os campos (básicos + opcionais).
-    id e user_id são preenchidos pelo banco (opcionais aqui para criação).
-    from_attributes=True permite criar instância a partir de row do Supabase.
-    
-    Usado em: resposta de GET/POST/PATCH /api/clientes
-    """
-    id: Optional[Union[int, str]] = None
-    user_id: Optional[str] = None
-    # Dados básicos
-    nome: str
-    email: str
-    plano: Optional[str] = None        # ID/slug do plano vinculado
-    ativo: bool = True
-    data_cadastro: Optional[str] = None
-    # Contato
-    telefone: Optional[str] = None
-    cpf: Optional[str] = None
-    rg: Optional[str] = None
-    # Dados pessoais estendidos
-    data_nascimento: Optional[str] = None   # ISO: YYYY-MM-DD
-    genero: Optional[str] = None            # "M", "F", "Outro"
-    empresa: Optional[str] = None
-    cargo: Optional[str] = None
-    observacoes: Optional[str] = None
-    # Endereço
-    cep: Optional[str] = None
-    logradouro: Optional[str] = None
-    numero: Optional[str] = None
-    complemento: Optional[str] = None
-    bairro: Optional[str] = None
-    cidade: Optional[str] = None
-    estado: Optional[str] = None           # Sigla: "SP", "RJ"...
-    # Fase 1 — Kanban e Financeiro
-    etapa_id: Optional[Union[int, str]] = None  # FK para etapas (Kanban)
     valor_plano: Optional[str] = None
-
-    @validator("valor_plano", pre=True)
-    def valor_plano_para_string(cls, v):
-        if isinstance(v, (int, float)):
-            return f"R$ {v:.2f}".replace(".", ",")
-        return v
-    vencimento_dia: Optional[int] = None   # 1-31
-    status_pagamento: Optional[str] = None # em_dia | atrasado | isento
-    vencimento_dia: Optional[int] = None
-    status_pagamento: Optional[str] = None
-
     vencimento_dia: Optional[int] = None
     status_pagamento: Optional[str] = None
 
