@@ -1299,10 +1299,20 @@ async function confirmarImport() {
             if (!resp) { setButtonLoading(btn,false,'Importar'); return; }
             const data = await resp.json();
             if (resp.ok) {
-                resultDiv.className = 'p-3 rounded-xl border text-sm bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300';
-                resultDiv.innerHTML = `✅ ${data.sucessos}/${data.total} importados. ${data.erros?.length ? data.erros.length+' erros (ver console)' : ''}`;
+                if (data.erros && data.erros.length > 0) {
+                    console.warn('Import erros', data.erros);
+                    const detalhes = data.erros.slice(0,3).map(e => `Linha ${e.linha}: ${e.erro.slice(0,120)}`).join('<br>');
+                    const mais = data.erros.length > 3 ? `<br><span class="text-xs">+${data.erros.length-3} erros (ver console F12)</span>` : '';
+                    const isDup = data.erros.some(e => String(e.erro).includes('23505') || String(e.erro).toLowerCase().includes('duplicate'));
+                    const hintDup = isDup ? '<br><span class="text-xs font-bold text-amber-700 dark:text-amber-300">Dica: e-mail já existe em outra conta (constraint global). Rode supabase_fix_email_unique.sql no SQL Editor para permitir mesmo e-mail em usuários diferentes.</span>' : '';
+                    resultDiv.className = data.sucessos > 0 ? 'p-3 rounded-xl border text-sm bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300' : 'p-3 rounded-xl border text-sm bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300';
+                    resultDiv.innerHTML = `${data.sucessos > 0 ? '⚠️' : '❌'} ${data.sucessos}/${data.total} importados. ${data.erros.length} erro(s):<br><span class="text-xs">${detalhes}${mais}${hintDup}</span>`;
+                } else {
+                    resultDiv.className = 'p-3 rounded-xl border text-sm bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300';
+                    resultDiv.innerHTML = `✅ ${data.sucessos}/${data.total} importados.`;
+                }
                 resultDiv.classList.remove('hidden');
-                exibirToast(`${data.sucessos} clientes importados!`, 'sucesso');
+                exibirToast(`${data.sucessos} clientes importados!${data.erros?.length ? ` (${data.erros.length} erros)` : ''}`, data.sucessos > 0 ? 'sucesso' : 'erro');
                 await carregarClientes();
                 setButtonLoading(btn,false,'Importar');
                 return;
