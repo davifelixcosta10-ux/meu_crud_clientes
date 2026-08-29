@@ -320,7 +320,7 @@ async function inicializarApp() {
     await carregarFiltrosSalvos();
     await carregarClientes();
     setViewMode(viewMode, true);
-    await carregarRelatorioConversao();
+    await carregarRelatorios();
     if (window.lucide) lucide.createIcons();
 }
 
@@ -466,8 +466,8 @@ async function carregarEtapas() {
     inicializarFiltroEtapas();
     renderizarEtapasSelects();
     renderizarKanban();
-    // Atualiza relatório quando etapas mudam (contagem por etapa)
-    carregarRelatorioConversao();
+    // Atualiza relatórios quando etapas mudam
+    carregarRelatorios();
     if (window.lucide) lucide.createIcons();
 }
 function inicializarFiltroEtapas() {
@@ -617,7 +617,7 @@ function renderizarKanban() {
                         exibirToast('Etapa atualizada', 'sucesso');
                         atualizarMetricas(clientesCache);
                         renderizarKanban();
-                        carregarRelatorioConversao();
+                        carregarRelatorios();
                     } else if (!modoDemo) {
                         exibirToast('Erro ao mover card', 'erro');
                         renderizarKanban();
@@ -627,14 +627,14 @@ function renderizarKanban() {
                         if (idx2 !== -1) clientesCache[idx2].etapa_id = newEtapaId || null;
                         atualizarMetricas(clientesCache);
                         renderizarKanban();
-                        carregarRelatorioConversao();
+                        carregarRelatorios();
                     }
                 } catch (e) {
                     const idx = clientesCache.findIndex(c => String(c.id)===String(clienteId));
                     if (idx !== -1) clientesCache[idx].etapa_id = newEtapaId || null;
                     atualizarMetricas(clientesCache);
                     renderizarKanban();
-                    carregarRelatorioConversao();
+                    carregarRelatorios();
                 }
                 if (window.lucide) lucide.createIcons();
             }
@@ -1539,11 +1539,11 @@ function atualizarMetricas(clientes) {
             container.appendChild(div);
         }
     }
-    // Atualiza relatório de conversão se já carregado (mantém período selecionado)
+    // Atualiza relatórios se já carregados (mantém período selecionado)
     if (document.getElementById('chart-conversao')) {
         // debounce para não floodar API em cada métrica
         clearTimeout(window._relatorioDebounce);
-        window._relatorioDebounce = setTimeout(() => carregarRelatorioConversao(), 300);
+        window._relatorioDebounce = setTimeout(() => carregarRelatorios(), 300);
     }
 }
 
@@ -1658,6 +1658,90 @@ function renderizarRelatorioConversao(data) {
         }).join('');
     }
     if (totalEl) totalEl.textContent = `Total: ${data.total} cliente(s)${document.getElementById('relatorio-periodo')?.value ? ` • últimos ${document.getElementById('relatorio-periodo').value} dias` : ''}`;
+    if (window.lucide) lucide.createIcons();
+}
+async function carregarRelatorios() {
+    await Promise.all([carregarRelatorioConversao(), carregarRelatorioReceita()]);
+}
+let chartReceitaPlano = null;
+let chartReceitaMes = null;
+async function carregarRelatorioReceita() {
+    const canvasPlano = document.getElementById('chart-receita-plano');
+    const canvasMes = document.getElementById('chart-receita-mes');
+    const totalEl = document.getElementById('relatorio-receita-total');
+    if (!canvasPlano && !canvasMes) return;
+    const periodo = document.getElementById('relatorio-periodo')?.value || '';
+    const qs = periodo ? `?periodo=${periodo}` : '';
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/relatorios/receita${qs}`, { method: 'GET' });
+        if (!resp || !resp.ok) {
+            if (totalEl) totalEl.textContent = 'R$ 0';
+            return;
+        }
+        const data = await resp.json();
+        renderizarRelatorioReceita(data);
+    } catch (e) {
+        console.warn('Erro ao carregar relatório receita', e);
+        if (totalEl) totalEl.textContent = 'R$ 0';
+    }
+}
+function renderizarRelatorioReceita(data) {
+    const canvasPlano = document.getElementById('chart-receita-plano');
+    const canvasMes = document.getElementById('chart-receita-mes');
+    const totalEl = document.getElementById('relatorio-receita-total');
+    const tabelaPlanoEl = document.getElementById('relatorio-receita-plano-tabela');
+    const tabelaMesEl = document.getElementById('relatorio-receita-mes-tabela');
+    if (!data) return;
+    const totalFmt = `R$ ${Number(data.total_receita || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    if (totalEl) totalEl.textContent = totalFmt;
+    if (typeof Chart === 'undefined') return;
+    // Por plano - doughnut
+    if (canvasPlano) {
+        if (chartReceitaPlano) { try { chartReceitaPlano.destroy(); } catch(e) {} chartReceitaPlano = null; }
+        const labels = data.por_plano.map(p => p.plano_nome);
+        const vals = data.por_plano.map(p => p.total);
+        const corMap = { indigo: '#6366f1', cyan: '#06b6d4', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e', purple: '#a855f7', slate: '#64748b', orange: '#f97316' };
+        const bg = data.por_plano.map(p => (corMap[p.plano_cor] || '#64748b') + 'CC');
+        if (labels.length === 0) {
+            const ctx = canvasPlano.getContext('2d');
+            ctx.clearRect(0,0,canvasPlano.width, canvasPlano.height);
+            if (tabelaPlanoEl) tabelaPlanoEl.innerHTML = '<p class="text-xs text-slate-400 text-center">Sem receita em dia</p>';
+        } else {
+            const ctx = canvasPlano.getContext('2d');
+            chartReceitaPlano = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels, datasets: [{ data: vals, backgroundColor: bg, borderWidth: 2, borderColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff' }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155', font: { size: 10 }, padding: 12 } }, tooltip: { callbacks: { label: (c) => ` ${c.label}: R$ ${Number(c.parsed).toLocaleString('pt-BR', {minimumFractionDigits:2})}` } } } }
+            });
+            if (tabelaPlanoEl) {
+                tabelaPlanoEl.innerHTML = data.por_plano.map(p => {
+                    const estilo = MAPA_CORES_PLANO[p.plano_cor] || MAPA_CORES_PLANO.slate;
+                    return `<div class="flex items-center justify-between p-2 rounded-lg border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text}">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] text-slate-500">${p.count} cli • ${p.percent}%</span></div><span class="text-xs font-black ${estilo.text}">R$ ${Number(p.total).toLocaleString('pt-BR', {minimumFractionDigits:2})}</span></div>`;
+                }).join('');
+            }
+        }
+    }
+    // Por mês - bar
+    if (canvasMes) {
+        if (chartReceitaMes) { try { chartReceitaMes.destroy(); } catch(e) {} chartReceitaMes = null; }
+        const labels = data.por_mes.map(m => m.mes);
+        const vals = data.por_mes.map(m => m.total);
+        if (labels.length === 0) {
+            const ctx = canvasMes.getContext('2d');
+            ctx.clearRect(0,0,canvasMes.width, canvasMes.height);
+            if (tabelaMesEl) tabelaMesEl.innerHTML = '<p class="text-xs text-slate-400 text-center">Sem dados por mês</p>';
+        } else {
+            const ctx = canvasMes.getContext('2d');
+            chartReceitaMes = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Receita', data: vals, backgroundColor: '#10b981CC', borderColor: '#10b981', borderWidth: 1.5, borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` R$ ${Number(c.parsed.y).toLocaleString('pt-BR', {minimumFractionDigits:2})}` } } }, scales: { x: { ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', font: { size: 9 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', callback: (v) => `R$ ${v}` }, grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' } } } }
+            });
+            if (tabelaMesEl) {
+                tabelaMesEl.innerHTML = data.por_mes.map(m => `<div class="flex items-center justify-between p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><span class="text-xs font-medium text-slate-600 dark:text-slate-300">${escaparHTML(m.mes)}</span><span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">R$ ${Number(m.total).toLocaleString('pt-BR', {minimumFractionDigits:2})} <span class="text-[10px] font-normal text-slate-400">(${m.count})</span></span></div>`).join('');
+            }
+        }
+    }
     if (window.lucide) lucide.createIcons();
 }
 
