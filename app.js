@@ -466,6 +466,8 @@ async function carregarEtapas() {
     inicializarFiltroEtapas();
     renderizarEtapasSelects();
     renderizarKanban();
+    // Atualiza relatório quando etapas mudam (contagem por etapa)
+    carregarRelatorioConversao();
     if (window.lucide) lucide.createIcons();
 }
 function inicializarFiltroEtapas() {
@@ -530,7 +532,10 @@ function renderizarKanban() {
     if (!container) return;
     if (etapasCache.length === 0 && clientesCache.length === 0) {
         container.innerHTML = '<div class="w-full text-center py-16 text-sm text-slate-400">Crie etapas para usar o Kanban</div>';
-        if (countEl) countEl.textContent = '0 etapas';
+        if (countEl) {
+            countEl.textContent = '0 etapas • 0 clientes';
+            countEl.classList.remove('hidden');
+        }
         return;
     }
     const grupos = {};
@@ -586,7 +591,11 @@ function renderizarKanban() {
         </div>`;
     });
     container.innerHTML = html;
-    if (countEl) countEl.textContent = `${etapasCache.length} etapas`;
+    if (countEl) {
+        const totalClientesKanban = clientesCache.length;
+        countEl.textContent = `${etapasCache.length} etapas • ${totalClientesKanban} cliente${totalClientesKanban !== 1 ? 's' : ''}`;
+        countEl.classList.remove('hidden');
+    }
     container.querySelectorAll('.kanban-column-body').forEach(col => {
         new Sortable(col, {
             group: 'kanban',
@@ -606,14 +615,26 @@ function renderizarKanban() {
                         const idx = clientesCache.findIndex(c => String(c.id)===String(clienteId));
                         if (idx !== -1) clientesCache[idx].etapa_id = newEtapaId || null;
                         exibirToast('Etapa atualizada', 'sucesso');
+                        atualizarMetricas(clientesCache);
+                        renderizarKanban();
+                        carregarRelatorioConversao();
                     } else if (!modoDemo) {
                         exibirToast('Erro ao mover card', 'erro');
                         renderizarKanban();
+                    } else {
+                        // modoDemo fallback já atualizou localmente
+                        const idx2 = clientesCache.findIndex(c => String(c.id)===String(clienteId));
+                        if (idx2 !== -1) clientesCache[idx2].etapa_id = newEtapaId || null;
+                        atualizarMetricas(clientesCache);
+                        renderizarKanban();
+                        carregarRelatorioConversao();
                     }
                 } catch (e) {
                     const idx = clientesCache.findIndex(c => String(c.id)===String(clienteId));
                     if (idx !== -1) clientesCache[idx].etapa_id = newEtapaId || null;
+                    atualizarMetricas(clientesCache);
                     renderizarKanban();
+                    carregarRelatorioConversao();
                 }
                 if (window.lucide) lucide.createIcons();
             }
