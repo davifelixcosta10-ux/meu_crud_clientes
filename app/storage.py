@@ -351,9 +351,12 @@ def salvar_novo_cliente(cliente_dados: dict, user_id: str) -> Cliente:
         elif isinstance(vp, (int, float)):
             payload_banco["valor_plano"] = float(vp)
 
-    # Garante valor padrão de plano se não enviado ou nulo (evita 23502 not-null)
-    if not payload_banco.get("plano"):
-        payload_banco["plano"] = "basico"
+    # Sem plano deve permanecer null (mostra "Sem plano" no badge), não virar "basico"
+    # Só usa "basico" se plano não foi enviado (compatibilidade antiga)
+    if "plano" not in payload_banco:
+        payload_banco["plano"] = None
+    elif payload_banco["plano"] == "":
+        payload_banco["plano"] = None
     # Garante valor padrão de ativo
     if payload_banco.get("ativo") is None:
         payload_banco["ativo"] = True
