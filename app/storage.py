@@ -883,3 +883,76 @@ def importar_clientes_bulk(clientes: list[dict], user_id: str) -> dict:
         except Exception as e:
             erros.append({"linha": idx + 1, "erro": str(e), "dados": cli})
     return {"sucessos": sucessos, "erros": erros, "total": len(clientes), "planos_criados": planos_criados}
+
+
+# ============================================================
+# FASE 2A — RELATÓRIOS (Conversão por etapa)
+# ============================================================
+
+def relatorio_conversao(user_id: str, periodo_dias: int | None = None) -> dict:
+    """
+    Retorna distribuição de clientes por etapa Kanban (conversão).
+    Calcula count e percent por etapa, incluindo 'Sem etapa' (etapa_id null).
+    Filtra por periodo_dias se fornecido (ex: 30 = últimos 30 dias via data_cadastro).
+    """
+    from datetime import datetime, timedelta
+    # Carrega etapas e clientes do usuário (reusa funções existentes com RLS)
+    etapas = listar_etapas(user_id)
+    clientes = carregar_clientes(user_id)
+
+    # Filtro por período
+    if periodo_dias is not None and periodo_dias > 0:
+        try:
+            limite = datetime.now().date() - timedelta(days=periodo_dias)
+            clientes_filtrados = []
+            for c in clientes:
+                if not c.data_cadastro:
+                    continue
+                try:
+                    # data_cadastro pode ser "YYYY-MM-DD" ou "YYYY-MM-DDTHH:MM:SS"
+                    dc = c.data_cadastro.split("T")[0]
+                    d = datetime.strptime(dc, "%Y-%m-%d").date()
+                    if d >= limite:
+                        clientes_filtrados.append(c)
+                except Exception:
+                    # Se falhar parse, mantém cliente (não filtra)
+                    clientes_filtrados.append(c)
+            clientes = clientes_filtrados
+        except Exception:
+            pass
+
+    total = len(clientes)
+    # Conta por etapa_id
+    counts: dict[str | None, int] = {}
+    for c in clientes:
+        key = str(c.etapa_id) if c.etapa_id is not None else None
+        counts[key] = counts.get(key, 0) + 1
+
+    # Mapa etapa id -> objeto para nome/cor
+    etapa_map = {str(e.id): e for e in etapas}
+
+    itens = []
+    # Sem etapa primeiro
+    sem = counts.get(None, 0)
+    if sem > 0 or total == 0 or len(etapas) == 0:
+        # Sempre inclui Sem etapa se houver clientes sem etapa ou se não há etapas
+        # Se total 0, mostra 0 para Sem etapa
+        itens.append({
+            "etapa_id": None,
+            "etapa_nome": "Sem etapa",
+            "etapa_cor": "slate",
+            "count": sem,
+            "percent": round((sem / total * 100) if total > 0 else 0, 1)
+        })
+    # Cada etapa ordenada por ordem
+    for e in sorted(etapas, key=lambda x: x.ordem):
+        cnt = counts.get(str(e.id), 0)
+        itens.append({
+            "etapa_id": str(e.id),
+            "etapa_nome": e.nome,
+            "etapa_cor": e.cor,
+            "count": cnt,
+            "percent": round((cnt / total * 100) if total > 0 else 0, 1)
+        })
+
+    return {"total": total, "itens": itens}

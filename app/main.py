@@ -36,6 +36,7 @@ from app.models import (
     Atividade, AtividadeCreate, AtividadeUpdate,
     Tag, TagCreate, TagUpdate, ClienteTagCreate,
     FiltroSalvo, FiltroSalvoCreate, ImportPreviewRequest,
+    RelatorioConversaoResponse,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -48,6 +49,7 @@ from app.storage import (
     listar_tags_cliente, vincular_tag_cliente, desvincular_tag_cliente,
     listar_filtros_salvos, criar_filtro_salvo, deletar_filtro_salvo,
     importar_clientes_bulk,
+    relatorio_conversao,
 )
 
 # --- Rate Limiter ---
@@ -514,6 +516,19 @@ async def import_clientes(dados: ImportPreviewRequest, user_id: str = Depends(ob
         return resultado
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro na importação.")
+
+
+# ============================================================
+# FASE 2A — RELATÓRIOS (Conversão por etapa)
+# ============================================================
+
+@app.get("/api/relatorios/conversao", response_model=RelatorioConversaoResponse, tags=["Relatórios"])
+async def get_relatorio_conversao(periodo: int | None = None, user_id: str = Depends(obter_user_id)):
+    """Retorna distribuição de clientes por etapa (conversão). Query ?periodo=30 para últimos 30 dias."""
+    try:
+        return relatorio_conversao(user_id, periodo)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de conversão.")
 
 
 # ============================================================
