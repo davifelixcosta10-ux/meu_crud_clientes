@@ -2442,12 +2442,19 @@ function exportarCSV() {
         'Número', 'Complemento', 'Bairro', 'Cidade', 'Estado', 'Observações', 'Data Cadastro'
     ];
 
-    const rows = clientesCache.map(c => [
+    const rows = clientesCache.map(c => {
+        // Exporta nome do plano em vez de ID "1" para import preservar nome/cor (ex: "Vip" em vez de "1")
+        let planoNome = c.plano || '';
+        if (planoNome) {
+            const p = planosCache.find(x => String(x.id) === String(planoNome));
+            if (p) planoNome = p.nome;
+        }
+        return [
         c.id,
         `"${(c.nome || '').replace(/"/g, '""')}"`,
         `"${(c.email || '').replace(/"/g, '""')}"`,
         c.ativo ? 'Ativo' : 'Inativo',
-        `"${(c.plano || '').replace(/"/g, '""')}"`,
+        `"${String(planoNome).replace(/"/g, '""')}"`,
         `"${(c.telefone || '').replace(/"/g, '""')}"`,
         `"${(c.cpf || '').replace(/"/g, '""')}"`,
         `"${(c.rg || '').replace(/"/g, '""')}"`,
@@ -2464,7 +2471,8 @@ function exportarCSV() {
         `"${(c.estado || '').replace(/"/g, '""')}"`,
         `"${(c.observacoes || '').replace(/"/g, '""')}"`,
         c.data_cadastro || ''
-    ]);
+        ];
+    });
 
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
