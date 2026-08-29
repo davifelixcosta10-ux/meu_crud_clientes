@@ -731,6 +731,7 @@ def importar_clientes_bulk(clientes: list[dict], user_id: str) -> dict:
     supabase = get_supabase_client()
     # Auto-cria planos ausentes antes de inserir clientes
     planos_criados = []
+    plano_id_map = {}  # mapeia plano original (ex: "1") -> novo id (ex: "7")
     try:
         # Coleta planos distintos do import (ex: "pro", "enterprise", "1")
         planos_import = {str(c.get("plano")).strip() for c in clientes if c.get("plano") and str(c.get("plano")).strip()}
@@ -747,18 +748,60 @@ def importar_clientes_bulk(clientes: list[dict], user_id: str) -> dict:
                 # Já existe por id ou por nome?
                 if pv in por_id or pv_lower in por_nome:
                     continue
-                # Precisa criar
-                # Se for numérico puro (ex: "1" vindo de export de outra conta), cria como "Plano 1"
-                nome_novo = f"Plano {pv}" if pv.isdigit() else pv.capitalize() if pv.lower() in ("pro","basico","enterprise") else pv
+                # Precisa criar — tenta preservar nome/cor originais
+                nome_novo = None
+                cor_nova = None
+                desc_nova = "Criado automaticamente no import"
+                valor_novo = ""
+                # Se for ID numérico (ex: "1" do export), busca plano original para copiar nome/cor
+                if pv.isdigit():
+                    try:
+                        orig = supabase.table("planos").select("nome,cor,descricao,valor").eq("id", int(pv)).limit(1).execute()
+                        if orig.data:
+                            nome_novo = orig.data[0].get("nome") or f"Plano {pv}"
+                            cor_nova = orig.data[0].get("cor") or _cor_para_plano(nome_novo)
+                            desc_nova = orig.data[0].get("descricao") or desc_nova
+                            valor_novo = orig.data[0].get("valor") or ""
+                        else:
+                            nome_novo = f"Plano {pv}"
+                    except Exception:
+                        nome_novo = f"Plano {pv}"
+                if not nome_novo:
+                    # Para slug "pro"/"enterprise"/"basico" usa nome capitalizado e cor padrão
+                    if pv_lower in ("pro", "basico", "enterprise"):
+                        nome_novo = pv.capitalize()
+                        # Cor padrão igual ao PLANOS_DEFAULT do frontend
+                        cores_default = {"pro": "indigo", "basico": "slate", "enterprise": "amber"}
+                        cor_nova = cores_default.get(pv_lower) or _cor_para_plano(nome_novo)
+                        # Tenta buscar valor de plano com mesmo nome em qualquer usuário para preservar
+                        try:
+                            orig2 = supabase.table("planos").select("valor").ilike("nome", pv).limit(1).execute()
+                            if orig2.data:
+                                valor_novo = orig2.data[0].get("valor") or valor_novo
+                        except Exception:
+                            pass
+                    else:
+                        nome_novo = pv
+                if not cor_nova:
+                    cor_nova = _cor_para_plano(nome_novo)
                 # Evita duplicar nome se já existe "Plano 1" etc.
                 if nome_novo.strip().lower() in por_nome:
+                    # Mesmo que nome já exista, mapeia pv (ex: "1") para id existente desse nome
+                    if pv not in por_id:
+                        plano_id_map[pv] = por_nome[nome_novo.strip().lower()].id if hasattr(por_nome[nome_novo.strip().lower()], 'id') else por_nome[nome_novo.strip().lower()]
+                        # por_nome guarda objeto Plano, com .id
+                        try:
+                            plano_id_map[pv] = str(por_nome[nome_novo.strip().lower()].id)
+                        except:
+                            plano_id_map[pv] = str(por_nome[nome_novo.strip().lower()])
                     continue
                 try:
-                    novo = criar_plano({"nome": nome_novo, "cor": _cor_para_plano(nome_novo), "descricao": "Criado automaticamente no import", "valor": ""}, user_id)
+                    novo = criar_plano({"nome": nome_novo, "cor": cor_nova, "descricao": desc_nova, "valor": valor_novo}, user_id)
                     planos_criados.append(novo.nome)
                     # Atualiza mapas para não duplicar dentro do mesmo import
                     por_id[str(novo.id)] = novo
                     por_nome[novo.nome.strip().lower()] = novo
+                    plano_id_map[pv] = str(novo.id)
                 except Exception as e:
                     # Se falhar criar plano (ex: race), ignora — cliente ainda será inserido com plano string original (fallback badge)
                     print(f"[import] falha ao criar plano '{nome_novo}': {e}")
@@ -769,7 +812,13 @@ def importar_clientes_bulk(clientes: list[dict], user_id: str) -> dict:
     # Após criar, recarrega para ter ids corretos
     try:
         if planos_import:
-            # Recarrega planos atualizados
+            # Primeiro usa mapa direto de criação (ex: "1" -> "7" para Vip)
+            for cli in clientes:
+                pv = str(cli.get("plano", "")).strip()
+                if pv in plano_id_map:
+                    cli["plano"] = plano_id_map[pv]
+                    continue
+            # Recarrega planos atualizados para mapear por nome
             atuais = listar_planos(user_id)
             por_nome_atual = {p.nome.strip().lower(): str(p.id) for p in atuais}
             por_id_atual = {str(p.id): str(p.id) for p in atuais}
