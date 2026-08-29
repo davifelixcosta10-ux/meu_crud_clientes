@@ -716,13 +716,79 @@ def deletar_filtro_salvo(filtro_id: int | str, user_id: str) -> bool:
 # FASE 1E — IMPORTAÇÃO BULK (CSV/Excel já parseado no frontend)
 # ============================================================
 
+def _cor_para_plano(nome: str) -> str:
+    """Escolhe cor determinística para plano auto-criado no import."""
+    cores = ["indigo", "emerald", "amber", "rose", "cyan", "purple", "orange", "slate"]
+    h = sum(ord(c) for c in (nome or "")) % len(cores)
+    return cores[h]
+
 def importar_clientes_bulk(clientes: list[dict], user_id: str) -> dict:
     """
     Importa lista de clientes em lote (usado por POST /api/clientes/import).
-    Validação já feita no frontend + Pydantic; aqui apenas filtra colunas e insere.
-    Retorna dict com contagem de sucessos e erros.
+    Cria automaticamente planos ausentes (ex: importar dados de teste para conta do pai).
+    Retorna dict com contagem de sucessos, erros e planos_criados.
     """
     supabase = get_supabase_client()
+    # Auto-cria planos ausentes antes de inserir clientes
+    planos_criados = []
+    try:
+        # Coleta planos distintos do import (ex: "pro", "enterprise", "1")
+        planos_import = {str(c.get("plano")).strip() for c in clientes if c.get("plano") and str(c.get("plano")).strip()}
+        # Normaliza: remove empty, trata "basico" como nome
+        planos_import = {p for p in planos_import if p}
+        if planos_import:
+            existentes = listar_planos(user_id)
+            # Mapa por id string e por nome lower
+            por_id = {str(p.id): p for p in existentes}
+            por_nome = {p.nome.strip().lower(): p for p in existentes}
+            for plano_val in planos_import:
+                pv = plano_val.strip()
+                pv_lower = pv.lower()
+                # Já existe por id ou por nome?
+                if pv in por_id or pv_lower in por_nome:
+                    continue
+                # Precisa criar
+                # Se for numérico puro (ex: "1" vindo de export de outra conta), cria como "Plano 1"
+                nome_novo = f"Plano {pv}" if pv.isdigit() else pv.capitalize() if pv.lower() in ("pro","basico","enterprise") else pv
+                # Evita duplicar nome se já existe "Plano 1" etc.
+                if nome_novo.strip().lower() in por_nome:
+                    continue
+                try:
+                    novo = criar_plano({"nome": nome_novo, "cor": _cor_para_plano(nome_novo), "descricao": "Criado automaticamente no import", "valor": ""}, user_id)
+                    planos_criados.append(novo.nome)
+                    # Atualiza mapas para não duplicar dentro do mesmo import
+                    por_id[str(novo.id)] = novo
+                    por_nome[novo.nome.strip().lower()] = novo
+                except Exception as e:
+                    # Se falhar criar plano (ex: race), ignora — cliente ainda será inserido com plano string original (fallback badge)
+                    print(f"[import] falha ao criar plano '{nome_novo}': {e}")
+    except Exception as e:
+        print(f"[import] erro ao auto-criar planos: {e}")
+
+    # Mapeia plano antigo (ex: "pro", "1") para novo id criado, para badge funcionar
+    # Após criar, recarrega para ter ids corretos
+    try:
+        if planos_import:
+            # Recarrega planos atualizados
+            atuais = listar_planos(user_id)
+            por_nome_atual = {p.nome.strip().lower(): str(p.id) for p in atuais}
+            por_id_atual = {str(p.id): str(p.id) for p in atuais}
+            for cli in clientes:
+                pv = str(cli.get("plano", "")).strip()
+                if not pv:
+                    continue
+                # Se já é id válido, mantém
+                if pv in por_id_atual:
+                    continue
+                # Se nome já existe (ex: import "pro" -> plano "Pro" com id 5), mapeia para id
+                pv_lower = pv.lower()
+                if pv_lower in por_nome_atual:
+                    cli["plano"] = por_nome_atual[pv_lower]
+                elif pv.isdigit() and f"plano {pv}".lower() in por_nome_atual:
+                    cli["plano"] = por_nome_atual[f"plano {pv}".lower()]
+    except Exception as e:
+        print(f"[import] erro ao remapear planos: {e}")
+
     sucessos = 0
     erros = []
     for idx, cli in enumerate(clientes):
@@ -767,4 +833,4 @@ def importar_clientes_bulk(clientes: list[dict], user_id: str) -> dict:
             sucessos += 1
         except Exception as e:
             erros.append({"linha": idx + 1, "erro": str(e), "dados": cli})
-    return {"sucessos": sucessos, "erros": erros, "total": len(clientes)}
+    return {"sucessos": sucessos, "erros": erros, "total": len(clientes), "planos_criados": planos_criados}
