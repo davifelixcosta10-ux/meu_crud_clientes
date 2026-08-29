@@ -320,6 +320,7 @@ async function inicializarApp() {
     await carregarFiltrosSalvos();
     await carregarClientes();
     setViewMode(viewMode, true);
+    await carregarRelatorioConversao();
     if (window.lucide) lucide.createIcons();
 }
 
@@ -465,6 +466,8 @@ async function carregarEtapas() {
     inicializarFiltroEtapas();
     renderizarEtapasSelects();
     renderizarKanban();
+    // Atualiza relatório quando etapas mudam (contagem por etapa)
+    carregarRelatorioConversao();
     if (window.lucide) lucide.createIcons();
 }
 function inicializarFiltroEtapas() {
@@ -529,7 +532,10 @@ function renderizarKanban() {
     if (!container) return;
     if (etapasCache.length === 0 && clientesCache.length === 0) {
         container.innerHTML = '<div class="w-full text-center py-16 text-sm text-slate-400">Crie etapas para usar o Kanban</div>';
-        if (countEl) countEl.textContent = '0 etapas';
+        if (countEl) {
+            countEl.textContent = '0 etapas • 0 clientes';
+            countEl.classList.remove('hidden');
+        }
         return;
     }
     const grupos = {};
@@ -585,7 +591,11 @@ function renderizarKanban() {
         </div>`;
     });
     container.innerHTML = html;
-    if (countEl) countEl.textContent = `${etapasCache.length} etapas`;
+    if (countEl) {
+        const totalClientesKanban = clientesCache.length;
+        countEl.textContent = `${etapasCache.length} etapas • ${totalClientesKanban} cliente${totalClientesKanban !== 1 ? 's' : ''}`;
+        countEl.classList.remove('hidden');
+    }
     container.querySelectorAll('.kanban-column-body').forEach(col => {
         new Sortable(col, {
             group: 'kanban',
@@ -605,14 +615,26 @@ function renderizarKanban() {
                         const idx = clientesCache.findIndex(c => String(c.id)===String(clienteId));
                         if (idx !== -1) clientesCache[idx].etapa_id = newEtapaId || null;
                         exibirToast('Etapa atualizada', 'sucesso');
+                        atualizarMetricas(clientesCache);
+                        renderizarKanban();
+                        carregarRelatorioConversao();
                     } else if (!modoDemo) {
                         exibirToast('Erro ao mover card', 'erro');
                         renderizarKanban();
+                    } else {
+                        // modoDemo fallback já atualizou localmente
+                        const idx2 = clientesCache.findIndex(c => String(c.id)===String(clienteId));
+                        if (idx2 !== -1) clientesCache[idx2].etapa_id = newEtapaId || null;
+                        atualizarMetricas(clientesCache);
+                        renderizarKanban();
+                        carregarRelatorioConversao();
                     }
                 } catch (e) {
                     const idx = clientesCache.findIndex(c => String(c.id)===String(clienteId));
                     if (idx !== -1) clientesCache[idx].etapa_id = newEtapaId || null;
+                    atualizarMetricas(clientesCache);
                     renderizarKanban();
+                    carregarRelatorioConversao();
                 }
                 if (window.lucide) lucide.createIcons();
             }
@@ -1517,6 +1539,126 @@ function atualizarMetricas(clientes) {
             container.appendChild(div);
         }
     }
+    // Atualiza relatório de conversão se já carregado (mantém período selecionado)
+    if (document.getElementById('chart-conversao')) {
+        // debounce para não floodar API em cada métrica
+        clearTimeout(window._relatorioDebounce);
+        window._relatorioDebounce = setTimeout(() => carregarRelatorioConversao(), 300);
+    }
+}
+
+// ============================================================
+// 5B. FASE 2A — RELATÓRIO CONVERSÃO POR ETAPA
+// ============================================================
+let chartConversao = null;
+async function carregarRelatorioConversao() {
+    const canvas = document.getElementById('chart-conversao');
+    const tabelaEl = document.getElementById('relatorio-conversao-tabela');
+    const totalEl = document.getElementById('relatorio-conversao-total');
+    if (!canvas) return;
+    const periodo = document.getElementById('relatorio-periodo')?.value || '';
+    const qs = periodo ? `?periodo=${periodo}` : '';
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/relatorios/conversao${qs}`, { method: 'GET' });
+        if (!resp || !resp.ok) {
+            if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-slate-400 text-center col-span-3">Sem dados para o período</p>';
+            if (totalEl) totalEl.textContent = '';
+            return;
+        }
+        const data = await resp.json();
+        renderizarRelatorioConversao(data);
+    } catch (e) {
+        console.warn('Erro ao carregar relatório conversão', e);
+        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-rose-400 text-center col-span-3">Erro ao carregar</p>';
+    }
+}
+function renderizarRelatorioConversao(data) {
+    const canvas = document.getElementById('chart-conversao');
+    const tabelaEl = document.getElementById('relatorio-conversao-tabela');
+    const totalEl = document.getElementById('relatorio-conversao-total');
+    if (!canvas || !data || !data.itens) return;
+    // Destrói chart anterior
+    if (chartConversao) {
+        try { chartConversao.destroy(); } catch(e) {}
+        chartConversao = null;
+    }
+    const labels = data.itens.map(i => i.etapa_nome);
+    const counts = data.itens.map(i => i.count);
+    const percents = data.itens.map(i => i.percent);
+    const bgColors = data.itens.map(i => {
+        const cor = i.etapa_cor || 'slate';
+        const mapa = MAPA_CORES_PLANO[cor] || MAPA_CORES_PLANO.slate;
+        // Extrai cor do dot (bg-indigo-500 -> #6366f1 aproximado)
+        const corMap = { indigo: '#6366f1', cyan: '#06b6d4', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e', purple: '#a855f7', slate: '#64748b', orange: '#f97316' };
+        return corMap[cor] || '#64748b';
+    });
+    const borderColors = bgColors;
+    // Verifica Chart.js carregado (CDN)
+    if (typeof Chart === 'undefined') {
+        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-amber-600 text-center col-span-3">Chart.js não carregado</p>';
+        return;
+    }
+    const ctx = canvas.getContext('2d');
+    chartConversao = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Clientes',
+                data: counts,
+                backgroundColor: bgColors.map(c => c + 'CC'),
+                borderColor: borderColors,
+                borderWidth: 1.5,
+                borderRadius: 8,
+                maxBarThickness: 48
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const idx = ctx.dataIndex;
+                            return `${counts[idx]} clientes (${percents[idx]}%)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: { precision: 0, color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', font: { size: 10 } },
+                    grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' }
+                },
+                y: {
+                    ticks: { color: document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#334155', font: { size: 11, weight: '600' } },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+    // Tabela resumo abaixo do gráfico
+    if (tabelaEl) {
+        tabelaEl.innerHTML = data.itens.map(i => {
+            const estilo = MAPA_CORES_PLANO[i.etapa_cor] || MAPA_CORES_PLANO.slate;
+            return `<div class="flex items-center justify-between p-2.5 rounded-xl border ${estilo.border} ${estilo.bg}">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-2.5 h-2.5 rounded-full ${estilo.dot} flex-shrink-0"></span>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">${escaparHTML(i.etapa_nome)}</span>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <span class="text-xs font-black tabular-nums ${estilo.text}">${i.count}</span>
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/70 dark:bg-slate-900/30 ${estilo.text}">${i.percent}%</span>
+                </div>
+            </div>`;
+        }).join('');
+    }
+    if (totalEl) totalEl.textContent = `Total: ${data.total} cliente(s)${document.getElementById('relatorio-periodo')?.value ? ` • últimos ${document.getElementById('relatorio-periodo').value} dias` : ''}`;
+    if (window.lucide) lucide.createIcons();
 }
 
 // ============================================================

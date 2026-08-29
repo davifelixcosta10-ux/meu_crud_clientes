@@ -607,3 +607,28 @@ class FiltroSalvo(BaseModel):
 class ImportPreviewRequest(BaseModel):
     """Payload para import preview (CSV/Excel já parseado no frontend)."""
     clientes: list[dict]
+
+
+# ============================================================
+# MODELOS FASE 2A — Relatórios (Conversão por etapa)
+# ============================================================
+
+class RelatorioConversaoItem(BaseModel):
+    """Item de conversão por etapa Kanban."""
+    etapa_id: Optional[Union[int, str]] = None
+    etapa_nome: str
+    etapa_cor: Optional[str] = None
+    count: int
+    percent: float
+
+    class Config:
+        from_attributes = True
+
+
+class RelatorioConversaoResponse(BaseModel):
+    """Resposta completa do relatório de conversão."""
+    total: int
+    itens: list[RelatorioConversaoItem]
+
+    class Config:
+        from_attributes = True

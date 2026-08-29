@@ -58,6 +58,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Fase 2A — Relatórios -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <!-- Application Script -->
     <script src="app.js" defer></script>
@@ -212,6 +214,37 @@
                 </div>
             </div>
 
+        </section>
+
+        <!-- ================================================
+             RELATÓRIOS — Fase 2A Conversão por Etapa
+             ================================================ -->
+        <section id="relatorios-section" class="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm p-4 sm:p-5">
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 flex items-center justify-center">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-900 dark:text-white">Relatórios</h2>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500">Conversão por etapa</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="relatorio-periodo" onchange="carregarRelatorioConversao()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer">
+                        <option value="">Todos</option>
+                        <option value="30">30 dias</option>
+                        <option value="90">90 dias</option>
+                        <option value="365">1 ano</option>
+                    </select>
+                    <button onclick="carregarRelatorioConversao()" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700/60" title="Atualizar"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+            <div class="relative h-64 sm:h-72">
+                <canvas id="chart-conversao"></canvas>
+            </div>
+            <div id="relatorio-conversao-tabela" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs"></div>
+            <p id="relatorio-conversao-total" class="text-[11px] text-slate-400 dark:text-slate-500 mt-3 text-center"></p>
         </section>
 
         <!-- ================================================
