@@ -351,10 +351,12 @@ def salvar_novo_cliente(cliente_dados: dict, user_id: str) -> Cliente:
         elif isinstance(vp, (int, float)):
             payload_banco["valor_plano"] = float(vp)
 
-    # Garante valor padrão de plano se não enviado
-    payload_banco.setdefault("plano", "basico")
+    # Garante valor padrão de plano se não enviado ou nulo (evita 23502 not-null)
+    if not payload_banco.get("plano"):
+        payload_banco["plano"] = "basico"
     # Garante valor padrão de ativo
-    payload_banco.setdefault("ativo", True)
+    if payload_banco.get("ativo") is None:
+        payload_banco["ativo"] = True
 
     response = supabase.table("clientes").insert(payload_banco).execute()
     if not response.data:
