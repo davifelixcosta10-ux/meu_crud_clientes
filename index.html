@@ -879,6 +879,7 @@
             if (e.key === 'Escape') {
                 closeModal('modal-login');
                 closeModal('modal-register');
+                closeModal('modal-recovery');
             }
         });
 
@@ -915,27 +916,34 @@
         document.addEventListener("DOMContentLoaded", () => {
             const qs = window.location.search || "";
             const hash = window.location.hash || "";
-            const hasRecovery = qs.includes("recovery=true") || qs.includes("type=recovery") || hash.includes("access_token") || hash.includes("type=recovery") || qs.includes("type=invite");
-            // Supabase verify redireciona com access_token no hash: #access_token=...&type=recovery
-            if (qs.includes("login=true")) {
+            // debug para você ver no console o que veio do Supabase
+            if (qs || hash) console.log("[recovery] qs:", qs, "hash:", hash);
+            const hasToken = hash.includes("access_token") || hash.includes("type=recovery") || hash.includes("type=invite");
+            const isRecoveryQS = qs.includes("recovery=true") || qs.includes("type=recovery") || qs.includes("type=invite");
+            const isLoginQS = qs.includes("login=true");
+            // prioridade: se tem token no hash, SEMPRE abre recovery (define senha), não login
+            if (hasToken) {
+                console.log("[recovery] token detectado, abrindo modal-recovery");
+                openModal("modal-recovery");
+                try {
+                    const params = new URLSearchParams(hash.substring(1));
+                    const at = params.get("access_token");
+                    const rt = params.get("refresh_token");
+                    if (at) localStorage.setItem("df_recovery_token", at);
+                    if (rt) localStorage.setItem("df_recovery_refresh", rt);
+                } catch(e) {}
+                return;
+            }
+            if (isRecoveryQS) {
+                console.log("[recovery] recoveryQS, abrindo modal-recovery");
+                openModal("modal-recovery");
+                return;
+            }
+            if (isLoginQS) {
                 openModal("modal-login");
             }
-            if (hasRecovery || hash.includes("access_token")) {
-                // tenta extrair access_token do hash para mostrar modal de redefinição
-                openModal("modal-recovery");
-                // se tiver token no hash, armazena temporariamente para o supabase-js
-                if (hash.includes("access_token")) {
-                    try {
-                        const params = new URLSearchParams(hash.substring(1));
-                        const at = params.get("access_token");
-                        const rt = params.get("refresh_token");
-                        if (at) localStorage.setItem("df_recovery_token", at);
-                        if (rt) localStorage.setItem("df_recovery_refresh", rt);
-                    } catch(e) {}
-                }
-            }
-            // também suporta ?recovery=true sem hash (link do Resend direto) -> já abre modal
-            if (qs.includes("recovery=true") && !hash.includes("access_token")) {
+            // rota manual para teste: /?recovery=true sem token já abre modal para testar layout
+            if (qs.includes("recovery=true") && !hasToken) {
                 openModal("modal-recovery");
             }
         });
