@@ -1941,20 +1941,30 @@ function toggleRelatorioSub(tipo) {
     }
 }
 function restaurarEstadoRelatorios() {
-    const collapsed = localStorage.getItem('relatorios_collapsed') === '1';
+    const collapsed = localStorage.getItem('relatorios_collapsed') !== '0';
     const content = document.getElementById('relatorios-content');
     const chevron = document.getElementById('relatorios-chevron');
-    if (content && collapsed) {
-        content.classList.add('hidden');
-        if (chevron) chevron.style.transform = 'rotate(-90deg)';
+    if (content) {
+        if (collapsed) {
+            content.classList.add('hidden');
+            if (chevron) chevron.style.transform = 'rotate(-90deg)';
+        } else {
+            content.classList.remove('hidden');
+            if (chevron) chevron.style.transform = 'rotate(0deg)';
+        }
     }
     ['conversao','receita','churn','ltv'].forEach(tipo => {
         const c = document.getElementById(`relatorio-${tipo}-content`);
         const ch = document.getElementById(`relatorio-${tipo}-chevron`);
-        const col = localStorage.getItem(`relatorio_${tipo}_collapsed`) === '1';
-        if (c && col) {
-            c.classList.add('hidden');
-            if (ch) ch.style.transform = 'rotate(-90deg)';
+        const col = localStorage.getItem(`relatorio_${tipo}_collapsed`) !== '0';
+        if (c) {
+            if (col) {
+                c.classList.add('hidden');
+                if (ch) ch.style.transform = 'rotate(-90deg)';
+            } else {
+                c.classList.remove('hidden');
+                if (ch) ch.style.transform = 'rotate(0deg)';
+            }
         }
     });
 }

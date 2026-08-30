@@ -129,7 +129,7 @@
         <!-- ================================================
              METRICS — Fase 1: + Atrasados (1B) e Receita (1D)
              ================================================ -->
-        <section class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3 sm:gap-4">
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 
             <!-- Total -->
             <div class="metric-card">
@@ -181,7 +181,7 @@
                         <i data-lucide="award" class="w-4 h-4"></i>
                     </div>
                 </div>
-                <div id="metric-planos-container" class="grid grid-cols-2 gap-1.5">
+                <div id="metric-planos-container" class="flex flex-wrap gap-1.5 content-start">
                     <!-- Populado dinamicamente via JS com os planos do usuário -->
                 </div>
             </div>
@@ -208,9 +208,9 @@
                         <i data-lucide="wallet" class="w-4 h-4"></i>
                     </div>
                 </div>
-                <div class="flex items-baseline justify-between">
-                    <span id="metric-receita" class="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">R$ 0</span>
-                    <span class="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">prevista</span>
+                <div class="flex items-baseline justify-between gap-2">
+                    <span id="metric-receita" class="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums truncate">R$ 0</span>
+                    <span class="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium flex-shrink-0">prevista</span>
                 </div>
             </div>
 
@@ -236,9 +236,9 @@
                         <i data-lucide="gem" class="w-4 h-4"></i>
                     </div>
                 </div>
-                <div class="flex items-baseline justify-between">
-                    <span id="metric-ltv" class="text-lg sm:text-xl font-black text-violet-600 dark:text-violet-400 tabular-nums">R$ 0</span>
-                    <span class="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">médio</span>
+                <div class="flex items-baseline justify-between gap-2">
+                    <span id="metric-ltv" class="text-xl sm:text-2xl font-black text-violet-600 dark:text-violet-400 tabular-nums truncate">R$ 0</span>
+                    <span class="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium flex-shrink-0">médio</span>
                 </div>
             </div>
 
@@ -255,7 +255,7 @@
                     </div>
                     <div>
                         <h2 class="text-sm font-bold text-slate-900 dark:text-white">Relatórios</h2>
-                        <p class="text-[11px] text-slate-400 dark:text-slate-500">Conversão e receita • clique para expandir/recolher</p>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500">Conversão, receita, churn e LTV • clique para expandir</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2" onclick="event.stopPropagation()">
@@ -267,18 +267,18 @@
                     </select>
                     <button onclick="carregarRelatorios()" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700/60" title="Atualizar"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
                     <button id="btn-toggle-relatorios" onclick="toggleRelatoriosSection()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-transform" title="Expandir/Recolher">
-                        <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="relatorios-chevron"></i>
+                        <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="relatorios-chevron" style="transform: rotate(-90deg)"></i>
                     </button>
                 </div>
             </div>
-            <div id="relatorios-content" class="space-y-5">
+            <div id="relatorios-content" class="space-y-5 hidden">
             <!-- Conversão -->
             <div class="rounded-xl border border-slate-100 dark:border-slate-700/60 overflow-hidden">
                 <button type="button" onclick="toggleRelatorioSub('conversao')" class="w-full flex items-center justify-between px-3 py-2.5 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors text-left">
                     <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-indigo-500"></span> Conversão por etapa</h3>
-                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="relatorio-conversao-chevron"></i>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="relatorio-conversao-chevron" style="transform: rotate(-90deg)"></i>
                 </button>
-                <div id="relatorio-conversao-content" class="p-3 sm:p-4">
+                <div id="relatorio-conversao-content" class="p-3 sm:p-4 hidden">
                 <div class="relative h-64 sm:h-72">
                     <canvas id="chart-conversao"></canvas>
                 </div>
@@ -293,9 +293,9 @@
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Receita prevista (em dia)</h3>
                         <span id="relatorio-receita-total" class="text-xs font-black text-emerald-600 dark:text-emerald-400">R$ 0</span>
                     </div>
-                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="relatorio-receita-chevron"></i>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="relatorio-receita-chevron" style="transform: rotate(-90deg)"></i>
                 </button>
-                <div id="relatorio-receita-content" class="p-3 sm:p-4">
+                <div id="relatorio-receita-content" class="p-3 sm:p-4 hidden">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
                         <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">Por plano</p>
@@ -321,9 +321,9 @@
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-rose-500"></span> Churn (inativos)</h3>
                         <span id="relatorio-churn-total" class="text-xs font-black text-rose-600 dark:text-rose-400">0%</span>
                     </div>
-                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="relatorio-churn-chevron"></i>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="relatorio-churn-chevron" style="transform: rotate(-90deg)"></i>
                 </button>
-                <div id="relatorio-churn-content" class="p-3 sm:p-4">
+                <div id="relatorio-churn-content" class="p-3 sm:p-4 hidden">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
                             <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">Por mês (coorte cadastro)</p>
@@ -350,9 +350,9 @@
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-violet-500"></span> LTV estimado</h3>
                         <span id="relatorio-ltv-total" class="text-xs font-black text-violet-600 dark:text-violet-400">R$ 0</span>
                     </div>
-                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="relatorio-ltv-chevron"></i>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="relatorio-ltv-chevron" style="transform: rotate(-90deg)"></i>
                 </button>
-                <div id="relatorio-ltv-content" class="p-3 sm:p-4">
+                <div id="relatorio-ltv-content" class="p-3 sm:p-4 hidden">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
                             <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">Por plano (LTV médio)</p>
