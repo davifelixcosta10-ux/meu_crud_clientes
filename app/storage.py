@@ -1434,42 +1434,72 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             raise
         except Exception:
             raise ValueError("Acesso negado à organização")
-    # helper robusto para achar user por email (retorna dict com id e se é pendente)
+    # helper robusto para achar user por email (retorna dict com id e se é pendente) - com paginação
     def _find_user(mail: str):
         ml = mail.lower().strip()
-        # tenta list_users via admin
-        try:
-            users_res = supabase_admin.auth.admin.list_users()
-            users = getattr(users_res, "users", None) or getattr(users_res, "data", None) or []
-            if isinstance(users, dict) and "users" in users:
-                users = users["users"]
-            for u in users or []:
-                uemail = getattr(u, "email", None) or (u.get("email") if isinstance(u, dict) else None)
-                if uemail and uemail.lower() == ml:
-                    uid = getattr(u, "id", None) or (u.get("id") if isinstance(u, dict) else None)
-                    # verifica se é pendente (não confirmado)
-                    confirmed = getattr(u, "email_confirmed_at", None) or (u.get("email_confirmed_at") if isinstance(u, dict) else None)
-                    if not confirmed:
-                        confirmed = getattr(u, "confirmed_at", None) or (u.get("confirmed_at") if isinstance(u, dict) else None)
-                    is_pending = not confirmed
-                    return {"id": uid, "pending": bool(is_pending), "raw": u}
-            # tenta via auth.users
+        # tenta list_users via admin com paginação (supabase-py pode ter page/per_page)
+        for attempt in range(3):
             try:
-                res_auth = supabase_admin.schema("auth").table("users").select("id, email, email_confirmed_at, confirmed_at, invited_at").eq("email", ml).execute()
-                if res_auth.data and len(res_auth.data) > 0:
-                    r = res_auth.data[0]
-                    is_pending = not r.get("email_confirmed_at") and not r.get("confirmed_at")
-                    return {"id": r.get("id"), "pending": bool(is_pending), "raw": r}
-                res_auth2 = supabase_admin.schema("auth").table("users").select("id, email, email_confirmed_at").ilike("email", ml).execute()
-                if res_auth2.data and len(res_auth2.data) > 0:
-                    for r in res_auth2.data:
-                        if r.get("email","").lower() == ml:
-                            is_pending = not r.get("email_confirmed_at")
-                            return {"id": r.get("id"), "pending": bool(is_pending), "raw": r}
-            except Exception:
-                pass
-        except Exception:
-            pass
+                # tenta com per_page grande para pegar tudo de uma vez
+                try:
+                    users_res = supabase_admin.auth.admin.list_users(page=1, per_page=1000)
+                except TypeError:
+                    users_res = supabase_admin.auth.admin.list_users()
+                users = getattr(users_res, "users", None) or getattr(users_res, "data", None) or []
+                if isinstance(users, dict) and "users" in users:
+                    users = users["users"]
+                # se for dict paginado com dados em outra chave, tenta extrair
+                if isinstance(users, dict) and "data" in users:
+                    users = users["data"]
+                for u in users or []:
+                    # u pode ser dict ou objeto
+                    uemail = None
+                    if isinstance(u, dict):
+                        uemail = u.get("email")
+                    else:
+                        uemail = getattr(u, "email", None)
+                    if uemail and str(uemail).lower() == ml:
+                        uid = None
+                        if isinstance(u, dict):
+                            uid = u.get("id")
+                        else:
+                            uid = getattr(u, "id", None)
+                        confirmed = None
+                        if isinstance(u, dict):
+                            confirmed = u.get("email_confirmed_at") or u.get("confirmed_at")
+                        else:
+                            confirmed = getattr(u, "email_confirmed_at", None) or getattr(u, "confirmed_at", None)
+                        is_pending = not confirmed
+                        return {"id": uid, "pending": bool(is_pending), "raw": u}
+                # se não achou na lista, tenta via auth.users direto
+                try:
+                    res_auth = supabase_admin.schema("auth").table("users").select("id, email, email_confirmed_at, confirmed_at, invited_at").eq("email", ml).execute()
+                    if res_auth.data and len(res_auth.data) > 0:
+                        r = res_auth.data[0]
+                        is_pending = not r.get("email_confirmed_at") and not r.get("confirmed_at")
+                        return {"id": r.get("id"), "pending": bool(is_pending), "raw": r}
+                    res_auth2 = supabase_admin.schema("auth").table("users").select("id, email, email_confirmed_at").ilike("email", ml).execute()
+                    if res_auth2.data and len(res_auth2.data) > 0:
+                        for r in res_auth2.data:
+                            if str(r.get("email","")).lower() == ml:
+                                is_pending = not r.get("email_confirmed_at")
+                                return {"id": r.get("id"), "pending": bool(is_pending), "raw": r}
+                except Exception:
+                    pass
+                break  # achou ou não, sai do loop de tentativas de list
+            except Exception as e:
+                # se falhar por rate limit ou outro, tenta via schema direto
+                try:
+                    res_auth = supabase_admin.schema("auth").table("users").select("id, email_confirmed_at").eq("email", ml).execute()
+                    if res_auth.data and len(res_auth.data) > 0:
+                        r = res_auth.data[0]
+                        return {"id": r.get("id"), "pending": not r.get("email_confirmed_at"), "raw": r}
+                except Exception:
+                    pass
+                if attempt == 2:
+                    break
+                continue
+        # fallback final via schema direto
         try:
             res_auth = supabase_admin.schema("auth").table("users").select("id, email_confirmed_at").eq("email", ml).execute()
             if res_auth.data and len(res_auth.data) > 0:
@@ -1498,7 +1528,6 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                 try:
                     supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
                 except Exception:
-                    # se falhar por já existir, ignora e só adiciona como membro
                     pass
             except Exception:
                 pass
@@ -1509,17 +1538,8 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             if "duplicate" in str(e).lower() or "already" in str(e).lower():
                 raise ValueError("Usuário já é membro")
             raise
-        # se era pendente, retorna como convite reenviado, senão membro_adicionado
         if is_pending:
             return {"status": "convite_reenviado", "email": email, "user_id": target_user_id, "pending": True}
-        return {"status": "membro_adicionado", "email": email, "user_id": target_user_id}
-        # já existe -> vincula direto
-        try:
-            supabase_admin.table("membros").insert({"org_id": org_id, "user_id": target_user_id, "papel": papel}).execute()
-        except Exception as e:
-            if "duplicate" in str(e).lower() or "already" in str(e).lower():
-                raise ValueError("Usuário já é membro")
-            raise
         return {"status": "membro_adicionado", "email": email, "user_id": target_user_id}
     else:
         # não existe -> invite email automático (com redirect para produção, não localhost:3000)
