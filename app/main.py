@@ -31,7 +31,7 @@ from slowapi.errors import RateLimitExceeded
 from app.models import (
     Cliente, ClienteCreate, ClienteUpdate,
     Plano, PlanoCreate, PlanoUpdate,
-    UserSignUp, UserLogin, TokenResponse,
+    UserSignUp, UserLogin, TokenResponse, ForgotPasswordRequest,
     Etapa, EtapaCreate, EtapaUpdate,
     Atividade, AtividadeCreate, AtividadeUpdate,
     Tag, TagCreate, TagUpdate, ClienteTagCreate,
@@ -273,6 +273,29 @@ async def login(request: Request, dados: UserLogin):
         "user_id":      res.session.user.id,
         "email":        res.session.user.email,
     }
+
+
+@app.post("/api/auth/forgot-password", tags=["Auth"])
+@limiter.limit("5/minute")
+async def forgot_password(request: Request, dados: ForgotPasswordRequest):
+    """Envia email de redefinição de senha (Supabase)."""
+    try:
+        supabase = get_supabase_client()
+        site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflowgestoes.vercel.app"
+        site_url = site_url.strip().rstrip("/")
+        if not site_url.startswith("http"):
+            site_url = "https://" + site_url
+        redirect_to = f"{site_url}/?recovery=true"
+        # tenta com redirect_to, fallback sem options se versão antiga
+        try:
+            supabase.auth.reset_password_email(dados.email, {"redirect_to": redirect_to, "redirectTo": redirect_to})
+        except TypeError:
+            supabase.auth.reset_password_email(dados.email)
+        return {"mensagem": "Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha."}
+    except Exception as e:
+        # não vaza se email não existe (previne enumeração), mas loga
+        print(f"[ERRO forgot-password] {e}")
+        return {"mensagem": "Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha."}
 
 
 # ============================================================

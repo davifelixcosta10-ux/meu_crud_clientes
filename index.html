@@ -602,7 +602,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-2">
                                 <label for="login-password" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Senha</label>
-                                <a href="#" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors font-medium">Esqueci a senha</a>
+                                <a href="#" onclick="handleForgotPassword(event)" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors font-medium">Esqueci a senha</a>
                             </div>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
@@ -907,6 +907,53 @@
                 }
             } catch (error) {
                 showAuthError('login-error', 'login-error-text', error.message || 'Erro ao realizar login.');
+            } finally {
+                setButtonLoading('btn-login-submit', 'btn-login-arrow', 'btn-login-spinner', false);
+            }
+        }
+
+        async function handleForgotPassword(e) {
+            if (e) e.preventDefault();
+            const emailInput = document.getElementById('login-email');
+            let email = (emailInput?.value || '').trim();
+            if (!email) {
+                email = prompt('Digite seu e-mail para redefinir a senha:');
+                if (!email) return;
+                email = email.trim();
+            } else {
+                // confirma com o email já preenchido
+                if (!confirm(`Enviar link de redefinição para ${email}?`)) {
+                    const novo = prompt('Digite o e-mail para redefinir:', email);
+                    if (!novo) return;
+                    email = novo.trim();
+                }
+            }
+            if (!email || !email.includes('@')) {
+                showAuthError('login-error', 'login-error-text', 'Informe um e-mail válido.');
+                return;
+            }
+            setButtonLoading('btn-login-submit', 'btn-login-arrow', 'btn-login-spinner', true);
+            try {
+                const resp = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await resp.json().catch(() => ({}));
+                // sempre mostra sucesso para não enumerar emails (privacidade)
+                showAuthError('login-error', 'login-error-text', data.mensagem || 'Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha. Verifique spam.');
+                // troca para visual de sucesso (verde) temporariamente
+                const errEl = document.getElementById('login-error');
+                if (errEl) {
+                    errEl.classList.remove('bg-rose-500/10','border-rose-500/20','text-rose-400');
+                    errEl.classList.add('bg-emerald-500/10','border-emerald-500/20','text-emerald-400');
+                    errEl.classList.remove('hidden');
+                }
+                // também toast se existir
+                if (window.exibirToast) exibirToast('Se o e-mail estiver cadastrado, link enviado! Verifique spam.', 'sucesso');
+                else alert('Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha. Verifique spam.');
+            } catch (err) {
+                showAuthError('login-error', 'login-error-text', 'Erro ao enviar email. Tente novamente.');
             } finally {
                 setButtonLoading('btn-login-submit', 'btn-login-arrow', 'btn-login-spinner', false);
             }

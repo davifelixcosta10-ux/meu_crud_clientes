@@ -135,6 +135,12 @@ class UserLogin(BaseModel):
     password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    """Email para envio de link de redefinição de senha."""
+
+    email: EmailStr
+
+
 class TokenResponse(BaseModel):
     """
     Resposta de autenticação bem-sucedida.
