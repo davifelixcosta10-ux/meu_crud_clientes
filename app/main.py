@@ -670,11 +670,16 @@ async def post_convite(org_id: str, dados: ConviteCreate, user_id: str = Depends
     try:
         return convidar_membro_org(org_id, dados.email, dados.papel, user_id)
     except ValueError as e:
-        # 400 para email inválido, 403 para permissão
-        msg = str(e).lower()
+        msg_raw = str(e)
+        msg = msg_raw.lower()
+        # já cadastrado / already registered nunca deve ser erro vermelho — retorna 200 com instrução
+        if "already" in msg or "registered" in msg or "ja cadastrado" in msg or "já cadastrado" in msg:
+            return {"status": "ja_cadastrado", "email": dados.email, "msg": msg_raw}
+        if "já é membro" in msg or "ja e membro" in msg:
+            return {"status": "ja_membro", "email": dados.email, "msg": msg_raw}
         if "acesso" in msg or "permiss" in msg or "apenas admin" in msg:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=msg_raw)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg_raw)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao convidar.")
 

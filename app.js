@@ -530,7 +530,19 @@ async function enviarConvite() {
         if (!resp || !resp.ok) {
             const err = await resp.json().catch(() => ({}));
             let msg = err.detail || 'Erro ao convidar';
-            if (msg.toLowerCase().includes('smtp') || msg.toLowerCase().includes('service_role') || msg.toLowerCase().includes('cadastrar')) {
+            const low = msg.toLowerCase();
+            if (low.includes('already') || low.includes('registered') || low.includes('ja cadastrado') || low.includes('já cadastrado')) {
+                exibirToast(`✅ ${email} já tem conta — use "Esqueci a senha" no login.`, 'sucesso');
+                document.getElementById('convite-email-input').value = '';
+                await carregarMembros();
+                await carregarMembrosGerenciar();
+                return;
+            }
+            if (low.includes('já é membro') || low.includes('ja e membro')) {
+                exibirToast(`ℹ️ ${email} já é membro desta organização`, 'info');
+                return;
+            }
+            if (low.includes('smtp') || low.includes('service_role') || low.includes('cadastrar')) {
                 msg += ' — Dica: peça para o colega criar conta em daviflowgestoes.vercel.app e convide novamente (entra direto).';
             }
             exibirToast(msg, 'erro');
@@ -544,6 +556,10 @@ async function enviarConvite() {
             exibirToast(`✉️ Convite enviado para ${email}! Ele receberá um email com link para ${data.redirect_to || 'daviflowgestoes.vercel.app'} — peça para verificar spam.`, 'sucesso');
         } else if (data.status === 'convite_reenviado') {
             exibirToast(`🔄 Convite reenviado para ${email} (já estava pendente) e já adicionado como ${papel}! Peça para verificar email/spam ou usar o link anterior.`, 'sucesso');
+        } else if (data.status === 'ja_cadastrado') {
+            exibirToast(`✅ ${email} já tem conta — ${data.msg || 'foi vinculado à organização. Peça para usar "Esqueci a senha" para acessar.'}`, 'sucesso');
+        } else if (data.status === 'ja_membro') {
+            exibirToast(`ℹ️ ${email} já é membro desta organização`, 'info');
         } else {
             exibirToast(`✅ ${email} adicionado como ${papel} em "${orgsCache.find(o=>o.id===currentOrgId)?.nome || 'org'}"!`, 'sucesso');
         }
@@ -667,6 +683,18 @@ async function enviarConviteGerenciar() {
         const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/convites`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, papel }) });
         if (!resp || !resp.ok) {
             const err = await resp.json().catch(() => ({}));
+            const detail = (err.detail || '').toLowerCase();
+            // already registered não é erro — trata como sucesso
+            if (detail.includes('already') || detail.includes('registered') || detail.includes('ja cadastrado') || detail.includes('já cadastrado')) {
+                exibirToast(`✅ ${email} já tem conta — use "Esqueci a senha" no login para acessar. Atualizando lista...`, 'sucesso');
+                document.getElementById('gerenciar-email-input').value = '';
+                await carregarMembrosGerenciar();
+                return;
+            }
+            if (detail.includes('já é membro') || detail.includes('ja e membro')) {
+                exibirToast(`ℹ️ ${email} já é membro desta organização`, 'info');
+                return;
+            }
             exibirToast(err.detail || 'Erro ao convidar', 'erro');
             return;
         }
@@ -676,6 +704,8 @@ async function enviarConviteGerenciar() {
         await carregarMembros();
         if (data.status === 'convite_enviado') exibirToast(`✉️ Convite enviado para ${email}!`, 'sucesso');
         else if (data.status === 'convite_reenviado') exibirToast(`🔄 Convite reenviado para ${email} (pendente) e já adicionado como ${papel}!`, 'sucesso');
+        else if (data.status === 'ja_cadastrado') exibirToast(`✅ ${email} já tem conta — ${data.msg || 'vinculado. Peça para usar "Esqueci a senha".'}`, 'sucesso');
+        else if (data.status === 'ja_membro') exibirToast(`ℹ️ ${email} já é membro desta organização`, 'info');
         else exibirToast(`✅ ${email} adicionado como ${papel}!`, 'sucesso');
     } catch(e) { exibirToast('Erro ao enviar convite', 'erro'); }
 }

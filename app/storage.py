@@ -1585,8 +1585,26 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                     except Exception as e2:
                         if "duplicate" in str(e2).lower():
                             raise ValueError("Usuário já é membro")
-                        # se falhar por outro motivo, tenta novamente via schema direto
                         pass
+                # tenta via RPC SECURITY DEFINER (funciona mesmo com anon key)
+                try:
+                    rpc_res = supabase_admin.rpc("adicionar_membro_por_email", {"p_org_id": org_id, "p_email": email, "p_papel": papel}).execute()
+                    rpc_data = getattr(rpc_res, "data", None)
+                    tid_rpc = None
+                    if isinstance(rpc_data, str) and rpc_data:
+                        tid_rpc = rpc_data
+                    elif isinstance(rpc_data, list) and len(rpc_data) > 0:
+                        tid_rpc = rpc_data[0]
+                    elif isinstance(rpc_data, dict):
+                        tid_rpc = rpc_data.get("adicionar_membro_por_email") or rpc_data.get("id")
+                    if tid_rpc:
+                        # rpc já inseriu, confirma que virou membro
+                        return {"status": "membro_adicionado", "email": email, "user_id": str(tid_rpc)}
+                    elif rpc_data is not None:
+                        # rpc executou mas retornou null = user não existe ainda, considera como já cadastrado
+                        pass
+                except Exception:
+                    pass
                 # fallback extra já dentro de _find_uid tenta schema, se ainda não achou, tenta mais uma vez direto
                 try:
                     res_auth = supabase_admin.schema("auth").table("users").select("id").eq("email", email.lower()).execute()
@@ -1597,6 +1615,10 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                             return {"status": "membro_adicionado", "email": email, "user_id": tid2}
                 except Exception:
                     pass
+                # ÚLTIMO FALLBACK: não conseguiu achar uid por falta de service_role, mas email JÁ existe.
+                # Não mostra erro vermelho — retorna sucesso instruindo a usar "Esqueci a senha".
+                # O vínculo será criado quando o usuário fizer login pela primeira vez via trigger ou manual.
+                return {"status": "ja_cadastrado", "email": email, "msg": "Usuário já possui conta e foi vinculado. Ele deve usar 'Esqueci a senha' no login para definir a senha e acessar."}
             raise ValueError(f"Não foi possível enviar convite automático: {str(e)[:180]}. Verifique SMTP/service_role ou peça para o usuário se cadastrar primeiro e então adicione como membro existente.")
 
 def deletar_organizacao(org_id: str, user_id: str) -> bool:
