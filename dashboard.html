@@ -310,10 +310,22 @@
                     <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="relatorio-churn-chevron"></i>
                 </button>
                 <div id="relatorio-churn-content" class="p-3 sm:p-4">
-                    <div class="relative h-56">
-                        <canvas id="chart-churn"></canvas>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">Por mês (coorte cadastro)</p>
+                            <div class="relative h-56">
+                                <canvas id="chart-churn"></canvas>
+                            </div>
+                            <div id="relatorio-churn-tabela" class="mt-3 space-y-1 text-xs"></div>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">Por plano</p>
+                            <div class="relative h-56">
+                                <canvas id="chart-churn-plano"></canvas>
+                            </div>
+                            <div id="relatorio-churn-plano-tabela" class="mt-3 space-y-1.5 text-xs"></div>
+                        </div>
                     </div>
-                    <div id="relatorio-churn-tabela" class="mt-3 space-y-1 text-xs"></div>
                     <p id="relatorio-churn-footer" class="text-[11px] text-slate-400 dark:text-slate-500 mt-2 text-center"></p>
                 </div>
             </div>

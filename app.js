@@ -1753,6 +1753,7 @@ function renderizarRelatorioReceita(data) {
     if (window.lucide) lucide.createIcons();
 }
 let chartChurn = null;
+let chartChurnPlano = null;
 async function carregarRelatorioChurn() {
     const canvas = document.getElementById('chart-churn');
     const totalEl = document.getElementById('relatorio-churn-total');
@@ -1774,8 +1775,10 @@ async function carregarRelatorioChurn() {
 }
 function renderizarRelatorioChurn(data) {
     const canvas = document.getElementById('chart-churn');
+    const canvasPlano = document.getElementById('chart-churn-plano');
     const totalEl = document.getElementById('relatorio-churn-total');
     const tabelaEl = document.getElementById('relatorio-churn-tabela');
+    const tabelaPlanoEl = document.getElementById('relatorio-churn-plano-tabela');
     const footerEl = document.getElementById('relatorio-churn-footer');
     const churnHeaderEl = document.getElementById('metric-churn');
     if (!canvas || !data) return;
@@ -1784,22 +1787,50 @@ function renderizarRelatorioChurn(data) {
     if (footerEl) footerEl.textContent = `${data.total_inativos || 0} inativos de ${data.total_geral || 0} • média ${Number(data.churn_medio || 0).toFixed(1)}%${document.getElementById('relatorio-periodo')?.value ? ` • últimos ${document.getElementById('relatorio-periodo').value} dias` : ''}`;
     if (typeof Chart === 'undefined') return;
     if (chartChurn) { try { chartChurn.destroy(); } catch(e) {} chartChurn = null; }
+    if (chartChurnPlano) { try { chartChurnPlano.destroy(); } catch(e) {} chartChurnPlano = null; }
+    // Por mês - line
     const labels = (data.itens || []).map(i => i.mes);
     const vals = (data.itens || []).map(i => i.churn_percent);
     if (labels.length === 0) {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0,0,canvas.width, canvas.height);
         if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-slate-400 text-center">Sem dados por mês</p>';
-        return;
+    } else {
+        const ctx = canvas.getContext('2d');
+        chartChurn = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets: [{ label: 'Churn %', data: vals, borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.12)', fill: true, tension: 0.35, pointRadius: 4, pointBackgroundColor: '#f43f5e', pointBorderColor: '#fff', pointBorderWidth: 1.5 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.parsed.y}% (${data.itens[c.dataIndex].inativos}/${data.itens[c.dataIndex].total})` } } }, scales: { x: { ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', callback: (v) => `${v}%` }, grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' } } } }
+        });
+        if (tabelaEl) {
+            tabelaEl.innerHTML = data.itens.map(i => `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><span class="text-xs font-medium text-slate-600 dark:text-slate-300">${escaparHTML(i.mes)}</span><span class="text-xs font-bold ${i.churn_percent > 20 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}">${i.churn_percent}% <span class="text-[10px] font-normal text-slate-400">(${i.inativos}/${i.total})</span></span></div>`).join('');
+        }
     }
-    const ctx = canvas.getContext('2d');
-    chartChurn = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: [{ label: 'Churn %', data: vals, borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.12)', fill: true, tension: 0.35, pointRadius: 4, pointBackgroundColor: '#f43f5e', pointBorderColor: '#fff', pointBorderWidth: 1.5 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.parsed.y}% (${data.itens[c.dataIndex].inativos}/${data.itens[c.dataIndex].total})` } } }, scales: { x: { ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', callback: (v) => `${v}%` }, grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' } } } }
-    });
-    if (tabelaEl) {
-        tabelaEl.innerHTML = data.itens.map(i => `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><span class="text-xs font-medium text-slate-600 dark:text-slate-300">${escaparHTML(i.mes)}</span><span class="text-xs font-bold ${i.churn_percent > 20 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}">${i.churn_percent}% <span class="text-[10px] font-normal text-slate-400">(${i.inativos}/${i.total})</span></span></div>`).join('');
+    // Por plano - doughnut churn%
+    if (canvasPlano) {
+        const porPlano = data.por_plano || [];
+        if (porPlano.length === 0) {
+            const ctx = canvasPlano.getContext('2d');
+            ctx.clearRect(0,0,canvasPlano.width, canvasPlano.height);
+            if (tabelaPlanoEl) tabelaPlanoEl.innerHTML = '<p class="text-xs text-slate-400 text-center">Sem dados por plano</p>';
+        } else {
+            const corMap = { indigo: '#6366f1', cyan: '#06b6d4', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e', purple: '#a855f7', slate: '#64748b', orange: '#f97316' };
+            const labelsPlano = porPlano.map(p => p.plano_nome);
+            const valsPlano = porPlano.map(p => p.churn_percent);
+            const bg = porPlano.map(p => (corMap[p.plano_cor] || '#64748b') + 'CC');
+            const ctx = canvasPlano.getContext('2d');
+            chartChurnPlano = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: labelsPlano, datasets: [{ data: valsPlano, backgroundColor: bg, borderWidth: 2, borderColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff' }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155', font: { size: 10 }, padding: 12 } }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${c.parsed}% (${porPlano[c.dataIndex].inativos}/${porPlano[c.dataIndex].total})` } } } }
+            });
+            if (tabelaPlanoEl) {
+                tabelaPlanoEl.innerHTML = porPlano.map(p => {
+                    const estilo = MAPA_CORES_PLANO[p.plano_cor] || MAPA_CORES_PLANO.slate;
+                    return `<div class="flex items-center justify-between p-2 rounded-lg border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text}">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] text-slate-500">${p.inativos}/${p.total}</span></div><span class="text-xs font-black ${p.churn_percent > 30 ? 'text-rose-600 dark:text-rose-400' : estilo.text}">${p.churn_percent}%</span></div>`;
+                }).join('');
+            }
+        }
     }
     if (window.lucide) lucide.createIcons();
 }
@@ -1817,6 +1848,7 @@ function toggleRelatoriosSection() {
             if (chartReceitaPlano) try { chartReceitaPlano.resize(); } catch(e) {}
             if (chartReceitaMes) try { chartReceitaMes.resize(); } catch(e) {}
             if (chartChurn) try { chartChurn.resize(); } catch(e) {}
+            if (chartChurnPlano) try { chartChurnPlano.resize(); } catch(e) {}
         }, 100);
     }
 }
@@ -1834,7 +1866,7 @@ function toggleRelatorioSub(tipo) {
                 if (chartReceitaPlano) try { chartReceitaPlano.resize(); } catch(e) {}
                 if (chartReceitaMes) try { chartReceitaMes.resize(); } catch(e) {}
             }
-            if (tipo === 'churn' && chartChurn) try { chartChurn.resize(); } catch(e) {}
+            if (tipo === 'churn') { if (chartChurn) try { chartChurn.resize(); } catch(e) {} if (chartChurnPlano) try { chartChurnPlano.resize(); } catch(e) {} }
         }, 100);
     }
 }

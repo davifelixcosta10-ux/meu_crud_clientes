@@ -1133,9 +1133,35 @@ def relatorio_churn(user_id: str, periodo_dias: int | None = None) -> dict:
 
     churn_medio = round((total_inativos / total_geral * 100) if total_geral > 0 else 0, 1)
 
+    # Por plano — essencial para ver qual plano cancela mais
+    try:
+        planos = listar_planos(user_id)
+        plano_map = {str(p.id): p for p in planos}
+    except Exception:
+        planos = []
+        plano_map = {}
+    por_plano_dict = defaultdict(lambda: {"total": 0, "inativos": 0})
+    for c in clientes:
+        key = c.plano if c.plano and str(c.plano) in plano_map else "__sem_plano__"
+        por_plano_dict[key]["total"] += 1
+        if not c.ativo:
+            por_plano_dict[key]["inativos"] += 1
+    por_plano = []
+    for pid, vals in por_plano_dict.items():
+        tot = vals["total"]
+        ina = vals["inativos"]
+        churn = round((ina / tot * 100) if tot > 0 else 0, 1)
+        if pid == "__sem_plano__":
+            por_plano.append({"plano_id": None, "plano_nome": "Sem plano", "plano_cor": "slate", "total": tot, "inativos": ina, "churn_percent": churn})
+        else:
+            p = plano_map.get(str(pid))
+            por_plano.append({"plano_id": str(pid), "plano_nome": p.nome if p else str(pid), "plano_cor": p.cor if p else "slate", "total": tot, "inativos": ina, "churn_percent": churn})
+    por_plano.sort(key=lambda x: x["churn_percent"], reverse=True)
+
     return {
         "total_geral": total_geral,
         "total_inativos": total_inativos,
         "churn_medio": churn_medio,
-        "itens": itens
+        "itens": itens,
+        "por_plano": por_plano
     }

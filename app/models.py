@@ -675,11 +675,24 @@ class RelatorioChurnItem(BaseModel):
         from_attributes = True
 
 
+class RelatorioChurnPorPlano(BaseModel):
+    plano_id: Optional[str] = None
+    plano_nome: str
+    plano_cor: Optional[str] = None
+    total: int
+    inativos: int
+    churn_percent: float
+
+    class Config:
+        from_attributes = True
+
+
 class RelatorioChurnResponse(BaseModel):
     total_geral: int
     total_inativos: int
     churn_medio: float
     itens: list[RelatorioChurnItem]
+    por_plano: list[RelatorioChurnPorPlano] = []
 
     class Config:
         from_attributes = True
