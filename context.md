@@ -1,14 +1,14 @@
 # DaviFlow — Project Summary
 
 ## Overview
-Full-stack CRM application for client and plan management, designed for freelancers, solo entrepreneurs, and small businesses. Features a modern landing page with a corporate/somber visual design, and a complete dashboard administrative interface. Em produção em daviflowgestoes.vercel.app e daviflow.vercel.app.
+Full-stack CRM application for client and plan management, designed for freelancers, solo entrepreneurs, and small businesses. Features a modern landing page with a corporate/somber visual design, and a complete dashboard administrative interface. Em produção em daviflowgestoes.vercel.app e daviflow.vercel.app (main@7999cbb). Fase 1 e 2A completas.
 
 **Tagline**: Gestão de clientes sem planilhas — organize seus cadastros, métricas e planos em um painel intuitivo.
 
 ## Architecture
-- **Backend**: FastAPI (Python) — RESTful API with authentication, client management, plan management, Kanban, atividades, tags, filtros e importação
-- **Frontend**: Static HTML + Tailwind CSS + Vanilla JS + Lucide Icons + SortableJS + PapaParse + SheetJS
-- **Database**: Supabase (PostgreSQL + Auth + RLS)
+- **Backend**: FastAPI (Python) — RESTful API with authentication, client management, plan management, Kanban, atividades, tags, filtros, importação e relatórios (conversão, receita, churn, LTV)
+- **Frontend**: Static HTML + Tailwind CSS + Vanilla JS + Lucide Icons + SortableJS + PapaParse + SheetJS + Chart.js 4.4.1
+- **Database**: Supabase (PostgreSQL + Auth + RLS) — 7 tabelas + colunas financeiro
 - **Deployment**: Vercel (frontend + rewrites para /api, região gru1, cache headers, sem crons) — FastAPI serverless
 - **Communication**: JWT-based authentication via Bearer tokens (Supabase Auth, validado via `supabase.auth.get_user`)
 
@@ -17,9 +17,9 @@ Full-stack CRM application for client and plan management, designed for freelanc
 ### Structure
 ```
 app/
-  main.py       # FastAPI app, 35 rotas, rate limiter, CORS restrito, JWT async, Fase 1 endpoints
-  models.py     # Pydantic models + validadores (CPF módulo 11 leniente em leitura, estrito em escrita)
-  storage.py    # Supabase singleton & CRUD RLS (inclui etapas, atividades, tags, filtros, import bulk)
+  main.py       # FastAPI app, 39 rotas (35 + 4 relatórios), rate limiter, CORS restrito, JWT async, Fase 1+2A endpoints
+  models.py     # Pydantic models + validadores (CPF módulo 11 leniente em leitura, estrito em escrita) + Relatorio* (Conversao, Receita, Churn, Ltv)
+  storage.py    # Supabase singleton & CRUD RLS (inclui etapas, atividades, tags, filtros, import bulk, relatorio_conversao/receita/churn/ltv)
 supabase_fase1.sql # Migração Fase 1 (etapas, atividades, tags, cliente_tags, filtros_salvos + colunas clientes)
 ```
 
@@ -32,8 +32,9 @@ supabase_fase1.sql # Migração Fase 1 (etapas, atividades, tags, cliente_tags, 
 - **Tag** / **TagCreate** / **TagUpdate** — Segmentação (nome único por user, cor) — Fase 1C
 - **ClienteTagCreate** — vínculo N:N
 - **FiltroSalvo** / **FiltroSalvoCreate** — filtros salvos (nome, query JSON) — Fase 1C
-- **ImportPreviewRequest** — bulk import (lista de dicts) — Fase 1E
-- **Validação**: `validar_cpf()` módulo 11 completo, `cpf_validator()` estrito em Create/Update e leniente em Cliente (leitura) para compatibilidade com dados antigos; RG/telefone/data lenientes em leitura
+ - **ImportPreviewRequest** — bulk import (lista de dicts) — Fase 1E
+ - **RelatorioConversaoItem/Response, RelatorioReceita*, RelatorioChurn*, RelatorioLtv*** — Fase 2A (agregações por etapa/plano/mês, período ?periodo) — `main@7999cbb`
+ - **Validação**: `validar_cpf()` módulo 11 completo, `cpf_validator()` estrito em Create/Update e leniente em Cliente (leitura) para compatibilidade com dados antigos; RG/telefone/data lenientes em leitura
 
 ### API Endpoints (main.py — 35 rotas)
 | Method | Endpoint | Description |
@@ -64,6 +65,10 @@ supabase_fase1.sql # Migração Fase 1 (etapas, atividades, tags, cliente_tags, 
 | POST /api/filtros | Create filtro |
 | DELETE /api/filtros/{id} | Delete filtro |
 | POST /api/clientes/import | Bulk import CSV/Excel — Fase 1E |
+| GET /api/relatorios/conversao | Conversão por etapa (?periodo) — Fase 2A-1 |
+| GET /api/relatorios/receita | Receita por plano/mês (?periodo) — Fase 2A-2 |
+| GET /api/relatorios/churn | Churn por mês + por plano (?periodo) — Fase 2A-3 |
+| GET /api/relatorios/ltv | LTV estimado por plano (?periodo) — Fase 2A-4 |
 | GET /api/clientes | List clients (com _tags e atividades para métricas) |
 | POST /api/clientes | Create client |
 | PATCH /api/clientes/{id} | Update client |
@@ -85,12 +90,12 @@ supabase_fase1.sql # Migração Fase 1 (etapas, atividades, tags, cliente_tags, 
 
 ### Pages
 - **index.html** — Landing page (hero com mockup + browser chrome, features 3 cards, how-it-works 3 passos, about 3 pilares, CTA, navbar, modais, footer legal, preconnect/preload perf)
-- **dashboard.html** — Painel completo (métricas 6 cards, toolbar com busca + 4 filtros + 6 botões, toggle Tabela|Kanban, tabela desktop + cards mobile, Kanban board, empty state, FAB, modais: criar/editar/deletar/planos/detalhes/logout + 5 modais Fase 1: etapas, atividade, tags, filtros, import, confirm genérico)
+- **dashboard.html** — Painel completo (métricas 8 cards 2x4, toolbar com busca + 4 filtros + 6 botões, toggle Tabela|Kanban, tabela desktop + cards mobile, Kanban board, relatórios 4 dobras Chart.js fechadas por default, empty state, FAB, modais: criar/editar/deletar/planos/detalhes/logout + 5 modais Fase 1: etapas, atividade, tags, filtros, import, confirm genérico)
 - **privacidade.html** — Política LGPD 11 seções (CSS puro, sem @apply, sem reveal — fix 2026-08-27)
 - **termos.html** — Termos 15 seções (mesmo fix)
 - **404.html** — Error page
 
-### Key Features (Fase 1 completo)
+### Key Features (Fase 1 + 2A completo)
 - **Client Management**: Full CRUD 30+ campos + Fase 1: etapa Kanban, financeiro (valor/vencimento/status), tags
 - **Kanban**: Toggle Tabela|Kanban (persiste `localStorage daviflow_view`), colunas por etapa + Sem etapa, drag SortableJS (ghost/chosen), PATCH `etapa_id` ao soltar, modal Etapas CRUD, contador
 - **Atividades**: Timeline no Detalhes (badge Atrasada amarelo/Concluída verde), modal Nova Atividade (tipo/data/nota/concluída), fallback local via `atividadesCache` quando `IS_LOCAL` sem backend, métrica Atrasados
@@ -98,11 +103,12 @@ supabase_fase1.sql # Migração Fase 1 (etapas, atividades, tags, cliente_tags, 
 - **Filtros Salvos**: salvar combinação atual (termo/plano/status/etapa/tag) como JSON, aplicar/restaurar, deletar — tudo via `/api/filtros`
 - **Financeiro**: Valor (texto), Vencimento (1-31), Status (em_dia/atrasado/isento) — exibido em Detalhes e Kanban card, métrica Receita prevista (soma valor em_dia)
 - **Import**: Modal drag&drop, PapaParse para CSV e SheetJS para XLSX/XLS (máx 1000 linhas), preview 5 linhas, `POST /api/clientes/import` com `ImportPreviewRequest`, fallback local
+- **Relatórios Fase 2A**: 4 dobras Chart.js (Conversão bar y, Receita doughnut+bar, Churn line+ doughnut intuitivo `X de Y cancelaram`, LTV bar y + detalhe receita estimada), período Todos/30/90/365 compartilhado, fechadas por default (`hidden` + `localStorage !==0`), `carregarRelatorios()` com debounce 300ms, resize ao expandir
 - **Plan System**: 8 cores, badges, MAPA_CORES_PLANO
 - **Authentication**: fetchAuth centralizado (10+ usos), 401 handling diferenciado prod vs IS_LOCAL
-- **Responsive**: Mobile-first, toolbar `flex-col` com `flex-wrap` (fix vazamento), métricas `grid-cols-2 lg:grid-cols-3 xl:grid-cols-6`, Kanban `min-w-280` com scroll-x, dark mode, bottom-sheet
+- **Responsive**: Mobile-first, toolbar `flex-col` com `flex-wrap` (fix vazamento), métricas `grid-cols-2 lg:grid-cols-4` 2x4 com `metric-card min-h 108px flex column`, Kanban `min-w-280` com scroll-x, dark mode, bottom-sheet
 - **Modals**: Todos com `.modal-box` scale/opacity, `confirmarAcao()` genérico substitui `confirm()` do navegador
-- **Metrics**: 6 cards: Total, Ativos (emerald), Inativos (rose), Por Plano (indigo), Atrasados (amber, Fase 1B), Receita (emerald, Fase 1D)
+- **Metrics**: 8 cards: Total, Ativos (emerald), Inativos (rose), Por Plano (flex wrap), Atrasados (amber, Fase 1B), Receita (emerald, Fase 1D), Churn rose (2A-3), LTV violet (2A-4)
 - **Demo Mode**: `IS_LOCAL` controla `CLIENTES_DEMO` (`IS_LOCAL ? [...] : []`) e `atividadesCache`; produção nunca expõe mock PII; `fetchAuth` não redireciona em IS_LOCAL
 
 ### Styling (style.css)
@@ -252,7 +258,16 @@ supabase_fase1.sql # Migração Fase 1 (etapas, atividades, tags, cliente_tags, 
 7. `Live Server` em `dashboard.html` → `IS_LOCAL` demo com 3 clientes se sem backend; com backend, login em `/?login=true`
 8. Vercel: push em `main` dispara deploy para `daviflowgestoes.vercel.app` (região `gru1`)
 
-## Estado Atual (2026-08-27 20:08 UTC — Funcionando)
-- **Produção**: `daviflowgestoes.vercel.app` em `main@7314d70` (debug) + `b885d28` (leniente) + `4577736` (vercel fix) — `GET /api/clientes` com token válido retorna `200` com lista (testado com `teste-...@teste.com` → `[]` e após criar → 1 registro)
-- **Teste**: `teste/fase1` em `733d62f` (sync vercel fix) + frontend completo — Kanban drag funcionando em Live Server (persiste via `PATCH etapa_id` quando com backend, senão local)
-- **Próximos passos**: Validar Fase 1 em produção com dados reais do usuário `dcfaf27f...` (3 clientes), testar Import CSV/Excel, Tags, Financeiro, Atividades com vencimento, depois Fase 2 (Relatórios, WhatsApp, Automações) conforme `plan.md`
+## Sessão 9 — Fase 2A Relatórios Quebrada em 4 Pedaços (2026-08-30)
+- **Estrutura incremental**: 1 branch + 1 Preview por pedaço (lição Fase 1). Todos `feat/fase2a-*` → `main` via `--no-ff`.
+- **2A-1 Conversão** `feat/fase2a-1-conversao` → `main@eee7177` — `RelatorioConversaoItem/Response`, `relatorio_conversao` group by etapa, bar y, `GET /api/relatorios/conversao?periodo`, `localStorage` collapsed.
+- **2A-2 Receita** `feat/fase2a-2-receita` → `main@e5992ae` — `RelatorioReceita*`, `relatorio_receita` por plano (doughnut) + por mês (bar), `GET /api/relatorios/receita`, abas recolhíveis dinâmicas, período Todos/30/90/365 compartilhado, `resize()` ao expandir.
+- **2A-3 Churn** `feat/fase2a-3-churn` → `main@f619d52` — `RelatorioChurn*`, `relatorio_churn` coorte `data_cadastro[:7]` + por plano `por_plano` ordenado churn desc, line rose + doughnut rose, tooltip `X de Y cancelaram — Z%`, header 7º card Churn médio, `grid lg:grid-cols-3 xl:grid-cols-7` → depois `2x4`.
+- **2A-4 LTV** `feat/fase2a-4-ltv` → `main@7999cbb` — `RelatorioLtv*`, `relatorio_ltv` `valor*meses dias/30` (parse BRL), `GET /api/relatorios/ltv`, bar y violet por plano + detalhe receita estimada, header 8º card LTV, grid `2 / 4 / 4` com `metric-card flex column min-h 108px`, relatórios **fechados por default** (`hidden` + `localStorage !==0`), `carregarRelatorios()` com 4 relatórios + debounce 300ms.
+- **Correções no caminho**: `metric-planos-container` flex wrap, `Receita/LTV` `text-xl truncate`, churn intuitivo `2 de 3 cancelaram`, `restaurarEstadoRelatorios` default collapsed.
+- **Testes**: `TestClient` `httpx` com `carregar_clientes` mock + `get_supabase_client` mock — churn 50% (6 cli 3 inativos, Jul 66.7%), LTV 180 médio (Vip 225 vs Basico 90), `py_compile` + `node --check` ok por branch.
+
+## Estado Atual (2026-08-30 23:XX UTC — Funcionando)
+- **Produção**: `daviflowgestoes.vercel.app` em `main@7999cbb` (LTV + churn por plano + cards 2x4 + relatórios fechados) — 8 cards 2 linhas de 4, 4 dobras Chart.js fechadas por default, `GET /api/relatorios/*` com `periodo` compartilhado, RLS por `user_id`.
+- **Branches**: `feat/fase2a-1..4` merged, `feat/fase2a-4-ltv` com fix `79b88cc` cards/relatórios; `main` estável.
+- **Próximos passos**: Fase 3 quebrada em `3A Multi-usuário/org → 3B Integrações → 3C Anexos/API → 3D Monetização/PWA` (cada 1 branch + 1 Preview), começar `feat/fase3a-org`.

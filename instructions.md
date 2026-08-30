@@ -38,12 +38,13 @@ Após completar as alterações, adicione um resumo nesta seção da seguinte fo
 ## Lembrete de Segurança
 Caso sejam feitas alterações que possam ter risco de segurança (injeção, XSS, CSRF, exposição de dados, autenticação fraca, validação inadequada), execute a skill `use skill seguranca-test` ou `@seguranca-test` para identificar vulnerabilidades e sugerir correções.
 
-## Fluxo de Desenvolvimento Incremental (a partir de 2026-08-27)
+## Fluxo de Desenvolvimento Incremental (a partir de 2026-08-27) — ATUALIZADO 2026-08-30: quebrar em pedaços pequenos
 - **Parte por parte, nunca tudo de uma vez**: implementar uma sub-feature por vez (ex: Fase 1A → 1B → 1C...), testar e corrigir antes de avançar
-- Cada parte: criar/atualizar em `teste/fase1` (Live Server), teste minucioso item a item com instruções, só então merge para `main` e deploy
-- Cada parte deve ter commit e push separado com bateria de testes (imports, validações, RLS, rotas, frontend)
-- Não quebrar `main` — produção estável; `teste/fase1` é a branch de validação antes de produção
-- Ao final de cada parte: atualizar `plan.md` e `context.md` com o que foi entregue
+- **Quebrar fases grandes em pedaços 1 branch + 1 Preview por pedaço** (lição Fase 2A): ex `2A-1 Conversão` `feat/fase2a-1-conversao` → Preview → merge; `2A-2 Receita` `feat/fase2a-2-receita`; `2A-3 Churn`; `2A-4 LTV`; Fase 3 em `3A Org`, `3B Integrações`, `3C Anexos/API`, `3D Monetização/PWA` — nunca monolito
+- Cada pedaço: branch a partir de `main` atualizada, `python -m py_compile` + `node --check` + `TestClient` se backend, commit com `feat:`/`fix:` e `git push -u origin feat/...` para gerar Preview Vercel; só após aprovar Preview fazer `git checkout main && git merge --no-ff feat/... && git push`
+- Cada pedaço deve ter commit e push separado com bateria de testes (imports, validações, RLS, rotas, frontend)
+- Não quebrar `main` — produção estável; `feat/*` é a branch de validação antes de produção (legado `teste/fase1` descontinuado, usar `feat/*`)
+- Ao final de cada pedaço: atualizar `plan.md` e `context.md` com o que foi entregue; ao final da fase marcar ✅ no `plan.md`
 
 ---
 
