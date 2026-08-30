@@ -912,39 +912,54 @@
         }
 
         
-        // Recovery / Invite: detecta token do Supabase (hash ou query) e abre modal de definir senha
+        // Recovery / Invite: detecta token do Supabase (hash, query, code PKCE) e abre modal de definir senha
         document.addEventListener("DOMContentLoaded", () => {
+            const href = window.location.href || "";
             const qs = window.location.search || "";
             const hash = window.location.hash || "";
-            // debug para você ver no console o que veio do Supabase
-            if (qs || hash) console.log("[recovery] qs:", qs, "hash:", hash);
-            const hasToken = hash.includes("access_token") || hash.includes("type=recovery") || hash.includes("type=invite");
-            const isRecoveryQS = qs.includes("recovery=true") || qs.includes("type=recovery") || qs.includes("type=invite");
+            if (qs || hash) console.log("[recovery] href:", href, "qs:", qs, "hash:", hash);
+            // Supabase pode redirecionar com ?code= (PKCE) ou #access_token= ou ?token=
+            const hasToken = hash.includes("access_token") || hash.includes("refresh_token") || qs.includes("access_token") || qs.includes("code=") || qs.includes("token=") || hash.includes("type=recovery") || hash.includes("type=invite") || qs.includes("type=recovery") || qs.includes("type=invite");
+            const isRecoveryQS = qs.includes("recovery") || hash.includes("recovery");
             const isLoginQS = qs.includes("login=true");
-            // prioridade: se tem token no hash, SEMPRE abre recovery (define senha), não login
-            if (hasToken) {
-                console.log("[recovery] token detectado, abrindo modal-recovery");
+            // se tem token/code em qualquer lugar, abre recovery
+            if (hasToken || isRecoveryQS) {
+                console.log("[recovery] token/code detectado, abrindo modal-recovery");
                 openModal("modal-recovery");
                 try {
-                    const params = new URLSearchParams(hash.substring(1));
-                    const at = params.get("access_token");
-                    const rt = params.get("refresh_token");
+                    // tenta extrair access_token de hash ou query
+                    let at = null, rt = null;
+                    if (hash.includes("access_token")) {
+                        const p = new URLSearchParams(hash.substring(1));
+                        at = p.get("access_token"); rt = p.get("refresh_token");
+                    }
+                    if (!at && qs.includes("access_token")) {
+                        const p = new URLSearchParams(qs);
+                        at = p.get("access_token"); rt = p.get("refresh_token");
+                    }
+                    // PKCE code -> tenta trocar por sessão via Supabase JS se disponível
+                    const code = new URLSearchParams(qs).get("code");
+                    if (code && window.supabaseRecovery && window.supabaseRecovery.auth && window.supabaseRecovery.auth.exchangeCodeForSession) {
+                        window.supabaseRecovery.auth.exchangeCodeForSession(code).then(({data, error}) => {
+                            if (data && data.session && data.session.access_token) {
+                                localStorage.setItem("df_recovery_token", data.session.access_token);
+                                console.log("[recovery] PKCE code trocado por session");
+                            }
+                            if (error) console.warn("[recovery] exchangeCodeForSession erro", error);
+                        });
+                    }
                     if (at) localStorage.setItem("df_recovery_token", at);
                     if (rt) localStorage.setItem("df_recovery_refresh", rt);
-                } catch(e) {}
-                return;
-            }
-            if (isRecoveryQS) {
-                console.log("[recovery] recoveryQS, abrindo modal-recovery");
-                openModal("modal-recovery");
+                    // fallback: se veio ?token= (hashed_token) sem access_token, guarda para backend tentar
+                    if (!at) {
+                        const t = new URLSearchParams(qs).get("token") || new URLSearchParams(hash.substring(1)).get("token");
+                        if (t) localStorage.setItem("df_recovery_token", t);
+                    }
+                } catch(e) { console.warn(e); }
                 return;
             }
             if (isLoginQS) {
                 openModal("modal-login");
-            }
-            // rota manual para teste: /?recovery=true sem token já abre modal para testar layout
-            if (qs.includes("recovery=true") && !hasToken) {
-                openModal("modal-recovery");
             }
         });
 

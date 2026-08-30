@@ -1613,7 +1613,9 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                 site_url = site_url.strip().rstrip("/")
                 if not site_url.startswith("http"):
                     site_url = "https://" + site_url
-                redirect_to = f"{site_url}/?login=true"
+                # invite -> recovery (define senha), não login
+                redirect_to = f"{site_url}/?recovery=true"
+                # tenta Resend primeiro (não depende de SMTP Supabase)
                 sent = _send_invite_via_resend(email, _org_nome_cache, papel, redirect_to)
                 if not sent:
                     try:
@@ -1639,7 +1641,7 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             site_url = site_url.strip().rstrip("/")
             if not site_url.startswith("http"):
                 site_url = "https://" + site_url
-            redirect_to = f"{site_url}/?login=true"
+            redirect_to = f"{site_url}/?recovery=true"
             # tenta Resend primeiro se configurado (gera link e envia)
             sent_new = _send_invite_via_resend(email, _org_nome_cache, papel, redirect_to)
             # mesmo que Resend envie, ainda precisa criar usuário via Supabase invite (para pending)
