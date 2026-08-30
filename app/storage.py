@@ -1077,3 +1077,91 @@ def relatorio_receita(user_id: str, periodo_dias: int | None = None) -> dict:
         "por_plano": por_plano,
         "por_mes": por_mes
     }
+
+
+def relatorio_churn(user_id: str, periodo_dias: int | None = None) -> dict:
+    """
+    Retorna churn por mês: total, inativos e churn% (inativos/total*100).
+    Usa data_cadastro como coorte (não há data_inativacao).
+    """
+    from datetime import datetime, timedelta
+    from collections import defaultdict
+
+    clientes = carregar_clientes(user_id)
+
+    # Filtro período (mesma lógica dos outros relatórios)
+    if periodo_dias is not None and periodo_dias > 0:
+        try:
+            limite = datetime.now().date() - timedelta(days=periodo_dias)
+            filtrados = []
+            for c in clientes:
+                if not c.data_cadastro:
+                    continue
+                try:
+                    dc = c.data_cadastro.split("T")[0]
+                    d = datetime.strptime(dc, "%Y-%m-%d").date()
+                    if d >= limite:
+                        filtrados.append(c)
+                except Exception:
+                    filtrados.append(c)
+            clientes = filtrados
+        except Exception:
+            pass
+
+    # Agrupa por mês
+    por_mes = defaultdict(lambda: {"total": 0, "inativos": 0})
+    for c in clientes:
+        dc = (c.data_cadastro or "")[:7]
+        if len(dc) == 7 and dc[4] == "-":
+            key = dc
+        else:
+            key = "sem_data"
+        por_mes[key]["total"] += 1
+        if not c.ativo:
+            por_mes[key]["inativos"] += 1
+
+    itens = []
+    total_geral = 0
+    total_inativos = 0
+    for mes in sorted(por_mes.keys()):
+        tot = por_mes[mes]["total"]
+        ina = por_mes[mes]["inativos"]
+        churn = round((ina / tot * 100) if tot > 0 else 0, 1)
+        itens.append({"mes": mes, "total": tot, "inativos": ina, "churn_percent": churn})
+        total_geral += tot
+        total_inativos += ina
+
+    churn_medio = round((total_inativos / total_geral * 100) if total_geral > 0 else 0, 1)
+
+    # Por plano — essencial para ver qual plano cancela mais
+    try:
+        planos = listar_planos(user_id)
+        plano_map = {str(p.id): p for p in planos}
+    except Exception:
+        planos = []
+        plano_map = {}
+    por_plano_dict = defaultdict(lambda: {"total": 0, "inativos": 0})
+    for c in clientes:
+        key = c.plano if c.plano and str(c.plano) in plano_map else "__sem_plano__"
+        por_plano_dict[key]["total"] += 1
+        if not c.ativo:
+            por_plano_dict[key]["inativos"] += 1
+    por_plano = []
+    for pid, vals in por_plano_dict.items():
+        tot = vals["total"]
+        ina = vals["inativos"]
+        churn = round((ina / tot * 100) if tot > 0 else 0, 1)
+        if pid == "__sem_plano__":
+            por_plano.append({"plano_id": None, "plano_nome": "Sem plano", "plano_cor": "slate", "total": tot, "inativos": ina, "churn_percent": churn})
+        else:
+            p = plano_map.get(str(pid))
+            por_plano.append({"plano_id": str(pid), "plano_nome": p.nome if p else str(pid), "plano_cor": p.cor if p else "slate", "total": tot, "inativos": ina, "churn_percent": churn})
+    por_plano.sort(key=lambda x: x["churn_percent"], reverse=True)
+
+    return {
+        "total_geral": total_geral,
+        "total_inativos": total_inativos,
+        "churn_medio": churn_medio,
+        "itens": itens,
+        "por_plano": por_plano
+    }

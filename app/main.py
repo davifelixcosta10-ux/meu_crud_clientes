@@ -38,6 +38,7 @@ from app.models import (
     FiltroSalvo, FiltroSalvoCreate, ImportPreviewRequest,
     RelatorioConversaoResponse,
     RelatorioReceitaResponse,
+    RelatorioChurnResponse,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -52,6 +53,7 @@ from app.storage import (
     importar_clientes_bulk,
     relatorio_conversao,
     relatorio_receita,
+    relatorio_churn,
 )
 
 # --- Rate Limiter ---
@@ -540,6 +542,15 @@ async def get_relatorio_receita(periodo: int | None = None, user_id: str = Depen
         return relatorio_receita(user_id, periodo)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de receita.")
+
+
+@app.get("/api/relatorios/churn", response_model=RelatorioChurnResponse, tags=["Relatórios"])
+async def get_relatorio_churn(periodo: int | None = None, user_id: str = Depends(obter_user_id)):
+    """Retorna churn por mês (inativos/total)."""
+    try:
+        return relatorio_churn(user_id, periodo)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de churn.")
 
 
 # ============================================================
