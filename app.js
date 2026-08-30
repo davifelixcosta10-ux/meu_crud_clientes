@@ -413,12 +413,12 @@ function fecharModalOrg() {
 async function criarOrg() {
     const input = document.getElementById('org-nome-input');
     const nome = (input?.value || '').trim();
-    if (!nome) { alert('Informe o nome da organização'); return; }
+    if (!nome) { exibirToast('Informe o nome da organização', 'erro'); return; }
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/orgs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome }) });
         if (!resp || !resp.ok) {
             const err = await resp.json().catch(() => ({}));
-            alert(err.detail || 'Erro ao criar organização');
+            exibirToast(err.detail || 'Erro ao criar organização', 'erro');
             return;
         }
         const org = await resp.json();
@@ -429,10 +429,28 @@ async function criarOrg() {
         fecharModalOrg();
         // recarrega
         await Promise.all([carregarClientes(), carregarEtapas(), carregarTags()]);
-        alert(`Organização "${org.nome}" criada! Você é admin.`);
+        exibirToast(`Organização "${org.nome}" criada com sucesso! Você é admin.`, 'sucesso');
     } catch (e) {
         console.warn(e);
-        alert('Erro ao criar organização');
+        exibirToast('Erro ao criar organização', 'erro');
+    }
+}
+async function carregarMembros() {
+    const container = document.getElementById('lista-membros');
+    if (!container) return;
+    if (!currentOrgId) { container.innerHTML = '<p class="text-[11px] text-slate-400">Selecione uma organização</p>'; return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/membros`, { method: 'GET' });
+        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro ao carregar membros</p>'; return; }
+        const membros = await resp.json();
+        if (!Array.isArray(membros) || membros.length === 0) {
+            container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhum membro</p>';
+            return;
+        }
+        container.innerHTML = membros.map(m => `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><span class="font-mono text-[10px] truncate">${escaparHTML(m.user_id.slice(0,8))}...</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300'}">${escaparHTML(m.papel)}</span></div>`).join('');
+        if (window.lucide) lucide.createIcons();
+    } catch(e) {
+        container.innerHTML = '<p class="text-[11px] text-rose-400">Erro</p>';
     }
 }
 function abrirModalConvite() {
@@ -447,6 +465,7 @@ function abrirModalConvite() {
         modal.querySelector('.modal-box')?.classList.remove('scale-95','opacity-0');
         modal.querySelector('.modal-box')?.classList.add('scale-100','opacity-100');
     });
+    carregarMembros();
     if (window.lucide) lucide.createIcons();
 }
 function fecharModalConvite() {
@@ -458,23 +477,61 @@ function fecharModalConvite() {
 async function enviarConvite() {
     const email = (document.getElementById('convite-email-input')?.value || '').trim();
     const papel = document.getElementById('convite-papel-select')?.value || 'membro';
-    if (!email) { alert('Informe o email'); return; }
-    if (!currentOrgId) { alert('Selecione uma organização'); return; }
+    if (!email) { exibirToast('Informe o email', 'erro'); return; }
+    if (!currentOrgId) { exibirToast('Selecione uma organização', 'erro'); return; }
+    const btn = document.querySelector('#modal-convite button[onclick="enviarConvite()"]');
+    const origText = btn ? btn.textContent : '';
+    if (btn) { btn.textContent = 'Enviando...'; btn.disabled = true; }
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/convites`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, papel }) });
         if (!resp || !resp.ok) {
             const err = await resp.json().catch(() => ({}));
-            alert(err.detail || 'Erro ao convidar');
+            let msg = err.detail || 'Erro ao convidar';
+            if (msg.toLowerCase().includes('smtp') || msg.toLowerCase().includes('service_role') || msg.toLowerCase().includes('cadastrar')) {
+                msg += ' — Dica: peça para o colega criar conta em daviflowgestoes.vercel.app e convide novamente (entra direto).';
+            }
+            exibirToast(msg, 'erro');
             return;
         }
         const data = await resp.json();
-        fecharModalConvite();
-        if (data.status === 'convite_enviado') alert(`Convite enviado para ${email}! Ele receberá email para criar conta.`);
-        else alert(`Membro ${email} adicionado como ${papel}!`);
+        document.getElementById('convite-email-input').value = '';
+        await carregarMembros();
+        if (data.status === 'convite_enviado') {
+            exibirToast(`✉️ Convite enviado para ${email}! Ele receberá um email com link para ${data.redirect_to || 'daviflowgestoes.vercel.app'} — peça para verificar spam.`, 'sucesso');
+        } else {
+            exibirToast(`✅ ${email} adicionado como ${papel} em "${orgsCache.find(o=>o.id===currentOrgId)?.nome || 'org'}"!`, 'sucesso');
+        }
     } catch (e) {
         console.warn(e);
-        alert('Erro ao enviar convite');
+        exibirToast('Erro ao enviar convite', 'erro');
+    } finally {
+        if (btn) { btn.textContent = origText || 'Enviar convite'; btn.disabled = false; }
     }
+}
+async function excluirOrgAtual() {
+    if (!currentOrgId) { exibirToast('Nenhuma organização selecionada', 'erro'); return; }
+    const org = orgsCache.find(o => o.id === currentOrgId);
+    const nome = org ? org.nome : currentOrgId;
+    confirmarAcao(`Excluir "${nome}"?`, 'Isso apaga a organização (apenas se estiver sem clientes). Clientes precisam ser movidos ou excluídos antes. Deseja continuar?', async () => {
+        try {
+            const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}`, { method: 'DELETE' });
+            if (!resp || !resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                exibirToast(err.detail || 'Erro ao excluir organização. Verifique se é dono e se está sem clientes.', 'erro');
+                return;
+            }
+            exibirToast(`🗑️ Organização "${nome}" excluída!`, 'sucesso');
+            orgsCache = orgsCache.filter(o => o.id !== currentOrgId);
+            currentOrgId = orgsCache[0]?.id || null;
+            if (currentOrgId) localStorage.setItem('daviflow_org_id', currentOrgId);
+            else localStorage.removeItem('daviflow_org_id');
+            renderizarOrgsSelect();
+            await Promise.all([carregarClientes(), carregarEtapas(), carregarTags(), carregarFiltrosSalvos(), carregarRelatorios()]);
+        } catch(e) {
+            console.warn(e);
+            exibirToast('Erro ao excluir', 'erro');
+        }
+    });
 }
 
 // ============================================================

@@ -1420,15 +1420,69 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             raise
         return {"status": "membro_adicionado", "email": email, "user_id": target_user_id}
     else:
-        # não existe -> invite email automático
+        # não existe -> invite email automático (com redirect para produção, não localhost:3000)
         try:
-            # tenta invite
-            invite_res = supabase.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}})
-            # se sucesso, cria membro pendente? Por enquanto retorna status convite
-            return {"status": "convite_enviado", "email": email}
+            site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflowgestoes.vercel.app"
+            # garante https e sem barra final
+            site_url = site_url.strip().rstrip("/")
+            if not site_url.startswith("http"):
+                site_url = "https://" + site_url
+            redirect_to = f"{site_url}/?login=true"
+            # supabase-py aceita data + redirectTo/redirect_to dependendo da versão
+            try:
+                invite_res = supabase.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
+            except TypeError:
+                invite_res = supabase.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}})
+            # fallback para casos onde lib espera redirectTo camelCase
+            # se a lib não aceitar redirect_to, tenta sem (já tentado acima, então ignora)
+            return {"status": "convite_enviado", "email": email, "redirect_to": redirect_to}
         except Exception as e:
             # fallback: se service_role não configurado, retorna erro explicativo
-            raise ValueError(f"Não foi possível enviar convite automático: {str(e)[:120]}. Verifique SMTP/service_role ou cadastre o usuário manualmente.")
+            # Caso o usuário já exista mas list_users falhou (sem permissão), tenta mensagem mais amigável
+            msg = str(e).lower()
+            if "already" in msg or "exists" in msg or "duplicate" in msg:
+                # tenta novamente listar após invite falhar por já existir
+                try:
+                    users_res2 = supabase.auth.admin.list_users()
+                    users2 = getattr(users_res2, "users", None) or getattr(users_res2, "data", None) or []
+                    if isinstance(users2, dict) and "users" in users2:
+                        users2 = users2["users"]
+                    for u in users2 or []:
+                        uemail = getattr(u, "email", None) or (u.get("email") if isinstance(u, dict) else None)
+                        if uemail and uemail.lower() == email:
+                            tid = getattr(u, "id", None) or (u.get("id") if isinstance(u, dict) else None)
+                            if tid:
+                                try:
+                                    supabase.table("membros").insert({"org_id": org_id, "user_id": tid, "papel": papel}).execute()
+                                    return {"status": "membro_adicionado", "email": email, "user_id": tid}
+                                except Exception:
+                                    pass
+                except Exception:
+                    pass
+            raise ValueError(f"Não foi possível enviar convite automático: {str(e)[:180]}. Verifique SMTP/service_role ou peça para o usuário se cadastrar primeiro e então adicione como membro existente.")
+
+def deletar_organizacao(org_id: str, user_id: str) -> bool:
+    """Deleta organização (apenas owner). Bloqueia se tiver clientes (para não perder dados)."""
+    supabase = get_supabase_client()
+    # verifica owner
+    ro = supabase.table("organizacoes").select("owner_id, nome").eq("id", org_id).execute()
+    if not ro.data:
+        raise ValueError("Organização não encontrada")
+    if ro.data[0]["owner_id"] != user_id:
+        raise ValueError("Apenas o dono pode excluir a organização")
+    # verifica se tem clientes
+    rc = supabase.table("clientes").select("id").eq("org_id", org_id).limit(1).execute()
+    if rc.data and len(rc.data) > 0:
+        raise ValueError("Organização tem clientes. Mova ou exclua os clientes antes de excluir (para não perder dados).")
+    # verifica se tem outras orgs para não deixar user sem org
+    orgs = listar_organizacoes(user_id)
+    if len(orgs) <= 1:
+        raise ValueError("Você precisa de pelo menos uma organização. Crie outra antes de excluir esta.")
+    # deleta org (cascata membros)
+    supabase.table("organizacoes").delete().eq("id", org_id).execute()
+    # limpa org_id órfão em tabelas que ficaram (etapas etc com set null já, mas agora são not null então deletamos)
+    # não precisa, pois já bloqueamos com clientes; etapas/tags vazias podem ser deletadas em cascata? Mantém.
+    return True
 
 # --- Helpers para garantir org_id em criações (migração limpa) ---
 
