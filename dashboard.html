@@ -217,34 +217,76 @@
         </section>
 
         <!-- ================================================
-             RELATÓRIOS — Fase 2A Conversão por Etapa
+             RELATÓRIOS — Fase 2A Conversão + Receita
              ================================================ -->
         <section id="relatorios-section" class="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm p-4 sm:p-5">
-            <div class="flex items-center justify-between gap-3 mb-4">
+            <div class="flex items-center justify-between gap-3 mb-4 cursor-pointer" onclick="toggleRelatoriosSection()">
                 <div class="flex items-center gap-2.5">
                     <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 flex items-center justify-center">
                         <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
                     </div>
                     <div>
                         <h2 class="text-sm font-bold text-slate-900 dark:text-white">Relatórios</h2>
-                        <p class="text-[11px] text-slate-400 dark:text-slate-500">Conversão por etapa</p>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500">Conversão e receita • clique para expandir/recolher</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <select id="relatorio-periodo" onchange="carregarRelatorioConversao()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer">
+                <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                    <select id="relatorio-periodo" onchange="carregarRelatorios()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 cursor-pointer" title="Filtrar período">
                         <option value="">Todos</option>
                         <option value="30">30 dias</option>
                         <option value="90">90 dias</option>
                         <option value="365">1 ano</option>
                     </select>
-                    <button onclick="carregarRelatorioConversao()" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700/60" title="Atualizar"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                    <button onclick="carregarRelatorios()" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700/60" title="Atualizar"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                    <button id="btn-toggle-relatorios" onclick="toggleRelatoriosSection()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-transform" title="Expandir/Recolher">
+                        <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" id="relatorios-chevron"></i>
+                    </button>
                 </div>
             </div>
-            <div class="relative h-64 sm:h-72">
-                <canvas id="chart-conversao"></canvas>
+            <div id="relatorios-content" class="space-y-5">
+            <!-- Conversão -->
+            <div class="rounded-xl border border-slate-100 dark:border-slate-700/60 overflow-hidden">
+                <button type="button" onclick="toggleRelatorioSub('conversao')" class="w-full flex items-center justify-between px-3 py-2.5 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors text-left">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-indigo-500"></span> Conversão por etapa</h3>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="relatorio-conversao-chevron"></i>
+                </button>
+                <div id="relatorio-conversao-content" class="p-3 sm:p-4">
+                <div class="relative h-64 sm:h-72">
+                    <canvas id="chart-conversao"></canvas>
+                </div>
+                <div id="relatorio-conversao-tabela" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs"></div>
+                <p id="relatorio-conversao-total" class="text-[11px] text-slate-400 dark:text-slate-500 mt-3 text-center"></p>
+                </div>
             </div>
-            <div id="relatorio-conversao-tabela" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs"></div>
-            <p id="relatorio-conversao-total" class="text-[11px] text-slate-400 dark:text-slate-500 mt-3 text-center"></p>
+            <!-- Receita -->
+            <div class="rounded-xl border border-slate-100 dark:border-slate-700/60 overflow-hidden">
+                <button type="button" onclick="toggleRelatorioSub('receita')" class="w-full flex items-center justify-between px-3 py-2.5 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors text-left">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Receita prevista (em dia)</h3>
+                        <span id="relatorio-receita-total" class="text-xs font-black text-emerald-600 dark:text-emerald-400">R$ 0</span>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" id="relatorio-receita-chevron"></i>
+                </button>
+                <div id="relatorio-receita-content" class="p-3 sm:p-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">Por plano</p>
+                        <div class="relative h-56">
+                            <canvas id="chart-receita-plano"></canvas>
+                        </div>
+                        <div id="relatorio-receita-plano-tabela" class="mt-3 space-y-1.5 text-xs"></div>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">Por mês</p>
+                        <div class="relative h-56">
+                            <canvas id="chart-receita-mes"></canvas>
+                        </div>
+                        <div id="relatorio-receita-mes-tabela" class="mt-3 space-y-1 text-xs"></div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
         </section>
 
         <!-- ================================================

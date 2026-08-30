@@ -961,3 +961,119 @@ def relatorio_conversao(user_id: str, periodo_dias: int | None = None) -> dict:
         })
 
     return {"total": total, "itens": itens}
+
+
+def relatorio_receita(user_id: str, periodo_dias: int | None = None) -> dict:
+    """
+    Retorna receita prevista (soma valor_plano) por plano e por mês.
+    Considera apenas clientes com status_pagamento='em_dia' e valor_plano >0.
+    """
+    from datetime import datetime, timedelta
+    from collections import defaultdict
+    import re
+
+    clientes = carregar_clientes(user_id)
+    planos = listar_planos(user_id)
+    plano_map = {str(p.id): p for p in planos}
+    plano_nome_map = {p.nome.strip().lower(): p for p in planos}
+
+    # Filtro período
+    if periodo_dias is not None and periodo_dias > 0:
+        try:
+            limite = datetime.now().date() - timedelta(days=periodo_dias)
+            filtrados = []
+            for c in clientes:
+                if not c.data_cadastro:
+                    continue
+                try:
+                    dc = c.data_cadastro.split("T")[0]
+                    d = datetime.strptime(dc, "%Y-%m-%d").date()
+                    if d >= limite:
+                        filtrados.append(c)
+                except Exception:
+                    filtrados.append(c)
+            clientes = filtrados
+        except Exception:
+            pass
+
+    # Filtra em_dia com valor
+    em_dia = [c for c in clientes if c.status_pagamento == "em_dia" and c.valor_plano]
+
+    def parse_valor(v):
+        if v is None or v == "":
+            return 0.0
+        if isinstance(v, (int, float)):
+            return float(v)
+        s = str(v).replace("R$", "").strip()
+        if "," in s:
+            s = s.replace(".", "").replace(",", ".")
+        s = re.sub(r"[^0-9.\-]", "", s)
+        try:
+            return float(s) if s else 0.0
+        except:
+            return 0.0
+
+    total_receita = sum(parse_valor(c.valor_plano) for c in em_dia)
+    total_clientes = len(em_dia)
+
+    # Por plano
+    por_plano_dict = defaultdict(lambda: {"total": 0.0, "count": 0, "nome": "", "cor": "slate", "id": None})
+    for c in em_dia:
+        val = parse_valor(c.valor_plano)
+        pid = str(c.plano) if c.plano else None
+        # Resolve plano nome/cor
+        plano_obj = plano_map.get(pid) if pid else None
+        if not plano_obj and pid:
+            # tenta por nome
+            plano_obj = plano_nome_map.get(pid.strip().lower())
+        if plano_obj:
+            nome = plano_obj.nome
+            cor = plano_obj.cor
+            pid_resolv = str(plano_obj.id)
+        elif pid:
+            nome = pid
+            cor = "slate"
+            pid_resolv = pid
+        else:
+            nome = "Sem plano"
+            cor = "slate"
+            pid_resolv = None
+        key = pid_resolv or nome
+        por_plano_dict[key]["total"] += val
+        por_plano_dict[key]["count"] += 1
+        por_plano_dict[key]["nome"] = nome
+        por_plano_dict[key]["cor"] = cor
+        por_plano_dict[key]["id"] = pid_resolv
+
+    por_plano = []
+    for k, v in por_plano_dict.items():
+        por_plano.append({
+            "plano_id": v["id"],
+            "plano_nome": v["nome"],
+            "plano_cor": v["cor"],
+            "total": round(v["total"], 2),
+            "count": v["count"],
+            "percent": round((v["total"] / total_receita * 100) if total_receita > 0 else 0, 1)
+        })
+    por_plano.sort(key=lambda x: x["total"], reverse=True)
+
+    # Por mês (YYYY-MM)
+    por_mes_dict = defaultdict(lambda: {"total": 0.0, "count": 0})
+    for c in em_dia:
+        val = parse_valor(c.valor_plano)
+        dc = (c.data_cadastro or "")[:7]  # YYYY-MM
+        if len(dc) == 7 and dc[4] == "-":
+            por_mes_dict[dc]["total"] += val
+            por_mes_dict[dc]["count"] += 1
+        else:
+            por_mes_dict["sem_data"]["total"] += val
+            por_mes_dict["sem_data"]["count"] += 1
+
+    por_mes = [{"mes": k, "total": round(v["total"], 2), "count": v["count"]} for k, v in sorted(por_mes_dict.items())]
+
+    return {
+        "total_receita": round(total_receita, 2),
+        "total_clientes_em_dia": total_clientes,
+        "por_plano": por_plano,
+        "por_mes": por_mes
+    }

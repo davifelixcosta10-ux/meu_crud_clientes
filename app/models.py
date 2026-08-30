@@ -632,3 +632,34 @@ class RelatorioConversaoResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RelatorioReceitaPorPlano(BaseModel):
+    plano_id: Optional[str] = None
+    plano_nome: str
+    plano_cor: Optional[str] = None
+    total: float
+    count: int
+    percent: float
+
+    class Config:
+        from_attributes = True
+
+
+class RelatorioReceitaPorMes(BaseModel):
+    mes: str  # YYYY-MM
+    total: float
+    count: int
+
+    class Config:
+        from_attributes = True
+
+
+class RelatorioReceitaResponse(BaseModel):
+    total_receita: float
+    total_clientes_em_dia: int
+    por_plano: list[RelatorioReceitaPorPlano]
+    por_mes: list[RelatorioReceitaPorMes]
+
+    class Config:
+        from_attributes = True

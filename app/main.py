@@ -37,6 +37,7 @@ from app.models import (
     Tag, TagCreate, TagUpdate, ClienteTagCreate,
     FiltroSalvo, FiltroSalvoCreate, ImportPreviewRequest,
     RelatorioConversaoResponse,
+    RelatorioReceitaResponse,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -50,6 +51,7 @@ from app.storage import (
     listar_filtros_salvos, criar_filtro_salvo, deletar_filtro_salvo,
     importar_clientes_bulk,
     relatorio_conversao,
+    relatorio_receita,
 )
 
 # --- Rate Limiter ---
@@ -529,6 +531,15 @@ async def get_relatorio_conversao(periodo: int | None = None, user_id: str = Dep
         return relatorio_conversao(user_id, periodo)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de conversão.")
+
+
+@app.get("/api/relatorios/receita", response_model=RelatorioReceitaResponse, tags=["Relatórios"])
+async def get_relatorio_receita(periodo: int | None = None, user_id: str = Depends(obter_user_id)):
+    """Retorna receita prevista (em_dia) por plano e por mês."""
+    try:
+        return relatorio_receita(user_id, periodo)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de receita.")
 
 
 # ============================================================
