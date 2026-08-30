@@ -722,3 +722,29 @@ class RelatorioLtvResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class Organizacao(BaseModel):
+    id: str
+    nome: str
+    owner_id: str
+    created_at: Optional[str] = None
+    papel: Optional[str] = None  # preenchido no list
+
+    class Config:
+        from_attributes = True
+
+
+class OrganizacaoCreate(BaseModel):
+    nome: str
+
+    class Config:
+        from_attributes = True
+
+
+class ConviteCreate(BaseModel):
+    email: str
+    papel: str = "membro"  # admin|membro
+
+    class Config:
+        from_attributes = True

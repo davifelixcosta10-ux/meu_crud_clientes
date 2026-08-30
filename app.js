@@ -146,6 +146,8 @@ let importPreviewData = [];
 let viewMode = localStorage.getItem('daviflow_view') || 'tabela';
 let clienteParaDeletarId = null;
 let modoDemo = false;
+let orgsCache = [];
+let currentOrgId = localStorage.getItem('daviflow_org_id') || null;
 
 // Mapa de tema por cor de plano — usado em badges, métricas e cards de seleção.
 // Cada entrada define: bg, text, border, dot, activeBorder, activeBg (Tailwind classes)
@@ -314,6 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function inicializarApp() {
+    await carregarOrgs();
     await carregarPlanos();
     await carregarEtapas();
     await carregarTags();
@@ -323,6 +326,150 @@ async function inicializarApp() {
     restaurarEstadoRelatorios();
     await carregarRelatorios();
     if (window.lucide) lucide.createIcons();
+}
+
+// ============================================================
+// 3A — ORGANIZAÇÕES (Fase 3A-1)
+// ============================================================
+let _orgsCarregadas = false;
+async function carregarOrgs() {
+    const sel = document.getElementById('org-select');
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs`, { method: 'GET' });
+        if (!resp || !resp.ok) {
+            orgsCache = [];
+            if (sel) sel.innerHTML = '<option value="">Minha organização</option>';
+            return;
+        }
+        const data = await resp.json();
+        orgsCache = Array.isArray(data) ? data : [];
+        _orgsCarregadas = true;
+        // se não tem org selecionada, pega primeira
+        if (!currentOrgId && orgsCache.length > 0) {
+            currentOrgId = orgsCache[0].id;
+            localStorage.setItem('daviflow_org_id', currentOrgId);
+        }
+        // valida se current ainda existe
+        if (currentOrgId && !orgsCache.find(o => o.id === currentOrgId)) {
+            currentOrgId = orgsCache[0]?.id || null;
+            if (currentOrgId) localStorage.setItem('daviflow_org_id', currentOrgId);
+            else localStorage.removeItem('daviflow_org_id');
+        }
+        renderizarOrgsSelect();
+    } catch (e) {
+        console.warn('Erro ao carregar orgs', e);
+        orgsCache = [];
+    }
+}
+function renderizarOrgsSelect() {
+    const sel = document.getElementById('org-select');
+    if (!sel) return;
+    if (orgsCache.length === 0) {
+        sel.innerHTML = '<option value="">Minha organização</option>';
+        sel.classList.add('hidden');
+        return;
+    }
+    sel.classList.remove('hidden');
+    sel.innerHTML = orgsCache.map(o => `<option value="${o.id}" ${o.id === currentOrgId ? 'selected' : ''}>${escaparHTML(o.nome)} ${o.papel === 'admin' ? '• admin' : ''}</option>`).join('');
+    // atualiza convite org nome
+    const conviteNome = document.getElementById('convite-org-nome');
+    if (conviteNome) {
+        const org = orgsCache.find(o => o.id === currentOrgId);
+        conviteNome.textContent = org ? `Organização: ${org.nome}` : '';
+    }
+}
+function trocarOrg(orgId) {
+    currentOrgId = orgId || null;
+    if (currentOrgId) localStorage.setItem('daviflow_org_id', currentOrgId);
+    else localStorage.removeItem('daviflow_org_id');
+    renderizarOrgsSelect();
+    // recarrega dados da org
+    Promise.all([carregarClientes(), carregarEtapas(), carregarTags(), carregarFiltrosSalvos()]).then(() => {
+        if (window.lucide) lucide.createIcons();
+    });
+}
+function abrirModalOrg() {
+    const modal = document.getElementById('modal-org');
+    if (!modal) return;
+    document.getElementById('org-nome-input').value = '';
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        modal.querySelector('.modal-box')?.classList.remove('scale-95','opacity-0');
+        modal.querySelector('.modal-box')?.classList.add('scale-100','opacity-100');
+    });
+    if (window.lucide) lucide.createIcons();
+}
+function fecharModalOrg() {
+    const modal = document.getElementById('modal-org');
+    if (!modal) return;
+    modal.querySelector('.modal-box')?.classList.add('scale-95','opacity-0');
+    setTimeout(() => modal.classList.add('hidden'), 200);
+}
+async function criarOrg() {
+    const input = document.getElementById('org-nome-input');
+    const nome = (input?.value || '').trim();
+    if (!nome) { alert('Informe o nome da organização'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome }) });
+        if (!resp || !resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            alert(err.detail || 'Erro ao criar organização');
+            return;
+        }
+        const org = await resp.json();
+        orgsCache.push(org);
+        currentOrgId = org.id;
+        localStorage.setItem('daviflow_org_id', currentOrgId);
+        renderizarOrgsSelect();
+        fecharModalOrg();
+        // recarrega
+        await Promise.all([carregarClientes(), carregarEtapas(), carregarTags()]);
+        alert(`Organização "${org.nome}" criada! Você é admin.`);
+    } catch (e) {
+        console.warn(e);
+        alert('Erro ao criar organização');
+    }
+}
+function abrirModalConvite() {
+    if (orgsCache.length === 0) { alert('Crie uma organização primeiro'); return; }
+    const modal = document.getElementById('modal-convite');
+    if (!modal) return;
+    document.getElementById('convite-email-input').value = '';
+    document.getElementById('convite-papel-select').value = 'membro';
+    renderizarOrgsSelect();
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        modal.querySelector('.modal-box')?.classList.remove('scale-95','opacity-0');
+        modal.querySelector('.modal-box')?.classList.add('scale-100','opacity-100');
+    });
+    if (window.lucide) lucide.createIcons();
+}
+function fecharModalConvite() {
+    const modal = document.getElementById('modal-convite');
+    if (!modal) return;
+    modal.querySelector('.modal-box')?.classList.add('scale-95','opacity-0');
+    setTimeout(() => modal.classList.add('hidden'), 200);
+}
+async function enviarConvite() {
+    const email = (document.getElementById('convite-email-input')?.value || '').trim();
+    const papel = document.getElementById('convite-papel-select')?.value || 'membro';
+    if (!email) { alert('Informe o email'); return; }
+    if (!currentOrgId) { alert('Selecione uma organização'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/convites`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, papel }) });
+        if (!resp || !resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            alert(err.detail || 'Erro ao convidar');
+            return;
+        }
+        const data = await resp.json();
+        fecharModalConvite();
+        if (data.status === 'convite_enviado') alert(`Convite enviado para ${email}! Ele receberá email para criar conta.`);
+        else alert(`Membro ${email} adicionado como ${papel}!`);
+    } catch (e) {
+        console.warn(e);
+        alert('Erro ao enviar convite');
+    }
 }
 
 // ============================================================
