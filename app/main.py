@@ -57,7 +57,7 @@ from app.storage import (
     relatorio_receita,
     relatorio_churn,
     relatorio_ltv,
-    listar_organizacoes, criar_organizacao, listar_membros_org, convidar_membro_org, deletar_organizacao,
+    listar_organizacoes, criar_organizacao, listar_membros_org, convidar_membro_org, deletar_organizacao, remover_membro_org,
 )
 
 # --- Rate Limiter ---
@@ -646,6 +646,21 @@ async def delete_org(org_id: str, user_id: str = Depends(obter_user_id)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao excluir organização.")
+
+
+@app.delete("/api/orgs/{org_id}/membros/{target_user_id}", tags=["Organizações"])
+async def delete_membro(org_id: str, target_user_id: str, user_id: str = Depends(obter_user_id)):
+    """Remove membro da organização (apenas admin, não pode remover dono)."""
+    try:
+        remover_membro_org(org_id, target_user_id, user_id)
+        return {"mensagem": "Membro removido com sucesso"}
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg or "acesso" in msg or "dono" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao remover membro.")
 
 
 # ============================================================
