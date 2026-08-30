@@ -696,3 +696,29 @@ class RelatorioChurnResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RelatorioLtvPorPlano(BaseModel):
+    plano_id: Optional[str] = None
+    plano_nome: str
+    plano_cor: Optional[str] = None
+    count: int
+    valor_medio_mensal: float
+    meses_medio: float
+    ltv_medio: float
+    receita_estimada: float
+
+    class Config:
+        from_attributes = True
+
+
+class RelatorioLtvResponse(BaseModel):
+    total_clientes: int
+    ltv_medio_geral: float
+    receita_estimada_total: float
+    valor_medio_mensal_geral: float
+    meses_medio_geral: float
+    por_plano: list[RelatorioLtvPorPlano]
+
+    class Config:
+        from_attributes = True

@@ -39,6 +39,7 @@ from app.models import (
     RelatorioConversaoResponse,
     RelatorioReceitaResponse,
     RelatorioChurnResponse,
+    RelatorioLtvResponse,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -54,6 +55,7 @@ from app.storage import (
     relatorio_conversao,
     relatorio_receita,
     relatorio_churn,
+    relatorio_ltv,
 )
 
 # --- Rate Limiter ---
@@ -551,6 +553,15 @@ async def get_relatorio_churn(periodo: int | None = None, user_id: str = Depends
         return relatorio_churn(user_id, periodo)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de churn.")
+
+
+@app.get("/api/relatorios/ltv", response_model=RelatorioLtvResponse, tags=["Relatórios"])
+async def get_relatorio_ltv(periodo: int | None = None, user_id: str = Depends(obter_user_id)):
+    """Retorna LTV estimado (valor * meses) geral e por plano."""
+    try:
+        return relatorio_ltv(user_id, periodo)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de LTV.")
 
 
 # ============================================================

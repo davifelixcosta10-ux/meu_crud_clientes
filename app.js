@@ -1507,6 +1507,9 @@ function atualizarMetricas(clientes) {
         const c = total > 0 ? (inativos / total * 100) : 0;
         churnEl.textContent = `${Number(c.toFixed(1))}%`;
     }
+    // LTV header fallback — será sobrescrito por carregarRelatorioLtv
+    const ltvHeaderEl = document.getElementById('metric-ltv');
+    if (ltvHeaderEl && total === 0) ltvHeaderEl.textContent = 'R$ 0';
 
     // Renderizar métrica "Por Plano" dinamicamente conforme os planos reais do usuário
     const container = document.getElementById('metric-planos-container');
@@ -1669,7 +1672,7 @@ function renderizarRelatorioConversao(data) {
     if (window.lucide) lucide.createIcons();
 }
 async function carregarRelatorios() {
-    await Promise.all([carregarRelatorioConversao(), carregarRelatorioReceita(), carregarRelatorioChurn()]);
+    await Promise.all([carregarRelatorioConversao(), carregarRelatorioReceita(), carregarRelatorioChurn(), carregarRelatorioLtv()]);
 }
 let chartReceitaPlano = null;
 let chartReceitaMes = null;
@@ -1800,10 +1803,10 @@ function renderizarRelatorioChurn(data) {
         chartChurn = new Chart(ctx, {
             type: 'line',
             data: { labels, datasets: [{ label: 'Churn %', data: vals, borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.12)', fill: true, tension: 0.35, pointRadius: 4, pointBackgroundColor: '#f43f5e', pointBorderColor: '#fff', pointBorderWidth: 1.5 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.parsed.y}% (${data.itens[c.dataIndex].inativos}/${data.itens[c.dataIndex].total})` } } }, scales: { x: { ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', callback: (v) => `${v}%` }, grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' } } } }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.parsed.y}% — ${data.itens[c.dataIndex].inativos} de ${data.itens[c.dataIndex].total} cancelaram` } } }, scales: { x: { ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', callback: (v) => `${v}%` }, grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' } } } }
         });
         if (tabelaEl) {
-            tabelaEl.innerHTML = data.itens.map(i => `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><span class="text-xs font-medium text-slate-600 dark:text-slate-300">${escaparHTML(i.mes)}</span><span class="text-xs font-bold ${i.churn_percent > 20 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}">${i.churn_percent}% <span class="text-[10px] font-normal text-slate-400">(${i.inativos}/${i.total})</span></span></div>`).join('');
+            tabelaEl.innerHTML = data.itens.map(i => `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><span class="text-xs font-medium text-slate-600 dark:text-slate-300">${escaparHTML(i.mes)}</span><span class="text-xs font-bold ${i.churn_percent > 20 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}">${i.churn_percent}% <span class="text-[10px] font-normal text-slate-400">(${i.inativos} de ${i.total} cancelaram)</span></span></div>`).join('');
         }
     }
     // Por plano - doughnut churn%
@@ -1822,15 +1825,80 @@ function renderizarRelatorioChurn(data) {
             chartChurnPlano = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: labelsPlano, datasets: [{ data: valsPlano, backgroundColor: bg, borderWidth: 2, borderColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff' }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155', font: { size: 10 }, padding: 12 } }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${c.parsed}% (${porPlano[c.dataIndex].inativos}/${porPlano[c.dataIndex].total})` } } } }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155', font: { size: 10 }, padding: 12 } }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${porPlano[c.dataIndex].inativos} de ${porPlano[c.dataIndex].total} cancelaram — ${c.parsed}%` } } } }
             });
             if (tabelaPlanoEl) {
                 tabelaPlanoEl.innerHTML = porPlano.map(p => {
                     const estilo = MAPA_CORES_PLANO[p.plano_cor] || MAPA_CORES_PLANO.slate;
-                    return `<div class="flex items-center justify-between p-2 rounded-lg border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text}">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] text-slate-500">${p.inativos}/${p.total}</span></div><span class="text-xs font-black ${p.churn_percent > 30 ? 'text-rose-600 dark:text-rose-400' : estilo.text}">${p.churn_percent}%</span></div>`;
+                    return `<div class="flex items-center justify-between p-2 rounded-lg border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text}">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] text-slate-500">${p.inativos} de ${p.total} cancelaram</span></div><span class="text-xs font-black ${p.churn_percent > 30 ? 'text-rose-600 dark:text-rose-400' : estilo.text}">${p.churn_percent}%</span></div>`;
                 }).join('');
             }
         }
+    }
+    if (window.lucide) lucide.createIcons();
+}
+let chartLtvPlano = null;
+async function carregarRelatorioLtv() {
+    const canvas = document.getElementById('chart-ltv-plano');
+    const totalEl = document.getElementById('relatorio-ltv-total');
+    if (!canvas) return;
+    const periodo = document.getElementById('relatorio-periodo')?.value || '';
+    const qs = periodo ? `?periodo=${periodo}` : '';
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/relatorios/ltv${qs}`, { method: 'GET' });
+        if (!resp || !resp.ok) {
+            if (totalEl) totalEl.textContent = 'R$ 0';
+            return;
+        }
+        const data = await resp.json();
+        renderizarRelatorioLtv(data);
+    } catch (e) {
+        console.warn('Erro ao carregar relatório LTV', e);
+        if (totalEl) totalEl.textContent = 'R$ 0';
+    }
+}
+function renderizarRelatorioLtv(data) {
+    const canvas = document.getElementById('chart-ltv-plano');
+    const totalEl = document.getElementById('relatorio-ltv-total');
+    const tabelaEl = document.getElementById('relatorio-ltv-plano-tabela');
+    const detalheEl = document.getElementById('relatorio-ltv-detalhe');
+    const footerEl = document.getElementById('relatorio-ltv-footer');
+    const headerEl = document.getElementById('metric-ltv');
+    if (!data) return;
+    const fmt = (v) => `R$ ${Number(v || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+    if (totalEl) totalEl.textContent = fmt(data.ltv_medio_geral);
+    if (headerEl) headerEl.textContent = Number(data.ltv_medio_geral || 0) >= 1000 ? `R$ ${(Number(data.ltv_medio_geral)/1000).toFixed(1)}k` : fmt(data.ltv_medio_geral);
+    if (headerEl) headerEl.title = `${fmt(data.ltv_medio_geral)} médio • ${data.meses_medio_geral} meses • ${fmt(data.valor_medio_mensal_geral)}/mês`;
+    if (footerEl) footerEl.textContent = `${data.total_clientes || 0} clientes • ${fmt(data.receita_estimada_total)} estimado • ${data.meses_medio_geral} meses médio${document.getElementById('relatorio-periodo')?.value ? ` • últimos ${document.getElementById('relatorio-periodo').value} dias` : ''}`;
+    if (typeof Chart === 'undefined') return;
+    if (chartLtvPlano) { try { chartLtvPlano.destroy(); } catch(e) {} chartLtvPlano = null; }
+    const porPlano = data.por_plano || [];
+    if (!canvas) return;
+    if (porPlano.length === 0) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-slate-400 text-center">Sem dados por plano</p>';
+        if (detalheEl) detalheEl.innerHTML = '';
+        return;
+    }
+    const corMap = { indigo: '#6366f1', cyan: '#06b6d4', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e', purple: '#a855f7', slate: '#64748b', orange: '#f97316', violet: '#8b5cf6' };
+    const labels = porPlano.map(p => p.plano_nome);
+    const vals = porPlano.map(p => p.ltv_medio);
+    const bg = porPlano.map(p => (corMap[p.plano_cor] || '#8b5cf6') + 'CC');
+    const ctx = canvas.getContext('2d');
+    chartLtvPlano = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'LTV médio', data: vals, backgroundColor: bg, borderColor: porPlano.map(p => corMap[p.plano_cor] || '#8b5cf6'), borderWidth: 1.5, borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${fmt(c.parsed.x)} (${porPlano[c.dataIndex].meses_medio}m × ${fmt(porPlano[c.dataIndex].valor_medio_mensal)}/mês)` } } }, scales: { x: { beginAtZero: true, ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', callback: (v) => `R$ ${v}` }, grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' } }, y: { ticks: { color: document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#334155', font: { size: 11, weight: '600' } }, grid: { display: false } } } }
+    });
+    if (tabelaEl) {
+        tabelaEl.innerHTML = porPlano.map(p => {
+            const estilo = MAPA_CORES_PLANO[p.plano_cor] || MAPA_CORES_PLANO.slate;
+            return `<div class="flex items-center justify-between p-2 rounded-lg border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text} truncate">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] text-slate-500">${p.count} cli</span></div><div class="text-right"><div class="text-xs font-black ${estilo.text}">${fmt(p.ltv_medio)}</div><div class="text-[10px] text-slate-400">${p.meses_medio}m × ${fmt(p.valor_medio_mensal)}</div></div></div>`;
+        }).join('');
+    }
+    if (detalheEl) {
+        detalheEl.innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="p-3 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 text-center"><div class="text-[10px] font-bold uppercase tracking-widest text-violet-700 dark:text-violet-300">LTV médio</div><div class="text-lg font-black text-violet-600 dark:text-violet-400">${fmt(data.ltv_medio_geral)}</div><div class="text-[10px] text-slate-500">${data.meses_medio_geral}m × ${fmt(data.valor_medio_mensal_geral)}</div></div><div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 text-center"><div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Receita estimada</div><div class="text-lg font-black text-slate-700 dark:text-slate-200">${fmt(data.receita_estimada_total)}</div><div class="text-[10px] text-slate-500">${data.total_clientes} clientes</div></div></div><div class="mt-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-200"><i data-lucide="info" class="w-3 h-3 inline mr-1"></i> LTV = valor × meses desde cadastro (coorte). Valor com vírgula BR parseado.</div>`;
     }
     if (window.lucide) lucide.createIcons();
 }
@@ -1849,6 +1917,7 @@ function toggleRelatoriosSection() {
             if (chartReceitaMes) try { chartReceitaMes.resize(); } catch(e) {}
             if (chartChurn) try { chartChurn.resize(); } catch(e) {}
             if (chartChurnPlano) try { chartChurnPlano.resize(); } catch(e) {}
+            if (chartLtvPlano) try { chartLtvPlano.resize(); } catch(e) {}
         }, 100);
     }
 }
@@ -1867,6 +1936,7 @@ function toggleRelatorioSub(tipo) {
                 if (chartReceitaMes) try { chartReceitaMes.resize(); } catch(e) {}
             }
             if (tipo === 'churn') { if (chartChurn) try { chartChurn.resize(); } catch(e) {} if (chartChurnPlano) try { chartChurnPlano.resize(); } catch(e) {} }
+            if (tipo === 'ltv' && chartLtvPlano) try { chartLtvPlano.resize(); } catch(e) {}
         }, 100);
     }
 }
@@ -1878,7 +1948,7 @@ function restaurarEstadoRelatorios() {
         content.classList.add('hidden');
         if (chevron) chevron.style.transform = 'rotate(-90deg)';
     }
-    ['conversao','receita','churn'].forEach(tipo => {
+    ['conversao','receita','churn','ltv'].forEach(tipo => {
         const c = document.getElementById(`relatorio-${tipo}-content`);
         const ch = document.getElementById(`relatorio-${tipo}-chevron`);
         const col = localStorage.getItem(`relatorio_${tipo}_collapsed`) === '1';

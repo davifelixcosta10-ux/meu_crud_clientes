@@ -1165,3 +1165,118 @@ def relatorio_churn(user_id: str, periodo_dias: int | None = None) -> dict:
         "itens": itens,
         "por_plano": por_plano
     }
+
+
+def relatorio_ltv(user_id: str, periodo_dias: int | None = None) -> dict:
+    """
+    LTV estimado = valor_plano * meses desde data_cadastro (coorte).
+    Valor médio mensal = média valor_plano; meses médio = média meses; ltv médio = valor_medio * meses_medio (ou média dos ltvs individuais).
+    Por plano agrupa ltv médio e receita estimada.
+    """
+    from datetime import datetime
+    from collections import defaultdict
+    from datetime import timedelta
+    import re
+
+    clientes = carregar_clientes(user_id)
+
+    if periodo_dias is not None and periodo_dias > 0:
+        try:
+            limite = datetime.now().date() - timedelta(days=periodo_dias)
+            filtrados = []
+            for c in clientes:
+                if not c.data_cadastro:
+                    continue
+                try:
+                    dc = c.data_cadastro.split("T")[0]
+                    d = datetime.strptime(dc, "%Y-%m-%d").date()
+                    if d >= limite:
+                        filtrados.append(c)
+                except Exception:
+                    filtrados.append(c)
+            clientes = filtrados
+        except Exception:
+            pass
+
+    try:
+        planos = listar_planos(user_id)
+        plano_map = {str(p.id): p for p in planos}
+    except Exception:
+        plano_map = {}
+
+    hoje = datetime.now().date()
+
+    def parse_valor(raw):
+        if raw is None or raw == "":
+            return 0.0
+        s = str(raw)
+        s = re.sub(r"[^\d,.-]", "", s)
+        if not s:
+            return 0.0
+        try:
+            if "," in s:
+                return float(s.replace(".", "").replace(",", "."))
+            return float(s)
+        except Exception:
+            return 0.0
+
+    def meses_desde(dc_str):
+        if not dc_str:
+            return 1.0
+        try:
+            dc = dc_str.split("T")[0]
+            d = datetime.strptime(dc, "%Y-%m-%d").date()
+            dias = (hoje - d).days
+            # arredonda para meses (30 dias), mínimo 1
+            meses = dias / 30.0
+            return max(1.0, round(meses, 1))
+        except Exception:
+            return 1.0
+
+    por_plano_dict = defaultdict(lambda: {"count": 0, "soma_valor": 0.0, "soma_meses": 0.0, "soma_ltv": 0.0})
+    total_clientes = 0
+    soma_ltv_geral = 0.0
+    soma_valor_geral = 0.0
+    soma_meses_geral = 0.0
+
+    for c in clientes:
+        v = parse_valor(getattr(c, "valor_plano", 0))
+        m = meses_desde(getattr(c, "data_cadastro", None))
+        ltv = round(v * m, 2)
+        total_clientes += 1
+        soma_ltv_geral += ltv
+        soma_valor_geral += v
+        soma_meses_geral += m
+        key = c.plano if c.plano and str(c.plano) in plano_map else "__sem_plano__"
+        por_plano_dict[key]["count"] += 1
+        por_plano_dict[key]["soma_valor"] += v
+        por_plano_dict[key]["soma_meses"] += m
+        por_plano_dict[key]["soma_ltv"] += ltv
+
+    ltv_medio_geral = round(soma_ltv_geral / total_clientes, 2) if total_clientes else 0.0
+    valor_medio_geral = round(soma_valor_geral / total_clientes, 2) if total_clientes else 0.0
+    meses_medio_geral = round(soma_meses_geral / total_clientes, 1) if total_clientes else 0.0
+    receita_estimada_total = round(soma_ltv_geral, 2)
+
+    por_plano = []
+    for pid, vals in por_plano_dict.items():
+        cnt = vals["count"]
+        vm = round(vals["soma_valor"] / cnt, 2) if cnt else 0.0
+        mm = round(vals["soma_meses"] / cnt, 1) if cnt else 0.0
+        ltv_m = round(vals["soma_ltv"] / cnt, 2) if cnt else 0.0
+        rec = round(vals["soma_ltv"], 2)
+        if pid == "__sem_plano__":
+            por_plano.append({"plano_id": None, "plano_nome": "Sem plano", "plano_cor": "slate", "count": cnt, "valor_medio_mensal": vm, "meses_medio": mm, "ltv_medio": ltv_m, "receita_estimada": rec})
+        else:
+            p = plano_map.get(str(pid))
+            por_plano.append({"plano_id": str(pid), "plano_nome": p.nome if p else str(pid), "plano_cor": p.cor if p else "slate", "count": cnt, "valor_medio_mensal": vm, "meses_medio": mm, "ltv_medio": ltv_m, "receita_estimada": rec})
+    por_plano.sort(key=lambda x: x["ltv_medio"], reverse=True)
+
+    return {
+        "total_clientes": total_clientes,
+        "ltv_medio_geral": ltv_medio_geral,
+        "receita_estimada_total": receita_estimada_total,
+        "valor_medio_mensal_geral": valor_medio_geral,
+        "meses_medio_geral": meses_medio_geral,
+        "por_plano": por_plano
+    }
