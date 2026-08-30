@@ -91,6 +91,65 @@
 
 ---
 
+## Fase 4 — Verticalização + Navegação Lateral + Configurações (IDEIA NOVA 2026-08-30) — QUEBRADA EM PEDAÇOS 4A-4C
+
+> **Objetivo:** otimizar o gerenciamento para tipo de empresa. Cada vertical esconde, renomeia ou adiciona campos/fluxos. Navegação deixa de ser 1 página longa (dashboard.html monolito) e vira abas laterais como Vercel (Overview | Clientes | Kanban | Relatórios | Agenda | Configurações). Configurações centraliza o que hoje está espalhado (planos, etapas, tags, perfil, organização).
+
+### 4A. Sistema de Verticais (Templates por Tipo de Empresa) — `feat/fase4a-verticals`
+- **Problema:** hospital não precisa de `placa/km`, oficina não precisa de `dente/procedimento`, academia não precisa de `CRM médico`. Hoje todos veem os mesmos 30+ campos e métricas, gerando ruído.
+- **Backend:**
+  - Tabela `verticais(id, slug, nome, descricao, config_json)` seed com 4 presets + `custom`:
+    - `hospital`: campos extras `convenio, leito, prontuario, crm_medico_responsavel`, métrica `ocupação leitos`, esconde `placa/km`, status `internado/alta`
+    - `lava_rapido_oficina`: `placa (obrigatória + validação BR), modelo, km, servico[lavagem/troca_oleo/revisao]`, métrica `serviços por dia`, Kanban etapas `Aguardando → Em serviço → Pronto`
+    - `dentista`: `dente (1-32 FDI), procedimento[limpeza/canal/ortodontia], convenio_odonto`, timeline mostra `procedimento` em vez de `tipo genérico`, badge `retorno 6m`
+    - `academia`: `plano_mensal, treino[A/B/C], frequencia_semanal, vencimento_dia` já existe mas vira obrigatório + `check-in`, métrica `frequência média`, churn = `não vem há 14d`
+    - `geral` (default): mantém comportamento atual (30+ campos genéricos) para quem não escolhe vertical
+  - Coluna `usuarios.vertical` ou `organizacoes.vertical` (FK verticais) + `clientes.campos_custom jsonb` para extras sem criar 20 colunas novas (flexível). RLS por `user_id/org_id`.
+  - Endpoint `GET /api/verticais` (lista presets), `PATCH /api/usuarios/vertical` (troca), `GET /api/clientes?vertical=hospital` retorna `campos_custom` filtrados.
+- **Frontend:**
+  - Onboarding/modal “Escolha seu tipo de empresa” (4 cards com ícone + descrição) na primeira visita; seletor no header para trocar depois.
+  - `clientesCache` passa por `aplicarVertical(vertical)` que: renomeia labels (`cargo → Especialidade` no hospital), esconde inputs irrelevantes (`placa` só em oficina), torna obrigatórios específicos, altera `MAPA_CORES_PLANO` por vertical (ex: hospital = blue/rose, oficina = amber/slate).
+  - Métricas dinâmicas: `atualizarMetricas()` lê `config_json.metricas_visiveis` (hospital mostra `Leitos ocupados` em vez de `Por Plano` se não usar planos).
+  - Kanban: `etapas` seed diferentes por vertical (hospital: `Triagem → Atendimento → Alta`, academia: `Prospecção → Matriculado → Ativo → Inativo`).
+- **Aceite:** trocar vertical não perde dados (só esconde), `campos_custom` persiste, Preview mostra hospital sem campo `placa` e oficina sem `dente`.
+
+### 4B. Navegação Lateral (Sidebar como Vercel) — `feat/fase4b-sidebar`
+- **Problema:** `dashboard.html` hoje é 1 scroll gigante (métricas + relatórios + toolbar + tabela + kanban). Difícil achar relatórios, difícil escalar para Fase 3/4.
+- **Frontend:**
+  - Layout novo: `aside` lateral fixa `240px` (desktop) / drawer `bottom-sheet` (mobile) com abas:
+    - `Overview` → métricas 8 cards 2x4 + atalhos (igual Vercel Overview)
+    - `Clientes` → toolbar + tabela/cards + FAB (só lista, sem métricas)
+    - `Kanban` → board separado (antes era toggle)
+    - `Relatórios` → 4 dobras Chart.js (Conversão/Receita/Churn/LTV) movidas para página própria, com `periodo` no header da página
+    - `Agenda` → timeline de `atividades` (antes só no modal) em calendário/lista
+    - `Configurações` → link para 4C
+  - Roteamento sem reload: `history.pushState` + `secaoAtiva` em `localStorage daviflow_secao` (ex: `#clientes`), `setSecao('relatorios')` mostra só `<section id="secao-relatorios">`, esconde outras. Mantém `fetchAuth` e caches globais.
+  - Header topo vira breadcrumb + seletor vertical + org + notificações; sidebar mostra avatar + plano.
+  - Estilo: `style.css` `.sidebar`, `.sidebar-link.active` (indigo bg + border-l), `main` com `margin-left: 240px` desktop, transição 200ms.
+- **Backend:** nenhum novo endpoint, só reorganiza chamadas já existentes (`carregarRelatorios()` só quando entra em Relatórios).
+- **Aceite:** URL `.../dashboard.html#relatorios` abre direto em Relatórios, F5 mantém aba, mobile abre drawer com hamburger, nenhum gráfico quebra ao trocar aba (resize).
+
+### 4C. Página de Configurações — `feat/fase4c-settings`
+- **Problema:** hoje planos/etapas/tags estão em modais separados, sem lugar central para perfil, senha, vertical, organização, notificações. Usuário pede “colocar também configurações no site”.
+- **Backend:**
+  - `PATCH /api/usuarios/me` (nome, vertical, avatar), `POST /api/usuarios/alterar-senha` (já existe via Supabase, expor wrapper), `GET /api/usuarios/me` retorna `vertical, org_id, email`
+  - Reusa `GET/PATCH /api/planos`, `/api/etapas`, `/api/tags` mas agora listados na página Configurações em vez de só modais.
+- **Frontend:**
+  - Sidebar → `Configurações` com abas internas (como Vercel Settings):
+    - `Geral`: nome, email (readonly), vertical (select com 5 opções + preview de campos que mudam), idioma/tema (dark/light já existe)
+    - `Organização` (se 3A entregue): nome org, membros, convite
+    - `Planos`: CRUD inline (tabela, não modal) + cores
+    - `Etapas Kanban`: CRUD inline + ordem drag
+    - `Tags`: CRUD inline
+    - `Notificações`: toggle email/push para `atrasado`, `vence em 3d` (prepara 2C/3D)
+    - `Conta`: alterar senha, deletar conta (com `confirmarAcao`), exportar dados (`/api/clientes` JSON)
+  - Cada aba salva com `PATCH` imediato + toast `Salvo`; `vertical` troca recarrega `aplicarVertical()` sem reload.
+- **Aceite:** todas as configs hoje em modais continuam funcionando, mas agora também acessíveis em `/dashboard.html#configuracoes/geral`, deep-link por hash, sem quebrar RLS.
+
+> **Ordem incremental Fase 4:** `4A Verticals` (base dados) → `4B Sidebar` (reorganiza sem backend) → `4C Settings` (consolida). Cada `feat/fase4X` com Preview e merge `--no-ff`.*
+
+---
+
 ## Impacto no Site (Landing + Dashboard)
 
 ### Landing (index.html)
