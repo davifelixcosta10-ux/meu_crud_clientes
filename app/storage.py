@@ -42,9 +42,11 @@ if not os.environ.get("SUPABASE_URL"):
 _supabase_client: Client | None = None
 
 
+_supabase_admin_client: Client | None = None
+
 def get_supabase_client() -> Client:
     """
-    Retorna instância singleton do cliente Supabase.
+    Retorna instância singleton do cliente Supabase (anon).
     
     Inicialização lazy: cria apenas na primeira chamada.
     Variáveis obrigatórias: SUPABASE_URL, SUPABASE_KEY
@@ -65,6 +67,28 @@ def get_supabase_client() -> Client:
             )
         _supabase_client = create_client(url, key)
     return _supabase_client
+
+
+def get_supabase_admin_client() -> Client:
+    """Retorna cliente com service_role (para admin: invite, list_users, auth.users)."""
+    global _supabase_admin_client
+    if _supabase_admin_client is None:
+        url: str = os.environ.get("SUPABASE_URL", "")
+        # tenta service_role em várias vars comuns
+        key: str = (
+            os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+            or os.environ.get("SUPABASE_SERVICE_KEY")
+            or os.environ.get("SUPABASE_SERVICE_ROLE")
+            or os.environ.get("SERVICE_ROLE_KEY")
+            or os.environ.get("SUPABASE_KEY", "")
+        )
+        if not url or not key:
+            return get_supabase_client()
+        try:
+            _supabase_admin_client = create_client(url, key)
+        except Exception:
+            _supabase_admin_client = get_supabase_client()
+    return _supabase_admin_client
 
 
 # ============================================================
@@ -1351,7 +1375,7 @@ def criar_organizacao(user_id: str, nome: str) -> dict:
         raise ValueError("Falha ao criar organização")
     org = res.data[0]
     try:
-        supabase.table("membros").insert({"org_id": org["id"], "user_id": user_id, "papel": "admin"}).execute()
+        supabase_admin.table("membros").insert({"org_id": org["id"], "user_id": user_id, "papel": "admin"}).execute()
     except Exception:
         pass
     org["papel"] = "admin"
@@ -1370,7 +1394,7 @@ def listar_membros_org(org_id: str, user_id: str) -> list[dict]:
 
 
 def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) -> dict:
-    """Convida por email (invite automático) e cria vínculo se usuário existe."""
+    """Convida por email (invite automático) e cria vínculo se usuário existe. Usa service_role para auth."""
     import re
     email = (email or "").strip().lower()
     if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
@@ -1378,15 +1402,14 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
     if papel not in ("admin", "membro"):
         papel = "membro"
     supabase = get_supabase_client()
+    supabase_admin = get_supabase_admin_client()
     # verifica permissão admin/owner
     orgs = listar_organizacoes(inviter_id)
     me = next((o for o in orgs if o["id"] == org_id), None)
     if not me or me.get("papel") not in ("admin",):
-        # também checa owner diretamente
         try:
             ro = supabase.table("organizacoes").select("owner_id").eq("id", org_id).execute()
             if not ro.data or ro.data[0]["owner_id"] != inviter_id:
-                # verifica membro admin
                 rm = supabase.table("membros").select("papel").eq("org_id", org_id).eq("user_id", inviter_id).execute()
                 if not rm.data or rm.data[0].get("papel") != "admin":
                     raise ValueError("Apenas admin pode convidar")
@@ -1394,28 +1417,25 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             raise
         except Exception:
             raise ValueError("Acesso negado à organização")
-    # helper robusto para achar user_id por email (list + auth schema)
+    # helper robusto para achar user_id por email (usa admin para auth)
     def _find_uid(mail: str):
         ml = mail.lower().strip()
-        # 1) tenta list_users (com paginação simples)
+        # 1) tenta list_users via admin (service_role)
         try:
-            users_res = supabase.auth.admin.list_users()
+            users_res = supabase_admin.auth.admin.list_users()
             users = getattr(users_res, "users", None) or getattr(users_res, "data", None) or []
             if isinstance(users, dict) and "users" in users:
                 users = users["users"]
-            # se for objeto paginado com next_page, tenta pegar mais (supabase-py pode retornar com pagination)
-            # tenta também com per_page grande se o método aceitar
             for u in users or []:
                 uemail = getattr(u, "email", None) or (u.get("email") if isinstance(u, dict) else None)
                 if uemail and uemail.lower() == ml:
                     return getattr(u, "id", None) or (u.get("id") if isinstance(u, dict) else None)
-            # tenta buscar direto em auth.users via PostgREST (service_role)
+            # tenta buscar direto em auth.users via PostgREST service_role
             try:
-                res_auth = supabase.schema("auth").table("users").select("id, email").eq("email", ml).execute()
+                res_auth = supabase_admin.schema("auth").table("users").select("id, email").eq("email", ml).execute()
                 if res_auth.data and len(res_auth.data) > 0:
                     return res_auth.data[0].get("id")
-                # tenta case-insensitive com ilike se eq falhou
-                res_auth2 = supabase.schema("auth").table("users").select("id, email").ilike("email", ml).execute()
+                res_auth2 = supabase_admin.schema("auth").table("users").select("id, email").ilike("email", ml).execute()
                 if res_auth2.data and len(res_auth2.data) > 0:
                     for r in res_auth2.data:
                         if r.get("email","").lower() == ml:
@@ -1426,7 +1446,7 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             pass
         # 2) tenta via schema direto mesmo se list falhou
         try:
-            res_auth = supabase.schema("auth").table("users").select("id").eq("email", ml).execute()
+            res_auth = supabase_admin.schema("auth").table("users").select("id").eq("email", ml).execute()
             if res_auth.data and len(res_auth.data) > 0:
                 return res_auth.data[0].get("id")
         except Exception:
@@ -1437,7 +1457,7 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
     if target_user_id:
         # já existe -> vincula direto
         try:
-            supabase.table("membros").insert({"org_id": org_id, "user_id": target_user_id, "papel": papel}).execute()
+            supabase_admin.table("membros").insert({"org_id": org_id, "user_id": target_user_id, "papel": papel}).execute()
         except Exception as e:
             if "duplicate" in str(e).lower() or "already" in str(e).lower():
                 raise ValueError("Usuário já é membro")
@@ -1453,9 +1473,9 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                 site_url = "https://" + site_url
             redirect_to = f"{site_url}/?login=true"
             try:
-                invite_res = supabase.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
+                invite_res = supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
             except TypeError:
-                invite_res = supabase.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}})
+                invite_res = supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}})
             # Se invite criou um novo usuário, já vincula como membro (mesmo pendente) para quando confirmar já ter acesso
             try:
                 invited_user = getattr(invite_res, "user", None) or (invite_res.get("user") if isinstance(invite_res, dict) else None) or getattr(invite_res, "data", None)
@@ -1469,7 +1489,7 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                     invited_id = _find_uid(email)
                 if invited_id:
                     try:
-                        supabase.table("membros").insert({"org_id": org_id, "user_id": invited_id, "papel": papel}).execute()
+                        supabase_admin.table("membros").insert({"org_id": org_id, "user_id": invited_id, "papel": papel}).execute()
                     except Exception:
                         pass  # já é membro ou RLS, ignora e ainda retorna convite_enviado
             except Exception:
@@ -1482,7 +1502,7 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                 tid = _find_uid(email)
                 if tid:
                     try:
-                        supabase.table("membros").insert({"org_id": org_id, "user_id": tid, "papel": papel}).execute()
+                        supabase_admin.table("membros").insert({"org_id": org_id, "user_id": tid, "papel": papel}).execute()
                         return {"status": "membro_adicionado", "email": email, "user_id": tid}
                     except Exception as e2:
                         if "duplicate" in str(e2).lower():
@@ -1491,11 +1511,11 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                         pass
                 # fallback extra já dentro de _find_uid tenta schema, se ainda não achou, tenta mais uma vez direto
                 try:
-                    res_auth = supabase.schema("auth").table("users").select("id").eq("email", email.lower()).execute()
+                    res_auth = supabase_admin.schema("auth").table("users").select("id").eq("email", email.lower()).execute()
                     if res_auth.data and len(res_auth.data) > 0:
                         tid2 = res_auth.data[0].get("id")
                         if tid2:
-                            supabase.table("membros").insert({"org_id": org_id, "user_id": tid2, "papel": papel}).execute()
+                            supabase_admin.table("membros").insert({"org_id": org_id, "user_id": tid2, "papel": papel}).execute()
                             return {"status": "membro_adicionado", "email": email, "user_id": tid2}
                 except Exception:
                     pass
