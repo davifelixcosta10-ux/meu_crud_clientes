@@ -1434,10 +1434,10 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             raise
         except Exception:
             raise ValueError("Acesso negado à organização")
-    # helper robusto para achar user_id por email (usa admin para auth)
-    def _find_uid(mail: str):
+    # helper robusto para achar user por email (retorna dict com id e se é pendente)
+    def _find_user(mail: str):
         ml = mail.lower().strip()
-        # 1) tenta list_users via admin (service_role)
+        # tenta list_users via admin
         try:
             users_res = supabase_admin.auth.admin.list_users()
             users = getattr(users_res, "users", None) or getattr(users_res, "data", None) or []
@@ -1446,32 +1446,73 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             for u in users or []:
                 uemail = getattr(u, "email", None) or (u.get("email") if isinstance(u, dict) else None)
                 if uemail and uemail.lower() == ml:
-                    return getattr(u, "id", None) or (u.get("id") if isinstance(u, dict) else None)
-            # tenta buscar direto em auth.users via PostgREST service_role
+                    uid = getattr(u, "id", None) or (u.get("id") if isinstance(u, dict) else None)
+                    # verifica se é pendente (não confirmado)
+                    confirmed = getattr(u, "email_confirmed_at", None) or (u.get("email_confirmed_at") if isinstance(u, dict) else None)
+                    if not confirmed:
+                        confirmed = getattr(u, "confirmed_at", None) or (u.get("confirmed_at") if isinstance(u, dict) else None)
+                    is_pending = not confirmed
+                    return {"id": uid, "pending": bool(is_pending), "raw": u}
+            # tenta via auth.users
             try:
-                res_auth = supabase_admin.schema("auth").table("users").select("id, email").eq("email", ml).execute()
+                res_auth = supabase_admin.schema("auth").table("users").select("id, email, email_confirmed_at, confirmed_at, invited_at").eq("email", ml).execute()
                 if res_auth.data and len(res_auth.data) > 0:
-                    return res_auth.data[0].get("id")
-                res_auth2 = supabase_admin.schema("auth").table("users").select("id, email").ilike("email", ml).execute()
+                    r = res_auth.data[0]
+                    is_pending = not r.get("email_confirmed_at") and not r.get("confirmed_at")
+                    return {"id": r.get("id"), "pending": bool(is_pending), "raw": r}
+                res_auth2 = supabase_admin.schema("auth").table("users").select("id, email, email_confirmed_at").ilike("email", ml).execute()
                 if res_auth2.data and len(res_auth2.data) > 0:
                     for r in res_auth2.data:
                         if r.get("email","").lower() == ml:
-                            return r.get("id")
+                            is_pending = not r.get("email_confirmed_at")
+                            return {"id": r.get("id"), "pending": bool(is_pending), "raw": r}
             except Exception:
                 pass
         except Exception:
             pass
-        # 2) tenta via schema direto mesmo se list falhou
         try:
-            res_auth = supabase_admin.schema("auth").table("users").select("id").eq("email", ml).execute()
+            res_auth = supabase_admin.schema("auth").table("users").select("id, email_confirmed_at").eq("email", ml).execute()
             if res_auth.data and len(res_auth.data) > 0:
-                return res_auth.data[0].get("id")
+                r = res_auth.data[0]
+                return {"id": r.get("id"), "pending": not r.get("email_confirmed_at"), "raw": r}
         except Exception:
             pass
         return None
 
-    target_user_id = _find_uid(email)
+    def _find_uid(mail: str):
+        u = _find_user(mail)
+        return u["id"] if u else None
+
+    found = _find_user(email)
+    target_user_id = found["id"] if found else None
+    is_pending = found["pending"] if found else False
     if target_user_id:
+        # se for pendente, reenvia invite para o email chegar com link novo (mesmo que vá adicionar como membro)
+        if is_pending:
+            try:
+                site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflowgestoes.vercel.app"
+                site_url = site_url.strip().rstrip("/")
+                if not site_url.startswith("http"):
+                    site_url = "https://" + site_url
+                redirect_to = f"{site_url}/?login=true"
+                try:
+                    supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
+                except Exception:
+                    # se falhar por já existir, ignora e só adiciona como membro
+                    pass
+            except Exception:
+                pass
+        # vincula como membro (mesmo pendente, para quando confirmar já ter acesso)
+        try:
+            supabase_admin.table("membros").insert({"org_id": org_id, "user_id": target_user_id, "papel": papel}).execute()
+        except Exception as e:
+            if "duplicate" in str(e).lower() or "already" in str(e).lower():
+                raise ValueError("Usuário já é membro")
+            raise
+        # se era pendente, retorna como convite reenviado, senão membro_adicionado
+        if is_pending:
+            return {"status": "convite_reenviado", "email": email, "user_id": target_user_id, "pending": True}
+        return {"status": "membro_adicionado", "email": email, "user_id": target_user_id}
         # já existe -> vincula direto
         try:
             supabase_admin.table("membros").insert({"org_id": org_id, "user_id": target_user_id, "papel": papel}).execute()

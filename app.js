@@ -539,8 +539,11 @@ async function enviarConvite() {
         const data = await resp.json();
         document.getElementById('convite-email-input').value = '';
         await carregarMembros();
+        await carregarMembrosGerenciar();
         if (data.status === 'convite_enviado') {
             exibirToast(`✉️ Convite enviado para ${email}! Ele receberá um email com link para ${data.redirect_to || 'daviflowgestoes.vercel.app'} — peça para verificar spam.`, 'sucesso');
+        } else if (data.status === 'convite_reenviado') {
+            exibirToast(`🔄 Convite reenviado para ${email} (já estava pendente) e já adicionado como ${papel}! Peça para verificar email/spam ou usar o link anterior.`, 'sucesso');
         } else {
             exibirToast(`✅ ${email} adicionado como ${papel} em "${orgsCache.find(o=>o.id===currentOrgId)?.nome || 'org'}"!`, 'sucesso');
         }
@@ -670,7 +673,9 @@ async function enviarConviteGerenciar() {
         const data = await resp.json();
         document.getElementById('gerenciar-email-input').value = '';
         await carregarMembrosGerenciar();
+        await carregarMembros();
         if (data.status === 'convite_enviado') exibirToast(`✉️ Convite enviado para ${email}!`, 'sucesso');
+        else if (data.status === 'convite_reenviado') exibirToast(`🔄 Convite reenviado para ${email} (pendente) e já adicionado como ${papel}!`, 'sucesso');
         else exibirToast(`✅ ${email} adicionado como ${papel}!`, 'sucesso');
     } catch(e) { exibirToast('Erro ao enviar convite', 'erro'); }
 }
