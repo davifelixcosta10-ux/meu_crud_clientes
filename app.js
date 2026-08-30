@@ -148,6 +148,11 @@ let clienteParaDeletarId = null;
 let modoDemo = false;
 let orgsCache = [];
 let currentOrgId = localStorage.getItem('daviflow_org_id') || null;
+function getOrgQS(qs = '') {
+    if (!currentOrgId) return qs;
+    return qs ? (qs.includes('?') ? `${qs}&org_id=${currentOrgId}` : `${qs}?org_id=${currentOrgId}`) : `?org_id=${currentOrgId}`;
+}
+function getOrgQuery() { return currentOrgId ? `?org_id=${currentOrgId}` : ''; }
 
 // Mapa de tema por cor de plano — usado em badges, métricas e cards de seleção.
 // Cada entrada define: bg, text, border, dot, activeBorder, activeBg (Tailwind classes)
@@ -384,7 +389,7 @@ function trocarOrg(orgId) {
     else localStorage.removeItem('daviflow_org_id');
     renderizarOrgsSelect();
     // recarrega dados da org
-    Promise.all([carregarClientes(), carregarEtapas(), carregarTags(), carregarFiltrosSalvos()]).then(() => {
+    Promise.all([carregarClientes(), carregarEtapas(), carregarTags(), carregarFiltrosSalvos(), carregarRelatorios()]).then(() => {
         if (window.lucide) lucide.createIcons();
     });
 }
@@ -600,7 +605,7 @@ function inicializarFiltroPlanos() {
 // ============================================================
 async function carregarEtapas() {
     try {
-        const response = await fetchAuth(`${API_BASE_URL}/etapas`, { method: 'GET' });
+        const response = await fetchAuth(`${API_BASE_URL}/etapas${getOrgQuery()}`, { method: 'GET' });
         if (!response) return;
         if (response.ok) {
             const data = await response.json();
@@ -876,7 +881,7 @@ async function salvarEtapa(event) {
     const payload = { nome, ordem, cor };
     try {
         if (!modoDemo) {
-            const url = id ? `${API_BASE_URL}/etapas/${id}` : `${API_BASE_URL}/etapas`;
+            const url = id ? `${API_BASE_URL}/etapas/${id}` : `${API_BASE_URL}/etapas${getOrgQuery()}`;
             const method = id ? 'PATCH' : 'POST';
             const resp = await fetchAuth(url, { method, body: JSON.stringify(payload) });
             if (!resp) return;
@@ -929,7 +934,7 @@ async function deletarEtapa(id) {
 }
 async function carregarTags() {
     try {
-        const resp = await fetchAuth(`${API_BASE_URL}/tags`, { method: 'GET' });
+        const resp = await fetchAuth(`${API_BASE_URL}/tags${getOrgQuery()}`, { method: 'GET' });
         if (!resp) return;
         if (resp.ok) tagsCache = await resp.json();
         else tagsCache = [];
@@ -1018,7 +1023,7 @@ async function salvarTag(event) {
     const payload = { nome, cor };
     try {
         if (!modoDemo) {
-            const url = id ? `${API_BASE_URL}/tags/${id}` : `${API_BASE_URL}/tags`;
+            const url = id ? `${API_BASE_URL}/tags/${id}` : `${API_BASE_URL}/tags${getOrgQuery()}`;
             const method = id ? 'PATCH' : 'POST';
             const resp = await fetchAuth(url, { method, body: JSON.stringify(payload) });
             if (!resp) return;
@@ -1055,7 +1060,7 @@ async function deletarTag(id) {
 }
 async function carregarFiltrosSalvos() {
     try {
-        const resp = await fetchAuth(`${API_BASE_URL}/filtros`, { method: 'GET' });
+        const resp = await fetchAuth(`${API_BASE_URL}/filtros${getOrgQuery()}`, { method: 'GET' });
         if (!resp) return;
         if (resp.ok) filtrosCache = await resp.json();
         else filtrosCache = [];
@@ -1126,7 +1131,7 @@ async function salvarFiltroAtual() {
     };
     try {
         if (!modoDemo) {
-            const resp = await fetchAuth(`${API_BASE_URL}/filtros`, { method: 'POST', body: JSON.stringify({ nome, query }) });
+            const resp = await fetchAuth(`${API_BASE_URL}/filtros${getOrgQuery()}`, { method: 'POST', body: JSON.stringify({ nome, query }) });
             if (!resp) return;
             if (!resp.ok) throw new Error('Erro');
             exibirToast('Filtro salvo!', 'sucesso');
@@ -1217,7 +1222,7 @@ async function salvarAtividade(event) {
     const payload = { cliente_id, tipo, data, nota, concluida };
     try {
         if (!modoDemo) {
-            const resp = await fetchAuth(`${API_BASE_URL}/atividades`, { method: 'POST', body: JSON.stringify(payload) });
+            const resp = await fetchAuth(`${API_BASE_URL}/atividades${getOrgQuery()}`, { method: 'POST', body: JSON.stringify(payload) });
             if (!resp) return;
             if (!resp.ok) throw new Error('Erro ao criar atividade');
             exibirToast('Atividade criada!', 'sucesso');
@@ -1229,7 +1234,7 @@ async function salvarAtividade(event) {
                 if (cliente) abrirModalDetalhes(cliente.id);
             }
             // Atualiza cache para métrica
-            try { const r = await fetchAuth(`${API_BASE_URL}/atividades`, { method: 'GET' }); if (r && r.ok) atividadesCache = await r.json(); } catch(e) {}
+            try { const r = await fetchAuth(`${API_BASE_URL}/atividades${getOrgQuery()}`, { method: 'GET' }); if (r && r.ok) atividadesCache = await r.json(); } catch(e) {}
             atualizarMetricas(clientesCache);
             return;
         }
@@ -1534,7 +1539,7 @@ async function confirmarImport() {
 async function carregarClientes() {
     mostrarLoading(true);
     try {
-        const response = await fetchAuth(`${API_BASE_URL}/clientes`, { method: 'GET' });
+        const response = await fetchAuth(`${API_BASE_URL}/clientes${getOrgQuery()}`, { method: 'GET' });
         if (!response) return; // Redirect handled by fetchAuth
 
         if (!response.ok) throw new Error(`Erro ${response.status}`);
@@ -1557,7 +1562,7 @@ async function carregarClientes() {
         } catch(e) {}
         // Fase 1B — Carrega atividades para métrica de atrasados (se houver)
         try {
-            const rAtv = await fetchAuth(`${API_BASE_URL}/atividades`, { method: 'GET' });
+            const rAtv = await fetchAuth(`${API_BASE_URL}/atividades${getOrgQuery()}`, { method: 'GET' });
             if (rAtv && rAtv.ok) {
                 atividadesCache = await rAtv.json();
             }
@@ -1715,7 +1720,7 @@ async function carregarRelatorioConversao() {
     const totalEl = document.getElementById('relatorio-conversao-total');
     if (!canvas) return;
     const periodo = document.getElementById('relatorio-periodo')?.value || '';
-    const qs = periodo ? `?periodo=${periodo}` : '';
+    const qs = getOrgQS(periodo ? `?periodo=${periodo}` : '');
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/relatorios/conversao${qs}`, { method: 'GET' });
         if (!resp || !resp.ok) {
@@ -1829,7 +1834,7 @@ async function carregarRelatorioReceita() {
     const totalEl = document.getElementById('relatorio-receita-total');
     if (!canvasPlano && !canvasMes) return;
     const periodo = document.getElementById('relatorio-periodo')?.value || '';
-    const qs = periodo ? `?periodo=${periodo}` : '';
+    const qs = getOrgQS(periodo ? `?periodo=${periodo}` : '');
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/relatorios/receita${qs}`, { method: 'GET' });
         if (!resp || !resp.ok) {
@@ -1909,7 +1914,7 @@ async function carregarRelatorioChurn() {
     const totalEl = document.getElementById('relatorio-churn-total');
     if (!canvas) return;
     const periodo = document.getElementById('relatorio-periodo')?.value || '';
-    const qs = periodo ? `?periodo=${periodo}` : '';
+    const qs = getOrgQS(periodo ? `?periodo=${periodo}` : '');
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/relatorios/churn${qs}`, { method: 'GET' });
         if (!resp || !resp.ok) {
@@ -1990,7 +1995,7 @@ async function carregarRelatorioLtv() {
     const totalEl = document.getElementById('relatorio-ltv-total');
     if (!canvas) return;
     const periodo = document.getElementById('relatorio-periodo')?.value || '';
-    const qs = periodo ? `?periodo=${periodo}` : '';
+    const qs = getOrgQS(periodo ? `?periodo=${periodo}` : '');
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/relatorios/ltv${qs}`, { method: 'GET' });
         if (!resp || !resp.ok) {
@@ -2460,7 +2465,7 @@ async function salvarNovoCliente(event) {
 
     try {
         if (!modoDemo) {
-            const response = await fetchAuth(`${API_BASE_URL}/clientes`, {
+            const response = await fetchAuth(`${API_BASE_URL}/clientes${getOrgQuery()}`, {
                 method: 'POST',
                 body: JSON.stringify(novoCliente),
             });

@@ -261,30 +261,29 @@ _COLUNAS_CLIENTE = [
 ]
 
 
-def carregar_clientes(user_id: str) -> list[Cliente]:
+def carregar_clientes(user_id: str, org_id: str | None = None) -> list[Cliente]:
     """
     Lista todos os clientes do usuário autenticado.
     
     Ordenação: data_cadastro DESC (mais recentes primeiro)
-    Filtro RLS: user_id obrigatório
-    Leniente: ignora linhas que falharem na validação (compatibilidade com dados antigos)
+    Filtro: se org_id fornecido filtra por org (isolamento por org), senão por user_id (compat)
     
     Args:
         user_id: UUID do usuário autenticado
+        org_id: UUID da organização selecionada (opcional, Fase 3A-1)
     
     Returns:
         list[Cliente]: Lista validada pelo modelo Pydantic
     
-    Usado em: GET /api/clientes
+    Usado em: GET /api/clientes?org_id=...
     """
     supabase = get_supabase_client()
-    response = (
-        supabase.table("clientes")
-        .select("*")
-        .eq("user_id", user_id)              # CRÍTICO: isolamento por usuário
-        .order("data_cadastro", desc=True)
-        .execute()
-    )
+    q = supabase.table("clientes").select("*")
+    if org_id:
+        q = q.eq("org_id", org_id)
+    else:
+        q = q.eq("user_id", user_id)              # fallback compat
+    response = q.order("data_cadastro", desc=True).execute()
     print(f"[DEBUG] carregar_clientes user_id={user_id} => {len(response.data)} linhas brutas")
     clientes = []
     for item in response.data:
@@ -458,16 +457,15 @@ def deletar_cliente_db(cliente_id: int | str, user_id: str) -> bool:
 # FASE 1A — ETAPAS (Kanban)
 # ============================================================
 
-def listar_etapas(user_id: str) -> list[Etapa]:
-    """Lista etapas do usuário ordenadas por ordem."""
+def listar_etapas(user_id: str, org_id: str | None = None) -> list[Etapa]:
+    """Lista etapas do usuário ordenadas por ordem. Filtra por org_id se fornecido."""
     supabase = get_supabase_client()
-    response = (
-        supabase.table("etapas")
-        .select("*")
-        .eq("user_id", user_id)
-        .order("ordem")
-        .execute()
-    )
+    q = supabase.table("etapas").select("*")
+    if org_id:
+        q = q.eq("org_id", org_id)
+    else:
+        q = q.eq("user_id", user_id)
+    response = q.order("ordem").execute()
     return [Etapa.model_validate(item) for item in response.data]
 
 
@@ -522,10 +520,14 @@ def deletar_etapa(etapa_id: int | str, user_id: str) -> bool:
 # FASE 1B — ATIVIDADES (Follow-ups)
 # ============================================================
 
-def listar_atividades(user_id: str, cliente_id: int | str | None = None) -> list[Atividade]:
-    """Lista atividades do usuário; filtra por cliente_id se fornecido."""
+def listar_atividades(user_id: str, cliente_id: int | str | None = None, org_id: str | None = None) -> list[Atividade]:
+    """Lista atividades do usuário; filtra por cliente_id se fornecido. Filtra por org_id se fornecido."""
     supabase = get_supabase_client()
-    query = supabase.table("atividades").select("*").eq("user_id", user_id)
+    query = supabase.table("atividades").select("*")
+    if org_id:
+        query = query.eq("org_id", org_id)
+    else:
+        query = query.eq("user_id", user_id)
     if cliente_id is not None:
         query = query.eq("cliente_id", cliente_id)
     response = query.order("data", desc=False).execute()
@@ -587,15 +589,14 @@ def deletar_atividade(atividade_id: int | str, user_id: str) -> bool:
 # FASE 1C — TAGS
 # ============================================================
 
-def listar_tags(user_id: str) -> list[Tag]:
+def listar_tags(user_id: str, org_id: str | None = None) -> list[Tag]:
     supabase = get_supabase_client()
-    response = (
-        supabase.table("tags")
-        .select("*")
-        .eq("user_id", user_id)
-        .order("nome")
-        .execute()
-    )
+    q = supabase.table("tags").select("*")
+    if org_id:
+        q = q.eq("org_id", org_id)
+    else:
+        q = q.eq("user_id", user_id)
+    response = q.order("nome").execute()
     return [Tag.model_validate(item) for item in response.data]
 
 
@@ -688,15 +689,14 @@ def desvincular_tag_cliente(cliente_id: int | str, tag_id: int | str, user_id: s
 # FASE 1C — FILTROS SALVOS
 # ============================================================
 
-def listar_filtros_salvos(user_id: str) -> list[FiltroSalvo]:
+def listar_filtros_salvos(user_id: str, org_id: str | None = None) -> list[FiltroSalvo]:
     supabase = get_supabase_client()
-    response = (
-        supabase.table("filtros_salvos")
-        .select("*")
-        .eq("user_id", user_id)
-        .order("created_at", desc=True)
-        .execute()
-    )
+    q = supabase.table("filtros_salvos").select("*")
+    if org_id:
+        q = q.eq("org_id", org_id)
+    else:
+        q = q.eq("user_id", user_id)
+    response = q.order("created_at", desc=True).execute()
     return [FiltroSalvo.model_validate(item) for item in response.data]
 
 
@@ -899,16 +899,17 @@ def importar_clientes_bulk(clientes: list[dict], user_id: str) -> dict:
 # FASE 2A — RELATÓRIOS (Conversão por etapa)
 # ============================================================
 
-def relatorio_conversao(user_id: str, periodo_dias: int | None = None) -> dict:
+def relatorio_conversao(user_id: str, periodo_dias: int | None = None, org_id: str | None = None) -> dict:
     """
     Retorna distribuição de clientes por etapa Kanban (conversão).
     Calcula count e percent por etapa, incluindo 'Sem etapa' (etapa_id null).
     Filtra por periodo_dias se fornecido (ex: 30 = últimos 30 dias via data_cadastro).
+    Filtra por org_id se fornecido (Fase 3A-1).
     """
     from datetime import datetime, timedelta
     # Carrega etapas e clientes do usuário (reusa funções existentes com RLS)
-    etapas = listar_etapas(user_id)
-    clientes = carregar_clientes(user_id)
+    etapas = listar_etapas(user_id, org_id)
+    clientes = carregar_clientes(user_id, org_id)
 
     # Filtro por período
     if periodo_dias is not None and periodo_dias > 0:
@@ -968,16 +969,17 @@ def relatorio_conversao(user_id: str, periodo_dias: int | None = None) -> dict:
     return {"total": total, "itens": itens}
 
 
-def relatorio_receita(user_id: str, periodo_dias: int | None = None) -> dict:
+def relatorio_receita(user_id: str, periodo_dias: int | None = None, org_id: str | None = None) -> dict:
     """
     Retorna receita prevista (soma valor_plano) por plano e por mês.
     Considera apenas clientes com status_pagamento='em_dia' e valor_plano >0.
+    Filtra por org_id se fornecido.
     """
     from datetime import datetime, timedelta
     from collections import defaultdict
     import re
 
-    clientes = carregar_clientes(user_id)
+    clientes = carregar_clientes(user_id, org_id)
     planos = listar_planos(user_id)
     plano_map = {str(p.id): p for p in planos}
     plano_nome_map = {p.nome.strip().lower(): p for p in planos}
@@ -1084,15 +1086,16 @@ def relatorio_receita(user_id: str, periodo_dias: int | None = None) -> dict:
     }
 
 
-def relatorio_churn(user_id: str, periodo_dias: int | None = None) -> dict:
+def relatorio_churn(user_id: str, periodo_dias: int | None = None, org_id: str | None = None) -> dict:
     """
     Retorna churn por mês: total, inativos e churn% (inativos/total*100).
     Usa data_cadastro como coorte (não há data_inativacao).
+    Filtra por org_id se fornecido.
     """
     from datetime import datetime, timedelta
     from collections import defaultdict
 
-    clientes = carregar_clientes(user_id)
+    clientes = carregar_clientes(user_id, org_id)
 
     # Filtro período (mesma lógica dos outros relatórios)
     if periodo_dias is not None and periodo_dias > 0:
@@ -1172,18 +1175,19 @@ def relatorio_churn(user_id: str, periodo_dias: int | None = None) -> dict:
     }
 
 
-def relatorio_ltv(user_id: str, periodo_dias: int | None = None) -> dict:
+def relatorio_ltv(user_id: str, periodo_dias: int | None = None, org_id: str | None = None) -> dict:
     """
     LTV estimado = valor_plano * meses desde data_cadastro (coorte).
     Valor médio mensal = média valor_plano; meses médio = média meses; ltv médio = valor_medio * meses_medio (ou média dos ltvs individuais).
     Por plano agrupa ltv médio e receita estimada.
+    Filtra por org_id se fornecido.
     """
     from datetime import datetime
     from collections import defaultdict
     from datetime import timedelta
     import re
 
-    clientes = carregar_clientes(user_id)
+    clientes = carregar_clientes(user_id, org_id)
 
     if periodo_dias is not None and periodo_dias > 0:
         try:
