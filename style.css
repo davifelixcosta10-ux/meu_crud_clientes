@@ -213,6 +213,10 @@ html {
     border: 1px solid var(--dash-border);
     box-shadow: var(--dash-shadow-sm);
     transition: box-shadow 200ms ease, border-color 200ms ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 108px;
 }
 .metric-card:hover {
     box-shadow: var(--dash-shadow-md);
