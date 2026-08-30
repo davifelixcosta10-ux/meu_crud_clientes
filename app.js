@@ -320,6 +320,7 @@ async function inicializarApp() {
     await carregarFiltrosSalvos();
     await carregarClientes();
     setViewMode(viewMode, true);
+    restaurarEstadoRelatorios();
     await carregarRelatorios();
     if (window.lucide) lucide.createIcons();
 }
@@ -1743,6 +1744,57 @@ function renderizarRelatorioReceita(data) {
         }
     }
     if (window.lucide) lucide.createIcons();
+}
+function toggleRelatoriosSection() {
+    const content = document.getElementById('relatorios-content');
+    const chevron = document.getElementById('relatorios-chevron');
+    if (!content) return;
+    const isHidden = content.classList.toggle('hidden');
+    if (chevron) chevron.style.transform = isHidden ? 'rotate(-90deg)' : 'rotate(0deg)';
+    localStorage.setItem('relatorios_collapsed', isHidden ? '1' : '0');
+    // Se expandiu, redimensiona charts
+    if (!isHidden) {
+        setTimeout(() => {
+            if (chartConversao) try { chartConversao.resize(); } catch(e) {}
+            if (chartReceitaPlano) try { chartReceitaPlano.resize(); } catch(e) {}
+            if (chartReceitaMes) try { chartReceitaMes.resize(); } catch(e) {}
+        }, 100);
+    }
+}
+function toggleRelatorioSub(tipo) {
+    const content = document.getElementById(`relatorio-${tipo}-content`);
+    const chevron = document.getElementById(`relatorio-${tipo}-chevron`);
+    if (!content) return;
+    const isHidden = content.classList.toggle('hidden');
+    if (chevron) chevron.style.transform = isHidden ? 'rotate(-90deg)' : 'rotate(0deg)';
+    localStorage.setItem(`relatorio_${tipo}_collapsed`, isHidden ? '1' : '0');
+    if (!isHidden) {
+        setTimeout(() => {
+            if (tipo === 'conversao' && chartConversao) try { chartConversao.resize(); } catch(e) {}
+            if (tipo === 'receita') {
+                if (chartReceitaPlano) try { chartReceitaPlano.resize(); } catch(e) {}
+                if (chartReceitaMes) try { chartReceitaMes.resize(); } catch(e) {}
+            }
+        }, 100);
+    }
+}
+function restaurarEstadoRelatorios() {
+    const collapsed = localStorage.getItem('relatorios_collapsed') === '1';
+    const content = document.getElementById('relatorios-content');
+    const chevron = document.getElementById('relatorios-chevron');
+    if (content && collapsed) {
+        content.classList.add('hidden');
+        if (chevron) chevron.style.transform = 'rotate(-90deg)';
+    }
+    ['conversao','receita'].forEach(tipo => {
+        const c = document.getElementById(`relatorio-${tipo}-content`);
+        const ch = document.getElementById(`relatorio-${tipo}-chevron`);
+        const col = localStorage.getItem(`relatorio_${tipo}_collapsed`) === '1';
+        if (c && col) {
+            c.classList.add('hidden');
+            if (ch) ch.style.transform = 'rotate(-90deg)';
+        }
+    });
 }
 
 // ============================================================
