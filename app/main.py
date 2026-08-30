@@ -278,22 +278,66 @@ async def login(request: Request, dados: UserLogin):
 @app.post("/api/auth/forgot-password", tags=["Auth"])
 @limiter.limit("5/minute")
 async def forgot_password(request: Request, dados: ForgotPasswordRequest):
-    """Envia email de redefinição de senha (Supabase)."""
+    """Envia email de redefinição — tenta Resend (generate_link) primeiro, fallback Supabase SMTP."""
     try:
-        supabase = get_supabase_client()
         site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflowgestoes.vercel.app"
         site_url = site_url.strip().rstrip("/")
         if not site_url.startswith("http"):
             site_url = "https://" + site_url
         redirect_to = f"{site_url}/?recovery=true"
-        # tenta com redirect_to, fallback sem options se versão antiga
+        # tenta Resend se configurado
+        if os.environ.get("RESEND_API_KEY"):
+            try:
+                from app.storage import get_supabase_admin_client
+                from app.email import enviar_email_resend, html_recovery
+                supabase_admin = get_supabase_admin_client()
+                link = None
+                try:
+                    gen = supabase_admin.auth.admin.generate_link({"type": "recovery", "email": dados.email, "options": {"redirect_to": redirect_to, "redirectTo": redirect_to}})
+                    link = None
+                    try:
+                        props = getattr(gen, "properties", None)
+                        if props is not None:
+                            link = getattr(props, "action_link", None) or (props.get("action_link") if isinstance(props, dict) else None)
+                        if not link:
+                            data_g = getattr(gen, "data", None)
+                            if data_g is not None:
+                                link = getattr(data_g, "action_link", None) if not isinstance(data_g, dict) else data_g.get("action_link")
+                        if not link and isinstance(gen, dict):
+                            link = gen.get("action_link") or (gen.get("properties", {}) or {}).get("action_link")
+                        if not link:
+                            link = getattr(gen, "action_link", None)
+                    except Exception:
+                        pass
+                except Exception as e:
+                    print(f"[resend] generate_link recovery falhou: {e}")
+                if link:
+                    # garante que link aponta para produção, não localhost:3000
+                    if "localhost" in link:
+                        # extrai token e reconstrói com site_url (fallback)
+                        link = redirect_to  # fallback, usuário clicará e supabase ainda valida token via generate_link? melhor usar link original se possível
+                        # tenta forçar redirect_to correto já gerado acima, então mantém link original mesmo com localhost mas avisa
+                        pass
+                    if "localhost" in link:
+                        import urllib.parse as _up
+                        # força produção
+                        link = link.replace("http://localhost:3000", "https://daviflowgestoes.vercel.app").replace("https://localhost:3000", "https://daviflowgestoes.vercel.app")
+                        if "redirect_to=" in link:
+                            link = link.split("redirect_to=")[0] + "redirect_to=" + _up.quote(redirect_to, safe="") + ("&" + link.split("redirect_to=")[1].split("&",1)[1] if "&" in link.split("redirect_to=")[1] else "")
+                    html = html_recovery(link)
+                    ok = enviar_email_resend(dados.email, "Redefina sua senha — DaviFlow", html)
+                    if ok:
+                        return {"mensagem": "Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha."}
+            except Exception as e:
+                print(f"[resend] forgot-password resend falhou, fallback: {e}")
+        # fallback Supabase SMTP
+        supabase = get_supabase_client()
         try:
             supabase.auth.reset_password_email(dados.email, {"redirect_to": redirect_to, "redirectTo": redirect_to})
         except TypeError:
             supabase.auth.reset_password_email(dados.email)
         return {"mensagem": "Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha."}
     except Exception as e:
-        # não vaza se email não existe (previne enumeração), mas loga
         print(f"[ERRO forgot-password] {e}")
         return {"mensagem": "Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha."}
 

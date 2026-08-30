@@ -24,7 +24,10 @@ Tabelas Supabase:
 
 import os
 import re
+import logging
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 from supabase import create_client, Client
 from app.models import Cliente, ClienteCreate, Plano, UserLogin, UserSignUp, Etapa, Atividade, Tag, FiltroSalvo
 
@@ -1513,11 +1516,97 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
         u = _find_user(mail)
         return u["id"] if u else None
 
+    # helper Resend: tenta enviar invite via Resend + generate_link (não depende do SMTP do Supabase)
+    def _send_invite_via_resend(to_email: str, org_name: str, papel_send: str, redirect_to_send: str) -> bool:
+        # só tenta se RESEND_API_KEY estiver configurado
+        if not os.environ.get("RESEND_API_KEY"):
+            return False
+        # busca nome da org para template
+        org_nome_tpl = org_name or "sua organização"
+        try:
+            org_nome_tpl = supabase.table("organizacoes").select("nome").eq("id", org_id).execute().data[0].get("nome") if org_name is None else org_name
+        except Exception:
+            pass
+        # tenta gerar link mágico via admin (invite ou recovery) — precisa service_role
+        link = None
+        for gen_try in range(2):
+            try:
+                # tentativas de assinatura do generate_link (supabase-py varia por versão)
+                try:
+                    gen = supabase_admin.auth.admin.generate_link({"type": "invite", "email": to_email, "options": {"redirect_to": redirect_to_send, "redirectTo": redirect_to_send, "data": {"org_id": org_id, "papel": papel_send}}})
+                except TypeError:
+                    try:
+                        gen = supabase_admin.auth.admin.generate_link({"type": "invite", "email": to_email, "options": {"redirectTo": redirect_to_send}})
+                    except TypeError:
+                        gen = supabase_admin.auth.admin.generate_link({"type": "recovery", "email": to_email, "options": {"redirect_to": redirect_to_send}})
+                # extrai link de várias formas (supabase-py retorna objeto GenerateLinkProperties)
+                link_try = None
+                try:
+                    props = getattr(gen, "properties", None)
+                    if props is not None:
+                        link_try = getattr(props, "action_link", None) or (props.get("action_link") if isinstance(props, dict) else None)
+                    if not link_try:
+                        data_g = getattr(gen, "data", None)
+                        if data_g is not None:
+                            link_try = getattr(data_g, "action_link", None) if not isinstance(data_g, dict) else data_g.get("action_link")
+                    if not link_try and isinstance(gen, dict):
+                        link_try = gen.get("action_link") or (gen.get("properties", {}) or {}).get("action_link")
+                    if not link_try:
+                        # direto no objeto
+                        link_try = getattr(gen, "action_link", None)
+                except Exception:
+                    pass
+                link = link_try
+                if link:
+                    break
+            except Exception as e:
+                logger.warning(f"[resend] generate_link falhou tentativa {gen_try+1}: {e}")
+                # tenta recovery no segundo try
+                if gen_try == 0:
+                    continue
+                break
+        if not link:
+            # fallback: usa redirect_to como link base (usuário vai usar Esqueci a senha)
+            link = redirect_to_send
+        # corrige localhost que vem do Site URL errado no Supabase (while não atualizar dashboard)
+        # o generate_link ignora redirect_to se Site URL ainda é localhost:3000
+        if "localhost" in link:
+            # substitui qualquer localhost por produção
+            link = link.replace("http://localhost:3000", redirect_to_send.split("?")[0]).replace("https://localhost:3000", redirect_to_send.split("?")[0]).replace("http://localhost", "https://daviflowgestoes.vercel.app").replace("https://localhost", "https://daviflowgestoes.vercel.app")
+            # garante que redirect_to param aponta para produção com query correta
+            if "redirect_to=" in link and "daviflowgestoes.vercel.app" not in link:
+                import urllib.parse as _up
+                # reconstrói redirect_to corretamente
+                base_link = link.split("redirect_to=")[0] + "redirect_to=" + _up.quote(redirect_to_send, safe="")
+                # preserva outros params após redirect_to (se houver)
+                if "&" in link.split("redirect_to=")[1]:
+                    # mantém sufixo após redirect_to original
+                    suffix = link.split("redirect_to=")[1]
+                    if "&" in suffix:
+                        after = suffix.split("&", 1)[1]
+                        base_link += "&" + after
+                link = base_link
+        try:
+            from app.email import enviar_email_resend, html_convite
+            html = html_convite(org_nome_tpl, link, papel_send)
+            ok = enviar_email_resend(to_email, f"Convite para {org_nome_tpl} — DaviFlow", html)
+            return bool(ok)
+        except Exception as e:
+            logger.warning(f"[resend] envio falhou: {e}")
+            return False
+
+    # busca nome da org para uso no template (uma vez)
+    _org_nome_cache = None
+    try:
+        _org_nome_cache = supabase.table("organizacoes").select("nome").eq("id", org_id).execute().data[0].get("nome")
+    except Exception:
+        _org_nome_cache = None
+
     found = _find_user(email)
     target_user_id = found["id"] if found else None
     is_pending = found["pending"] if found else False
     if target_user_id:
-        # se for pendente, reenvia invite para o email chegar com link novo (mesmo que vá adicionar como membro)
+        # se for pendente, reenvia invite via Resend (link direto) + fallback Supabase invite
         if is_pending:
             try:
                 site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflowgestoes.vercel.app"
@@ -1525,10 +1614,12 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                 if not site_url.startswith("http"):
                     site_url = "https://" + site_url
                 redirect_to = f"{site_url}/?login=true"
-                try:
-                    supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
-                except Exception:
-                    pass
+                sent = _send_invite_via_resend(email, _org_nome_cache, papel, redirect_to)
+                if not sent:
+                    try:
+                        supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
+                    except Exception:
+                        pass
             except Exception:
                 pass
         # vincula como membro (mesmo pendente, para quando confirmar já ter acesso)
@@ -1542,18 +1633,39 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             return {"status": "convite_reenviado", "email": email, "user_id": target_user_id, "pending": True}
         return {"status": "membro_adicionado", "email": email, "user_id": target_user_id}
     else:
-        # não existe -> invite email automático (com redirect para produção, não localhost:3000)
-        # Tenta invite; se já existe (erro already registered) cai no fallback que adiciona como membro
+        # não existe -> invite email automático via Resend (sem depender do SMTP Supabase)
         try:
             site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflowgestoes.vercel.app"
             site_url = site_url.strip().rstrip("/")
             if not site_url.startswith("http"):
                 site_url = "https://" + site_url
             redirect_to = f"{site_url}/?login=true"
-            try:
-                invite_res = supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
-            except TypeError:
-                invite_res = supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}})
+            # tenta Resend primeiro se configurado (gera link e envia)
+            sent_new = _send_invite_via_resend(email, _org_nome_cache, papel, redirect_to)
+            # mesmo que Resend envie, ainda precisa criar usuário via Supabase invite (para pending)
+            # então chama invite_user_by_email se não enviou via Resend ou como fallback para criar user
+            invite_res = None
+            if not sent_new:
+                try:
+                    invite_res = supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
+                except TypeError:
+                    invite_res = supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}})
+            else:
+                # se Resend já enviou, ainda tenta criar user via invite silenciosamente (pode já existir)
+                try:
+                    invite_res = supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
+                except Exception:
+                    invite_res = None
+            # Se Resend enviou, já considera sucesso mesmo sem invite_res
+            if sent_new and not invite_res:
+                # tenta vincular se usuário já foi criado por Resend generate_link
+                tid_new = _find_uid(email)
+                if tid_new:
+                    try:
+                        supabase_admin.table("membros").insert({"org_id": org_id, "user_id": tid_new, "papel": papel}).execute()
+                    except Exception:
+                        pass
+                return {"status": "convite_enviado", "email": email, "redirect_to": redirect_to, "via": "resend"}
             # Se invite criou um novo usuário, já vincula como membro (mesmo pendente) para quando confirmar já ter acesso
             try:
                 invited_user = getattr(invite_res, "user", None) or (invite_res.get("user") if isinstance(invite_res, dict) else None) or getattr(invite_res, "data", None)
