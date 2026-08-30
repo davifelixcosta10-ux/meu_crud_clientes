@@ -66,6 +66,17 @@
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS (para recovery com access_token do hash) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        // Cliente Supabase para recovery (usa anon key do data/arquivos.env via meta, fallback para sb_publishable se não tiver)
+        window._SUPABASE_URL = window._SUPABASE_URL || "https://dtkmuelpxqezoqmpnevo.supabase.co";
+        window._SUPABASE_ANON = window._SUPABASE_ANON || "sb_publishable_placeholder";
+        try {
+            // tenta carregar anon key de /api/config se existir, senão usa placeholder e vai tentar via hash mesmo
+            window.supabaseRecovery = window.supabase ? window.supabase.createClient(window._SUPABASE_URL, window._SUPABASE_ANON) : null;
+        } catch(e) { window.supabaseRecovery = null; }
+    </script>
 
     <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="style.css">
@@ -765,6 +776,46 @@
         </div>
     </div>
 
+    <!-- MODAL: RECOVERY — Definir nova senha (invite / esqueci a senha) -->
+    <div id="modal-recovery" class="fixed inset-0 z-[100] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="recovery-modal-title">
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeModal('modal-recovery')"></div>
+        <div class="relative w-full max-w-md animate-fade-in-up">
+            <div class="glass-card rounded-3xl overflow-hidden" style="border:1px solid rgba(99,102,241,0.15);box-shadow:0 25px 80px rgba(0,0,0,0.6);">
+                <div class="p-8">
+                    <div class="flex items-start justify-between mb-6">
+                        <div>
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <div class="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center"><i data-lucide="key-round" class="w-4 h-4 text-white"></i></div>
+                                <span class="font-bold text-white text-lg">DaviFlow</span>
+                            </div>
+                            <h2 id="recovery-modal-title" class="text-2xl font-black text-white">Defina sua nova senha</h2>
+                            <p class="text-slate-400 text-sm mt-1">Link válido por 1h. Após definir, você será redirecionado ao login.</p>
+                        </div>
+                        <button onclick="closeModal('modal-recovery')" class="p-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/10"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+                    <form id="form-recovery" onsubmit="handleRecoverySubmit(event)" class="space-y-4" novalidate>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nova senha</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500"><i data-lucide="lock" class="w-4 h-4"></i></div>
+                                <input type="password" id="recovery-password" required autocomplete="new-password" placeholder="Mínimo 6 caracteres" class="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-emerald-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+                                <button type="button" onclick="togglePassword('recovery-password','recovery-eye')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300"><i data-lucide="eye" class="w-4 h-4" id="recovery-eye"></i></button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Confirmar senha</label>
+                            <input type="password" id="recovery-confirm" required autocomplete="new-password" placeholder="Repita a senha" class="w-full px-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-emerald-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+                        </div>
+                        <div id="recovery-error" class="hidden px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4"></i><span id="recovery-error-text"></span></div>
+                        <div id="recovery-success" class="hidden px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm"></div>
+                        <button type="submit" id="btn-recovery-submit" class="w-full py-3.5 text-sm font-bold text-white bg-emerald-600 rounded-2xl hover:bg-emerald-500 flex items-center justify-center gap-2"><span id="btn-recovery-text">Salvar nova senha</span><i data-lucide="check" class="w-4 h-4" id="btn-recovery-icon"></i><i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="btn-recovery-spinner"></i></button>
+                    </form>
+                    <p class="mt-4 text-center text-xs text-slate-500">Não recebeu o email? Verifique spam ou peça para o admin reenviar o convite em Gerenciar → Membros.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- =====================================================
          LANDING PAGE JAVASCRIPT
          ===================================================== -->
@@ -860,9 +911,32 @@
         }
 
         
+        // Recovery / Invite: detecta token do Supabase (hash ou query) e abre modal de definir senha
         document.addEventListener("DOMContentLoaded", () => {
-            if (window.location.search.includes("login=true")) {
+            const qs = window.location.search || "";
+            const hash = window.location.hash || "";
+            const hasRecovery = qs.includes("recovery=true") || qs.includes("type=recovery") || hash.includes("access_token") || hash.includes("type=recovery") || qs.includes("type=invite");
+            // Supabase verify redireciona com access_token no hash: #access_token=...&type=recovery
+            if (qs.includes("login=true")) {
                 openModal("modal-login");
+            }
+            if (hasRecovery || hash.includes("access_token")) {
+                // tenta extrair access_token do hash para mostrar modal de redefinição
+                openModal("modal-recovery");
+                // se tiver token no hash, armazena temporariamente para o supabase-js
+                if (hash.includes("access_token")) {
+                    try {
+                        const params = new URLSearchParams(hash.substring(1));
+                        const at = params.get("access_token");
+                        const rt = params.get("refresh_token");
+                        if (at) localStorage.setItem("df_recovery_token", at);
+                        if (rt) localStorage.setItem("df_recovery_refresh", rt);
+                    } catch(e) {}
+                }
+            }
+            // também suporta ?recovery=true sem hash (link do Resend direto) -> já abre modal
+            if (qs.includes("recovery=true") && !hash.includes("access_token")) {
+                openModal("modal-recovery");
             }
         });
 
@@ -1030,6 +1104,71 @@
             if (icon) {
                 icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
                 lucide.createIcons();
+            }
+        }
+
+        async function handleRecoverySubmit(e) {
+            if (e) e.preventDefault();
+            const pwd = document.getElementById('recovery-password')?.value || '';
+            const confirm = document.getElementById('recovery-confirm')?.value || '';
+            const errEl = document.getElementById('recovery-error');
+            const errText = document.getElementById('recovery-error-text');
+            const okEl = document.getElementById('recovery-success');
+            const btn = document.getElementById('btn-recovery-submit');
+            const btnText = document.getElementById('btn-recovery-text');
+            const spinner = document.getElementById('btn-recovery-spinner');
+            const icon = document.getElementById('btn-recovery-icon');
+            if (errEl) errEl.classList.add('hidden');
+            if (okEl) okEl.classList.add('hidden');
+            if (pwd !== confirm) {
+                if (errEl && errText) { errText.textContent = 'As senhas não coincidem.'; errEl.classList.remove('hidden'); }
+                return;
+            }
+            if (!pwd || pwd.length < 6) {
+                if (errEl && errText) { errText.textContent = 'Senha deve ter pelo menos 6 caracteres.'; errEl.classList.remove('hidden'); }
+                return;
+            }
+            // pega token do hash (Supabase recovery) ou do localStorage
+            let token = '';
+            try {
+                const hash = window.location.hash || '';
+                if (hash.includes('access_token')) {
+                    const p = new URLSearchParams(hash.substring(1));
+                    token = p.get('access_token') || '';
+                }
+                if (!token) token = localStorage.getItem('df_recovery_token') || '';
+                // fallback: tenta pegar ?token= na query (Resend link direto)
+                if (!token) {
+                    const qs = new URLSearchParams(window.location.search);
+                    token = qs.get('token') || qs.get('access_token') || '';
+                }
+            } catch(e) {}
+            if (!token) {
+                if (errEl && errText) { errText.textContent = 'Token ausente. Abra o link do email novamente ou peça novo link em Esqueci a senha.'; errEl.classList.remove('hidden'); }
+                return;
+            }
+            if (btn) btn.disabled = true;
+            if (btnText) btnText.textContent = 'Salvando...';
+            if (spinner) spinner.classList.remove('hidden');
+            if (icon) icon.classList.add('hidden');
+            try {
+                // tenta via backend primeiro (funciona mesmo sem supabase-js anon)
+                const resp = await fetch(`${API_BASE_URL}/auth/update-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ access_token: token, password: pwd })
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok) throw new Error(data.detail || 'Falha ao atualizar senha');
+                if (okEl) { okEl.textContent = '✅ ' + (data.mensagem || 'Senha atualizada! Redirecionando para login...'); okEl.classList.remove('hidden'); }
+                setTimeout(() => { closeModal('modal-recovery'); openModal('modal-login'); if (errText) errText.textContent=''; try{ history.replaceState(null,'', window.location.pathname); localStorage.removeItem('df_recovery_token'); }catch(e){} }, 1800);
+            } catch (err) {
+                if (errEl && errText) { errText.textContent = err.message || 'Erro ao atualizar senha. Solicite novo link.'; errEl.classList.remove('hidden'); }
+            } finally {
+                if (btn) btn.disabled = false;
+                if (btnText) btnText.textContent = 'Salvar nova senha';
+                if (spinner) spinner.classList.add('hidden');
+                if (icon) icon.classList.remove('hidden');
             }
         }
 
