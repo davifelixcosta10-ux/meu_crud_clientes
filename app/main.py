@@ -319,18 +319,21 @@ async def delete_plano(plano_id: str | int, user_id: str = Depends(obter_user_id
 # ============================================================
 
 @app.get("/api/etapas", response_model=list[Etapa], tags=["Etapas"])
-async def get_etapas(user_id: str = Depends(obter_user_id)):
-    """Lista etapas Kanban do usuário."""
+async def get_etapas(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Lista etapas Kanban do usuário. Filtra por org_id se fornecido."""
     try:
-        return listar_etapas(user_id)
+        return listar_etapas(user_id, org_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar etapas.")
 
 
 @app.post("/api/etapas", response_model=Etapa, status_code=status.HTTP_201_CREATED, tags=["Etapas"])
-async def post_etapa(dados: EtapaCreate, user_id: str = Depends(obter_user_id)):
+async def post_etapa(dados: EtapaCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
     try:
-        return criar_etapa(dados.model_dump(mode="json"), user_id)
+        payload = dados.model_dump(mode="json")
+        if org_id:
+            payload["org_id"] = org_id
+        return criar_etapa(payload, user_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar etapa.")
 
@@ -367,17 +370,20 @@ async def delete_etapa_api(etapa_id: str | int, user_id: str = Depends(obter_use
 # ============================================================
 
 @app.get("/api/atividades", response_model=list[Atividade], tags=["Atividades"])
-async def get_atividades(cliente_id: str | int | None = None, user_id: str = Depends(obter_user_id)):
+async def get_atividades(cliente_id: str | int | None = None, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
     try:
-        return listar_atividades(user_id, cliente_id)
+        return listar_atividades(user_id, cliente_id, org_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar atividades.")
 
 
 @app.post("/api/atividades", response_model=Atividade, status_code=status.HTTP_201_CREATED, tags=["Atividades"])
-async def post_atividade(dados: AtividadeCreate, user_id: str = Depends(obter_user_id)):
+async def post_atividade(dados: AtividadeCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
     try:
-        return criar_atividade(dados.model_dump(mode="json"), user_id)
+        payload = dados.model_dump(mode="json")
+        if org_id:
+            payload["org_id"] = org_id
+        return criar_atividade(payload, user_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar atividade.")
 
@@ -414,17 +420,20 @@ async def delete_atividade_api(atividade_id: str | int, user_id: str = Depends(o
 # ============================================================
 
 @app.get("/api/tags", response_model=list[Tag], tags=["Tags"])
-async def get_tags(user_id: str = Depends(obter_user_id)):
+async def get_tags(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
     try:
-        return listar_tags(user_id)
+        return listar_tags(user_id, org_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar tags.")
 
 
 @app.post("/api/tags", response_model=Tag, status_code=status.HTTP_201_CREATED, tags=["Tags"])
-async def post_tag(dados: TagCreate, user_id: str = Depends(obter_user_id)):
+async def post_tag(dados: TagCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
     try:
-        return criar_tag(dados.model_dump(mode="json"), user_id)
+        payload = dados.model_dump(mode="json")
+        if org_id:
+            payload["org_id"] = org_id
+        return criar_tag(payload, user_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar tag.")
 
@@ -489,17 +498,20 @@ async def delete_vinculo_tag(cliente_id: str | int, tag_id: str | int, user_id: 
 
 
 @app.get("/api/filtros", response_model=list[FiltroSalvo], tags=["Filtros"])
-async def get_filtros(user_id: str = Depends(obter_user_id)):
+async def get_filtros(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
     try:
-        return listar_filtros_salvos(user_id)
+        return listar_filtros_salvos(user_id, org_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar filtros.")
 
 
 @app.post("/api/filtros", response_model=FiltroSalvo, status_code=status.HTTP_201_CREATED, tags=["Filtros"])
-async def post_filtro(dados: FiltroSalvoCreate, user_id: str = Depends(obter_user_id)):
+async def post_filtro(dados: FiltroSalvoCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
     try:
-        return criar_filtro_salvo(dados.model_dump(mode="json"), user_id)
+        payload = dados.model_dump(mode="json")
+        if org_id:
+            payload["org_id"] = org_id
+        return criar_filtro_salvo(payload, user_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar filtro.")
 
@@ -537,37 +549,37 @@ async def import_clientes(dados: ImportPreviewRequest, user_id: str = Depends(ob
 # ============================================================
 
 @app.get("/api/relatorios/conversao", response_model=RelatorioConversaoResponse, tags=["Relatórios"])
-async def get_relatorio_conversao(periodo: int | None = None, user_id: str = Depends(obter_user_id)):
-    """Retorna distribuição de clientes por etapa (conversão). Query ?periodo=30 para últimos 30 dias."""
+async def get_relatorio_conversao(periodo: int | None = None, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Retorna distribuição de clientes por etapa (conversão). Query ?periodo=30 para últimos 30 dias. Filtra por org_id se fornecido."""
     try:
-        return relatorio_conversao(user_id, periodo)
+        return relatorio_conversao(user_id, periodo, org_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de conversão.")
 
 
 @app.get("/api/relatorios/receita", response_model=RelatorioReceitaResponse, tags=["Relatórios"])
-async def get_relatorio_receita(periodo: int | None = None, user_id: str = Depends(obter_user_id)):
-    """Retorna receita prevista (em_dia) por plano e por mês."""
+async def get_relatorio_receita(periodo: int | None = None, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Retorna receita prevista (em_dia) por plano e por mês. Filtra por org_id se fornecido."""
     try:
-        return relatorio_receita(user_id, periodo)
+        return relatorio_receita(user_id, periodo, org_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de receita.")
 
 
 @app.get("/api/relatorios/churn", response_model=RelatorioChurnResponse, tags=["Relatórios"])
-async def get_relatorio_churn(periodo: int | None = None, user_id: str = Depends(obter_user_id)):
-    """Retorna churn por mês (inativos/total)."""
+async def get_relatorio_churn(periodo: int | None = None, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Retorna churn por mês (inativos/total). Filtra por org_id se fornecido."""
     try:
-        return relatorio_churn(user_id, periodo)
+        return relatorio_churn(user_id, periodo, org_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de churn.")
 
 
 @app.get("/api/relatorios/ltv", response_model=RelatorioLtvResponse, tags=["Relatórios"])
-async def get_relatorio_ltv(periodo: int | None = None, user_id: str = Depends(obter_user_id)):
-    """Retorna LTV estimado (valor * meses) geral e por plano."""
+async def get_relatorio_ltv(periodo: int | None = None, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Retorna LTV estimado (valor * meses) geral e por plano. Filtra por org_id se fornecido."""
     try:
-        return relatorio_ltv(user_id, periodo)
+        return relatorio_ltv(user_id, periodo, org_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de LTV.")
 
@@ -629,10 +641,10 @@ async def post_convite(org_id: str, dados: ConviteCreate, user_id: str = Depends
 # Validações de CPF (módulo 11), RG, telefone, data_nascimento via Pydantic
 
 @app.get("/api/clientes", response_model=list[Cliente], tags=["Clientes"])
-async def listar_clientes(user_id: str = Depends(obter_user_id)):
-    """Lista todos os clientes do usuário autenticado, ordenados por data_cadastro desc."""
+async def listar_clientes(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Lista todos os clientes do usuário autenticado, ordenados por data_cadastro desc. Filtra por org_id se fornecido."""
     try:
-        return carregar_clientes(user_id)
+        return carregar_clientes(user_id, org_id)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -641,7 +653,7 @@ async def listar_clientes(user_id: str = Depends(obter_user_id)):
 
 
 @app.post("/api/clientes", response_model=Cliente, status_code=status.HTTP_201_CREATED, tags=["Clientes"])
-async def criar_cliente(dados: ClienteCreate, user_id: str = Depends(obter_user_id)):
+async def criar_cliente(dados: ClienteCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
     """
     Cria um novo cliente vinculado ao usuário autenticado.
     
@@ -649,10 +661,13 @@ async def criar_cliente(dados: ClienteCreate, user_id: str = Depends(obter_user_
     Campos opcionais: telefone, cpf, rg, data_nascimento, genero, empresa, cargo,
                       observacoes, cep, logradouro, numero, complemento, bairro, cidade, estado
     Defaults: ativo=True, plano="basico", data_cadastro=hoje
+    Se org_id fornecido usa ele, senão _ensure_org_id pega a org atual.
     """
     try:
         payload = dados.model_dump(mode="json")
         payload["data_cadastro"] = date.today().isoformat()
+        if org_id:
+            payload["org_id"] = org_id
         return salvar_novo_cliente(payload, user_id)
     except Exception:
         raise HTTPException(
