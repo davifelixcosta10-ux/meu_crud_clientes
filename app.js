@@ -447,11 +447,36 @@ async function carregarMembros() {
             container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhum membro</p>';
             return;
         }
-        container.innerHTML = membros.map(m => `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><span class="font-mono text-[10px] truncate">${escaparHTML(m.user_id.slice(0,8))}...</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300'}">${escaparHTML(m.papel)}</span></div>`).join('');
+        const orgAtual = orgsCache.find(o => o.id === currentOrgId);
+        const isAdmin = orgAtual?.papel === 'admin';
+        const ownerId = orgAtual?.owner_id || null;
+        container.innerHTML = membros.map(m => {
+            const isOwner = ownerId && m.user_id === ownerId;
+            const canRemove = isAdmin && !isOwner;
+            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' 👑 dono' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button onclick="removerMembro('${m.user_id}')" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover membro (apenas admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
+        }).join('');
         if (window.lucide) lucide.createIcons();
     } catch(e) {
         container.innerHTML = '<p class="text-[11px] text-rose-400">Erro</p>';
     }
+}
+async function removerMembro(targetUserId) {
+    if (!currentOrgId) return;
+    confirmarAcao('Remover membro?', 'O membro perderá acesso a todos os clientes desta organização. Deseja continuar? (Apenas admin)', async () => {
+        try {
+            const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/membros/${targetUserId}`, { method: 'DELETE' });
+            if (!resp || !resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                exibirToast(err.detail || 'Erro ao remover membro. Verifique se é admin e não é o dono.', 'erro');
+                return;
+            }
+            exibirToast('Membro removido com sucesso!', 'sucesso');
+            await carregarMembros();
+        } catch(e) {
+            console.warn(e);
+            exibirToast('Erro ao remover membro', 'erro');
+        }
+    });
 }
 function abrirModalConvite() {
     if (orgsCache.length === 0) { alert('Crie uma organização primeiro'); return; }

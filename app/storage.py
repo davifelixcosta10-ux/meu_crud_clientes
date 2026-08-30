@@ -1497,6 +1497,40 @@ def deletar_organizacao(org_id: str, user_id: str) -> bool:
     # não precisa, pois já bloqueamos com clientes; etapas/tags vazias podem ser deletadas em cascata? Mantém.
     return True
 
+
+def remover_membro_org(org_id: str, target_user_id: str, requester_id: str) -> bool:
+    """Remove membro da org (apenas admin, não pode remover owner)."""
+    supabase = get_supabase_client()
+    # verifica que requester é admin/owner
+    orgs = listar_organizacoes(requester_id)
+    me = next((o for o in orgs if o["id"] == org_id), None)
+    is_admin = me and me.get("papel") == "admin"
+    if not is_admin:
+        try:
+            rm = supabase.table("membros").select("papel").eq("org_id", org_id).eq("user_id", requester_id).execute()
+            if not rm.data or rm.data[0].get("papel") != "admin":
+                # também checa owner
+                ro = supabase.table("organizacoes").select("owner_id").eq("id", org_id).execute()
+                if not ro.data or ro.data[0]["owner_id"] != requester_id:
+                    raise ValueError("Apenas admin pode remover membros")
+                is_admin = True
+        except ValueError:
+            raise
+        except Exception:
+            raise ValueError("Apenas admin pode remover membros")
+    # não pode remover owner
+    ro = supabase.table("organizacoes").select("owner_id").eq("id", org_id).execute()
+    if ro.data and ro.data[0]["owner_id"] == target_user_id:
+        raise ValueError("Não é possível remover o dono da organização. Transfira a propriedade primeiro.")
+    # não pode remover a si mesmo se for o último admin?
+    # permite, mas garante que não fica sem admin
+    # verifica se target é membro
+    rm_target = supabase.table("membros").select("user_id").eq("org_id", org_id).eq("user_id", target_user_id).execute()
+    if not rm_target.data:
+        raise ValueError("Membro não encontrado nesta organização")
+    supabase.table("membros").delete().eq("org_id", org_id).eq("user_id", target_user_id).execute()
+    return True
+
 # --- Helpers para garantir org_id em criações (migração limpa) ---
 
 def _ensure_org_id(payload: dict, user_id: str):
