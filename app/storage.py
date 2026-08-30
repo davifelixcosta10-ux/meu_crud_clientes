@@ -1730,9 +1730,64 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                 except Exception:
                     pass
                 # ÚLTIMO FALLBACK: não conseguiu achar uid por falta de service_role, mas email JÁ existe.
-                # Não mostra erro vermelho — retorna sucesso instruindo a usar "Esqueci a senha".
-                # O vínculo será criado quando o usuário fizer login pela primeira vez via trigger ou manual.
-                return {"status": "ja_cadastrado", "email": email, "msg": "Usuário já possui conta e foi vinculado. Ele deve usar 'Esqueci a senha' no login para definir a senha e acessar."}
+                # Tenta enviar recovery automaticamente para o usuário não precisar fazer manual
+                try:
+                    site_url2 = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflow.vercel.app"
+                    site_url2 = site_url2.strip().rstrip("/")
+                    if not site_url2.startswith("http"):
+                        site_url2 = "https://" + site_url2
+                    redirect_to2 = f"{site_url2}/?recovery=true"
+                    # tenta Resend recovery se configurado
+                    if os.environ.get("RESEND_API_KEY"):
+                        try:
+                            from app.email import enviar_email_resend, html_recovery
+                            # gera link via admin
+                            gen2 = supabase_admin.auth.admin.generate_link({"type": "recovery", "email": email, "options": {"redirect_to": redirect_to2, "redirectTo": redirect_to2}})
+                            link2 = None
+                            try:
+                                props2 = getattr(gen2, "properties", None)
+                                if props2 is not None:
+                                    link2 = getattr(props2, "action_link", None) or (props2.get("action_link") if isinstance(props2, dict) else None)
+                                if not link2:
+                                    data_g2 = getattr(gen2, "data", None)
+                                    if data_g2 is not None:
+                                        link2 = getattr(data_g2, "action_link", None) if not isinstance(data_g2, dict) else data_g2.get("action_link")
+                                if not link2 and isinstance(gen2, dict):
+                                    link2 = gen2.get("action_link")
+                                if not link2:
+                                    link2 = getattr(gen2, "action_link", None)
+                            except Exception:
+                                pass
+                            if link2 and "localhost" in link2:
+                                import urllib.parse as _up2
+                                link2 = link2.replace("http://localhost:3000", "https://daviflow.vercel.app").replace("https://localhost:3000", "https://daviflow.vercel.app")
+                                if "redirect_to=" in link2:
+                                    link2 = link2.split("redirect_to=")[0] + "redirect_to=" + _up2.quote(redirect_to2, safe="") + ("&" + link2.split("redirect_to=")[1].split("&",1)[1] if "&" in link2.split("redirect_to=")[1] else "")
+                            if link2:
+                                html2 = html_recovery(link2)
+                                enviar_email_resend(email, "Defina sua senha — DaviFlow", html2)
+                        except Exception as e:
+                            logger.warning(f"[resend] ja_cadastrado recovery Resend falhou: {e}")
+                            # fallback Supabase SMTP
+                            try:
+                                supabase_admin.auth.reset_password_email(email, {"redirect_to": redirect_to2, "redirectTo": redirect_to2})
+                            except Exception:
+                                try:
+                                    get_supabase_client().auth.reset_password_email(email, {"redirect_to": redirect_to2})
+                                except Exception:
+                                    pass
+                    else:
+                        # sem Resend, usa Supabase SMTP direto
+                        try:
+                            supabase_admin.auth.reset_password_email(email, {"redirect_to": redirect_to2, "redirectTo": redirect_to2})
+                        except Exception:
+                            try:
+                                get_supabase_client().auth.reset_password_email(email, {"redirect_to": redirect_to2})
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+                return {"status": "ja_cadastrado", "email": email, "msg": "Usuário já possui conta e foi vinculado. Enviamos um email para definir a senha — peça para verificar inbox/spam e clicar em Definir senha."}
             raise ValueError(f"Não foi possível enviar convite automático: {str(e)[:180]}. Verifique SMTP/service_role ou peça para o usuário se cadastrar primeiro e então adicione como membro existente.")
 
 def deletar_organizacao(org_id: str, user_id: str) -> bool:
