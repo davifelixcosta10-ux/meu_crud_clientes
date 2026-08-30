@@ -1498,6 +1498,27 @@ def deletar_organizacao(org_id: str, user_id: str) -> bool:
     return True
 
 
+def atualizar_organizacao(org_id: str, nome: str, user_id: str) -> dict:
+    """Renomeia organização (apenas admin/owner)."""
+    nome = (nome or "").strip()
+    if not nome:
+        raise ValueError("Nome é obrigatório")
+    supabase = get_supabase_client()
+    # verifica admin
+    orgs = listar_organizacoes(user_id)
+    me = next((o for o in orgs if o["id"] == org_id), None)
+    if not me or me.get("papel") != "admin":
+        # checa owner direto
+        ro = supabase.table("organizacoes").select("owner_id").eq("id", org_id).execute()
+        if not ro.data or ro.data[0]["owner_id"] != user_id:
+            rm = supabase.table("membros").select("papel").eq("org_id", org_id).eq("user_id", user_id).execute()
+            if not rm.data or rm.data[0].get("papel") != "admin":
+                raise ValueError("Apenas admin pode renomear")
+    res = supabase.table("organizacoes").update({"nome": nome}).eq("id", org_id).execute()
+    if not res.data:
+        raise ValueError("Falha ao renomear")
+    return res.data[0]
+
 def remover_membro_org(org_id: str, target_user_id: str, requester_id: str) -> bool:
     """Remove membro da org (apenas admin, não pode remover owner)."""
     supabase = get_supabase_client()

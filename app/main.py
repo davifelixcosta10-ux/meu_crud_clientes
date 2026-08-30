@@ -57,7 +57,7 @@ from app.storage import (
     relatorio_receita,
     relatorio_churn,
     relatorio_ltv,
-    listar_organizacoes, criar_organizacao, listar_membros_org, convidar_membro_org, deletar_organizacao, remover_membro_org,
+    listar_organizacoes, criar_organizacao, listar_membros_org, convidar_membro_org, deletar_organizacao, remover_membro_org, atualizar_organizacao,
 )
 
 # --- Rate Limiter ---
@@ -661,6 +661,20 @@ async def delete_membro(org_id: str, target_user_id: str, user_id: str = Depends
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao remover membro.")
+
+
+@app.patch("/api/orgs/{org_id}", tags=["Organizações"])
+async def patch_org(org_id: str, dados: OrganizacaoCreate, user_id: str = Depends(obter_user_id)):
+    """Renomeia organização (apenas admin)."""
+    try:
+        return atualizar_organizacao(org_id, dados.nome, user_id)
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg or "acesso" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao renomear organização.")
 
 
 # ============================================================

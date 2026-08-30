@@ -337,11 +337,22 @@ async function inicializarApp() {
 // 3A — ORGANIZAÇÕES (Fase 3A-1)
 // ============================================================
 let _orgsCarregadas = false;
-async function carregarOrgs() {
+async function carregarOrgs(retry = 0) {
     const sel = document.getElementById('org-select');
+    if (sel && retry === 0) sel.innerHTML = '<option>Carregando...</option>';
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/orgs`, { method: 'GET' });
-        if (!resp || !resp.ok) {
+        if (!resp) {
+            // sem auth ainda (token não pronto) -> tenta novamente em 800ms
+            if (retry < 3) setTimeout(() => carregarOrgs(retry + 1), 800);
+            return;
+        }
+        if (!resp.ok) {
+            if (resp.status === 401 && retry < 2) {
+                // token ainda validando -> retry
+                setTimeout(() => carregarOrgs(retry + 1), 1000);
+                return;
+            }
             orgsCache = [];
             if (sel) sel.innerHTML = '<option value="">Minha organização</option>';
             return;
@@ -361,9 +372,16 @@ async function carregarOrgs() {
             else localStorage.removeItem('daviflow_org_id');
         }
         renderizarOrgsSelect();
+        // se tinha org mas ainda não carregou clientes por org, recarrega uma vez
+        if (_orgsCarregadas && retry === 0 && currentOrgId) {
+            // garante que clientes da org correta são carregados sem precisar F5
+            // evita loop: só se clientesCache ainda vazio ou de outra org
+            if (clientesCache.length === 0) carregarClientes();
+        }
     } catch (e) {
         console.warn('Erro ao carregar orgs', e);
-        orgsCache = [];
+        if (retry < 3) setTimeout(() => carregarOrgs(retry + 1), 1200);
+        else orgsCache = [];
     }
 }
 function renderizarOrgsSelect() {
@@ -552,10 +570,166 @@ async function excluirOrgAtual() {
             else localStorage.removeItem('daviflow_org_id');
             renderizarOrgsSelect();
             await Promise.all([carregarClientes(), carregarEtapas(), carregarTags(), carregarFiltrosSalvos(), carregarRelatorios()]);
+            fecharModalGerenciarOrg();
         } catch(e) {
             console.warn(e);
             exibirToast('Erro ao excluir', 'erro');
         }
+    });
+}
+function abrirModalGerenciarOrg() {
+    if (orgsCache.length === 0 && !_orgsCarregadas) {
+        exibirToast('Carregando organizações... tente novamente em 1s', 'info');
+        carregarOrgs();
+        return;
+    }
+    const modal = document.getElementById('modal-gerenciar-org');
+    if (!modal) return;
+    // preenche info org atual
+    const org = orgsCache.find(o => o.id === currentOrgId);
+    const info = document.getElementById('gerenciar-org-info');
+    if (info) {
+        if (org) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">${escaparHTML(org.papel || 'membro')}${org.owner_id ? ' • dono' : ''}</span></div><div class="text-[11px] text-slate-400 mt-1">${escaparHTML(org.id.slice(0,8))}... • ${orgsCache.length} org(s)</div>`;
+        else info.innerHTML = '<p class="text-[11px] text-slate-400">Nenhuma organização selecionada</p>';
+    }
+    const renameInput = document.getElementById('gerenciar-rename-input');
+    if (renameInput) renameInput.value = org ? org.nome : '';
+    const orgNomeMembros = document.getElementById('gerenciar-org-nome-membros');
+    if (orgNomeMembros) orgNomeMembros.textContent = org ? `Organização: ${org.nome}` : '';
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        modal.querySelector('.modal-box')?.classList.remove('scale-95','opacity-0');
+        modal.querySelector('.modal-box')?.classList.add('scale-100','opacity-100');
+    });
+    trocarAbaGerenciar('membros');
+    carregarMembrosGerenciar();
+    carregarClientesGerenciar();
+    if (window.lucide) lucide.createIcons();
+}
+function fecharModalGerenciarOrg() {
+    const modal = document.getElementById('modal-gerenciar-org');
+    if (!modal) return;
+    modal.querySelector('.modal-box')?.classList.add('scale-95','opacity-0');
+    setTimeout(() => modal.classList.add('hidden'), 200);
+}
+function trocarAbaGerenciar(aba) {
+    const abas = ['membros','org','clientes'];
+    abas.forEach(a => {
+        const btn = document.getElementById(`tab-gerenciar-${a}`);
+        const conteudo = document.getElementById(`gerenciar-conteudo-${a}`);
+        if (btn) {
+            if (a === aba) {
+                btn.classList.add('border-indigo-600','text-indigo-600','dark:text-indigo-400');
+                btn.classList.remove('border-transparent','text-slate-500');
+            } else {
+                btn.classList.remove('border-indigo-600','text-indigo-600','dark:text-indigo-400');
+                btn.classList.add('border-transparent','text-slate-500');
+            }
+        }
+        if (conteudo) conteudo.classList.toggle('hidden', a !== aba);
+    });
+    if (aba === 'membros') carregarMembrosGerenciar();
+    if (aba === 'clientes') carregarClientesGerenciar();
+    if (window.lucide) lucide.createIcons();
+}
+async function carregarMembrosGerenciar() {
+    const container = document.getElementById('lista-membros-gerenciar');
+    // também atualiza lista antiga para compat
+    carregarMembros();
+    if (!container) return;
+    if (!currentOrgId) { container.innerHTML = '<p class="text-[11px] text-slate-400">Selecione uma organização</p>'; return; }
+    container.innerHTML = '<p class="text-[11px] text-slate-400">Carregando...</p>';
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/membros`, { method: 'GET' });
+        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro ao carregar membros</p>'; return; }
+        const membros = await resp.json();
+        const orgAtual = orgsCache.find(o => o.id === currentOrgId);
+        const isAdmin = orgAtual?.papel === 'admin';
+        const ownerId = orgAtual?.owner_id || null;
+        if (!Array.isArray(membros) || membros.length === 0) { container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhum membro</p>'; return; }
+        container.innerHTML = membros.map(m => {
+            const isOwner = ownerId && m.user_id === ownerId;
+            const canRemove = isAdmin && !isOwner;
+            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' 👑 dono' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button onclick="removerMembro('${m.user_id}')" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover (admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
+        }).join('');
+        if (window.lucide) lucide.createIcons();
+    } catch(e) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro</p>'; }
+}
+async function enviarConviteGerenciar() {
+    const email = (document.getElementById('gerenciar-email-input')?.value || '').trim();
+    const papel = document.getElementById('gerenciar-papel-select')?.value || 'membro';
+    if (!email) { exibirToast('Informe o email', 'erro'); return; }
+    if (!currentOrgId) { exibirToast('Selecione uma organização', 'erro'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/convites`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, papel }) });
+        if (!resp || !resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            exibirToast(err.detail || 'Erro ao convidar', 'erro');
+            return;
+        }
+        const data = await resp.json();
+        document.getElementById('gerenciar-email-input').value = '';
+        await carregarMembrosGerenciar();
+        if (data.status === 'convite_enviado') exibirToast(`✉️ Convite enviado para ${email}!`, 'sucesso');
+        else exibirToast(`✅ ${email} adicionado como ${papel}!`, 'sucesso');
+    } catch(e) { exibirToast('Erro ao enviar convite', 'erro'); }
+}
+async function criarOrgGerenciar() {
+    const input = document.getElementById('gerenciar-nova-org-input');
+    const nome = (input?.value || '').trim();
+    if (!nome) { exibirToast('Informe o nome', 'erro'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome }) });
+        if (!resp || !resp.ok) { const err = await resp.json().catch(() => ({})); exibirToast(err.detail || 'Erro ao criar', 'erro'); return; }
+        const org = await resp.json();
+        orgsCache.push(org);
+        currentOrgId = org.id;
+        localStorage.setItem('daviflow_org_id', currentOrgId);
+        renderizarOrgsSelect();
+        exibirToast(`Organização "${org.nome}" criada!`, 'sucesso');
+        input.value = '';
+        // atualiza info
+        const info = document.getElementById('gerenciar-org-info');
+        if (info) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">admin</span></div>`;
+        await Promise.all([carregarClientes(), carregarEtapas(), carregarTags()]);
+    } catch(e) { exibirToast('Erro ao criar organização', 'erro'); }
+}
+async function renomearOrgAtual() {
+    const input = document.getElementById('gerenciar-rename-input');
+    const nome = (input?.value || '').trim();
+    if (!nome) { exibirToast('Informe o novo nome', 'erro'); return; }
+    if (!currentOrgId) { exibirToast('Nenhuma org selecionada', 'erro'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome }) });
+        if (!resp || !resp.ok) { const err = await resp.json().catch(() => ({})); exibirToast(err.detail || 'Erro ao renomear', 'erro'); return; }
+        const org = await resp.json();
+        const idx = orgsCache.findIndex(o => o.id === currentOrgId);
+        if (idx !== -1) orgsCache[idx].nome = org.nome;
+        renderizarOrgsSelect();
+        exibirToast(`Organização renomeada para "${org.nome}"`, 'sucesso');
+    } catch(e) { exibirToast('Erro ao renomear', 'erro'); }
+}
+async function carregarClientesGerenciar() {
+    const container = document.getElementById('lista-clientes-gerenciar');
+    if (!container) return;
+    if (!currentOrgId) { container.innerHTML = '<p class="text-[11px] text-slate-400">Selecione uma organização</p>'; return; }
+    // usa clientesCache já filtrado por org (carregarClientes já filtra)
+    if (!clientesCache || clientesCache.length === 0) {
+        container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhum cliente nesta organização</p>';
+        return;
+    }
+    container.innerHTML = clientesCache.map(c => `<div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="min-w-0"><div class="text-xs font-semibold truncate">${escaparHTML(c.nome)}</div><div class="text-[11px] text-slate-400 truncate">${escaparHTML(c.email || '')} • ${c.ativo ? 'ativo' : 'inativo'}</div></div><button onclick="removerClienteGerenciar('${c.id}')" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Excluir cliente (remove da org)"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`).join('');
+    if (window.lucide) lucide.createIcons();
+}
+async function removerClienteGerenciar(clienteId) {
+    confirmarAcao('Excluir cliente?', 'O cliente será removido permanentemente desta organização. Deseja continuar?', async () => {
+        try {
+            const resp = await fetchAuth(`${API_BASE_URL}/clientes/${clienteId}`, { method: 'DELETE' });
+            if (!resp || !resp.ok) { exibirToast('Erro ao excluir cliente', 'erro'); return; }
+            exibirToast('Cliente removido!', 'sucesso');
+            await carregarClientes();
+            carregarClientesGerenciar();
+        } catch(e) { exibirToast('Erro ao excluir', 'erro'); }
     });
 }
 
