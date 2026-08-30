@@ -360,6 +360,7 @@ def salvar_novo_cliente(cliente_dados: dict, user_id: str) -> Cliente:
     # Garante valor padrão de ativo
     if payload_banco.get("ativo") is None:
         payload_banco["ativo"] = True
+    payload_banco = _ensure_org_id(payload_banco, user_id)
 
     response = supabase.table("clientes").insert(payload_banco).execute()
     if not response.data:
@@ -479,6 +480,7 @@ def criar_etapa(dados: dict, user_id: str) -> Etapa:
         "ordem": dados.get("ordem", 0),
         "cor": dados.get("cor", "indigo"),
     }
+    payload = _ensure_org_id(payload, user_id)
     response = supabase.table("etapas").insert(payload).execute()
     if not response.data:
         raise ValueError("Falha ao criar etapa.")
@@ -545,6 +547,7 @@ def criar_atividade(dados: dict, user_id: str) -> Atividade:
         "concluida": dados.get("concluida", False),
         "nota": dados.get("nota"),
     }
+    payload = _ensure_org_id(payload, user_id)
     response = supabase.table("atividades").insert(payload).execute()
     if not response.data:
         raise ValueError("Falha ao criar atividade.")
@@ -599,6 +602,7 @@ def listar_tags(user_id: str) -> list[Tag]:
 def criar_tag(dados: dict, user_id: str) -> Tag:
     supabase = get_supabase_client()
     payload = {"user_id": user_id, "nome": dados.get("nome"), "cor": dados.get("cor", "indigo")}
+    payload = _ensure_org_id(payload, user_id)
     response = supabase.table("tags").insert(payload).execute()
     if not response.data:
         raise ValueError("Falha ao criar tag.")
@@ -699,6 +703,7 @@ def listar_filtros_salvos(user_id: str) -> list[FiltroSalvo]:
 def criar_filtro_salvo(dados: dict, user_id: str) -> FiltroSalvo:
     supabase = get_supabase_client()
     payload = {"user_id": user_id, "nome": dados.get("nome"), "query": dados.get("query")}
+    payload = _ensure_org_id(payload, user_id)
     response = supabase.table("filtros_salvos").insert(payload).execute()
     if not response.data:
         raise ValueError("Falha ao criar filtro.")
@@ -1280,3 +1285,160 @@ def relatorio_ltv(user_id: str, periodo_dias: int | None = None) -> dict:
         "meses_medio_geral": meses_medio_geral,
         "por_plano": por_plano
     }
+
+
+# ============================================================
+# ORGANIZAÇÕES — Fase 3A-1
+# ============================================================
+def _get_default_org_id(user_id: str) -> str | None:
+    """Retorna primeiro org_id do usuário (para migração limpa)."""
+    try:
+        supabase = get_supabase_client()
+        # tenta via membros + organizacoes
+        res = supabase.table("membros").select("org_id").eq("user_id", user_id).limit(1).execute()
+        if res.data and len(res.data) > 0:
+            return res.data[0]["org_id"]
+        res2 = supabase.table("organizacoes").select("id").eq("owner_id", user_id).limit(1).execute()
+        if res2.data and len(res2.data) > 0:
+            return res2.data[0]["id"]
+    except Exception:
+        pass
+    return None
+
+
+def listar_organizacoes(user_id: str) -> list[dict]:
+    """Lista orgs onde usuário é owner ou membro."""
+    supabase = get_supabase_client()
+    orgs: dict[str, dict] = {}
+    try:
+        # owner
+        r1 = supabase.table("organizacoes").select("*").eq("owner_id", user_id).execute()
+        for o in (r1.data or []):
+            orgs[o["id"]] = {**o, "papel": "admin"}
+    except Exception:
+        pass
+    try:
+        r2 = supabase.table("membros").select("org_id, papel, organizacoes(id, nome, owner_id, created_at)").eq("user_id", user_id).execute()
+        for m in (r2.data or []):
+            org = m.get("organizacoes")
+            if org and org.get("id"):
+                orgs[org["id"]] = {**org, "papel": m.get("papel", "membro")}
+            elif m.get("org_id"):
+                # fallback buscar org
+                try:
+                    ro = supabase.table("organizacoes").select("*").eq("id", m["org_id"]).execute()
+                    if ro.data:
+                        orgs[ro.data[0]["id"]] = {**ro.data[0], "papel": m.get("papel")}
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return list(orgs.values())
+
+
+def criar_organizacao(user_id: str, nome: str) -> dict:
+    """Cria org e membro admin."""
+    supabase = get_supabase_client()
+    nome = (nome or "").strip()
+    if not nome:
+        raise ValueError("Nome da organização é obrigatório")
+    res = supabase.table("organizacoes").insert({"nome": nome, "owner_id": user_id}).execute()
+    if not res.data:
+        raise ValueError("Falha ao criar organização")
+    org = res.data[0]
+    try:
+        supabase.table("membros").insert({"org_id": org["id"], "user_id": user_id, "papel": "admin"}).execute()
+    except Exception:
+        pass
+    org["papel"] = "admin"
+    return org
+
+
+def listar_membros_org(org_id: str, user_id: str) -> list[dict]:
+    """Lista membros da org (verifica se solicitante é membro)."""
+    supabase = get_supabase_client()
+    # verifica acesso
+    orgs = listar_organizacoes(user_id)
+    if not any(o["id"] == org_id for o in orgs):
+        raise ValueError("Acesso negado à organização")
+    res = supabase.table("membros").select("user_id, papel, created_at").eq("org_id", org_id).execute()
+    return res.data or []
+
+
+def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) -> dict:
+    """Convida por email (invite automático) e cria vínculo se usuário existe."""
+    import re
+    email = (email or "").strip().lower()
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        raise ValueError("Email inválido")
+    if papel not in ("admin", "membro"):
+        papel = "membro"
+    supabase = get_supabase_client()
+    # verifica permissão admin/owner
+    orgs = listar_organizacoes(inviter_id)
+    me = next((o for o in orgs if o["id"] == org_id), None)
+    if not me or me.get("papel") not in ("admin",):
+        # também checa owner diretamente
+        try:
+            ro = supabase.table("organizacoes").select("owner_id").eq("id", org_id).execute()
+            if not ro.data or ro.data[0]["owner_id"] != inviter_id:
+                # verifica membro admin
+                rm = supabase.table("membros").select("papel").eq("org_id", org_id).eq("user_id", inviter_id).execute()
+                if not rm.data or rm.data[0].get("papel") != "admin":
+                    raise ValueError("Apenas admin pode convidar")
+        except ValueError:
+            raise
+        except Exception:
+            raise ValueError("Acesso negado à organização")
+    # tenta resolver user_id por email via list_users (requer service_role)
+    target_user_id = None
+    try:
+        # supabase auth admin list
+        users_res = supabase.auth.admin.list_users()
+        # supabase-py retorna objeto com users
+        users = getattr(users_res, "users", None) or getattr(users_res, "data", None) or []
+        if isinstance(users, dict) and "users" in users:
+            users = users["users"]
+        for u in users or []:
+            uemail = getattr(u, "email", None) or (u.get("email") if isinstance(u, dict) else None)
+            if uemail and uemail.lower() == email:
+                target_user_id = getattr(u, "id", None) or (u.get("id") if isinstance(u, dict) else None)
+                break
+    except Exception:
+        pass
+    if target_user_id:
+        # já existe -> vincula direto
+        try:
+            supabase.table("membros").insert({"org_id": org_id, "user_id": target_user_id, "papel": papel}).execute()
+        except Exception as e:
+            if "duplicate" in str(e).lower() or "already" in str(e).lower():
+                raise ValueError("Usuário já é membro")
+            raise
+        return {"status": "membro_adicionado", "email": email, "user_id": target_user_id}
+    else:
+        # não existe -> invite email automático
+        try:
+            # tenta invite
+            invite_res = supabase.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}})
+            # se sucesso, cria membro pendente? Por enquanto retorna status convite
+            return {"status": "convite_enviado", "email": email}
+        except Exception as e:
+            # fallback: se service_role não configurado, retorna erro explicativo
+            raise ValueError(f"Não foi possível enviar convite automático: {str(e)[:120]}. Verifique SMTP/service_role ou cadastre o usuário manualmente.")
+
+# --- Helpers para garantir org_id em criações (migração limpa) ---
+
+def _ensure_org_id(payload: dict, user_id: str):
+    """Garante org_id no payload (para tabelas com org_id not null). Auto-cria org se não existir."""
+    if "org_id" in payload and payload["org_id"]:
+        return payload
+    oid = _get_default_org_id(user_id)
+    if not oid:
+        try:
+            org = criar_organizacao(user_id, "Minha organização")
+            oid = org.get("id") if isinstance(org, dict) else getattr(org, "id", None)
+        except Exception:
+            oid = _get_default_org_id(user_id)
+    if oid:
+        payload["org_id"] = oid
+    return payload

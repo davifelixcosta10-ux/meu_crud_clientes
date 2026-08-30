@@ -40,6 +40,7 @@ from app.models import (
     RelatorioReceitaResponse,
     RelatorioChurnResponse,
     RelatorioLtvResponse,
+    Organizacao, OrganizacaoCreate, ConviteCreate,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -56,6 +57,7 @@ from app.storage import (
     relatorio_receita,
     relatorio_churn,
     relatorio_ltv,
+    listar_organizacoes, criar_organizacao, listar_membros_org, convidar_membro_org,
 )
 
 # --- Rate Limiter ---
@@ -195,6 +197,12 @@ async def signup(request: Request, dados: UserSignUp):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Erro ao criar usuário. Verifique se o e-mail já está cadastrado.",
             )
+        # Fase 3A-1 migração limpa: auto-cria org padrão para novo usuário (se tabela já migrada)
+        try:
+            org_nome = (dados.nome_empresa or "Minha organização").strip() or "Minha organização"
+            criar_organizacao(res.user.id, org_nome)
+        except Exception:
+            pass
         return {"mensagem": "Usuário cadastrado com sucesso", "user_id": res.user.id}
     except HTTPException:
         raise
@@ -562,6 +570,55 @@ async def get_relatorio_ltv(periodo: int | None = None, user_id: str = Depends(o
         return relatorio_ltv(user_id, periodo)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de LTV.")
+
+
+# ============================================================
+# ORGANIZAÇÕES — Fase 3A-1
+# ============================================================
+@app.get("/api/orgs", tags=["Organizações"])
+async def get_orgs(user_id: str = Depends(obter_user_id)):
+    """Lista organizações do usuário (owner ou membro)."""
+    try:
+        return listar_organizacoes(user_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar organizações.")
+
+
+@app.post("/api/orgs", tags=["Organizações"])
+async def post_org(dados: OrganizacaoCreate, user_id: str = Depends(obter_user_id)):
+    """Cria organização e vira admin."""
+    try:
+        return criar_organizacao(user_id, dados.nome)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao criar organização.")
+
+
+@app.get("/api/orgs/{org_id}/membros", tags=["Organizações"])
+async def get_membros(org_id: str, user_id: str = Depends(obter_user_id)):
+    """Lista membros da organização (requer ser membro)."""
+    try:
+        return listar_membros_org(org_id, user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar membros.")
+
+
+@app.post("/api/orgs/{org_id}/convites", tags=["Organizações"])
+async def post_convite(org_id: str, dados: ConviteCreate, user_id: str = Depends(obter_user_id)):
+    """Convida por email (invite automático). Requer admin."""
+    try:
+        return convidar_membro_org(org_id, dados.email, dados.papel, user_id)
+    except ValueError as e:
+        # 400 para email inválido, 403 para permissão
+        msg = str(e).lower()
+        if "acesso" in msg or "permiss" in msg or "apenas admin" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao convidar.")
 
 
 # ============================================================
