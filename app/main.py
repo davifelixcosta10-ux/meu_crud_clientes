@@ -57,7 +57,7 @@ from app.storage import (
     relatorio_receita,
     relatorio_churn,
     relatorio_ltv,
-    listar_organizacoes, criar_organizacao, listar_membros_org, convidar_membro_org,
+    listar_organizacoes, criar_organizacao, listar_membros_org, convidar_membro_org, deletar_organizacao,
 )
 
 # --- Rate Limiter ---
@@ -620,7 +620,7 @@ async def get_membros(org_id: str, user_id: str = Depends(obter_user_id)):
 
 @app.post("/api/orgs/{org_id}/convites", tags=["Organizações"])
 async def post_convite(org_id: str, dados: ConviteCreate, user_id: str = Depends(obter_user_id)):
-    """Convida por email (invite automático). Requer admin."""
+    """Convida por email (invite automático). Requer admin. Se email já existe adiciona como membro direto."""
     try:
         return convidar_membro_org(org_id, dados.email, dados.papel, user_id)
     except ValueError as e:
@@ -631,6 +631,21 @@ async def post_convite(org_id: str, dados: ConviteCreate, user_id: str = Depends
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao convidar.")
+
+
+@app.delete("/api/orgs/{org_id}", tags=["Organizações"])
+async def delete_org(org_id: str, user_id: str = Depends(obter_user_id)):
+    """Exclui organização (apenas dono, sem clientes)."""
+    try:
+        deletar_organizacao(org_id, user_id)
+        return {"mensagem": "Organização excluída com sucesso"}
+    except ValueError as e:
+        msg = str(e).lower()
+        if "dono" in msg or "permiss" in msg or "acesso" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao excluir organização.")
 
 
 # ============================================================

@@ -114,6 +114,9 @@
                 <button onclick="abrirModalConvite()" type="button" class="hidden sm:inline-flex p-2 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-700/40 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all" title="Convidar membro">
                     <i data-lucide="user-plus" class="w-4 h-4"></i>
                 </button>
+                <button onclick="excluirOrgAtual()" type="button" class="hidden sm:inline-flex p-2 rounded-xl border border-rose-200 dark:border-rose-800/50 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-all" title="Excluir organização atual (apenas dono, sem clientes)">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
 
                 <button onclick="carregarClientes()" id="btn-reload" type="button"
                     class="p-2 sm:p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-700/40 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-100 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
@@ -1793,7 +1796,11 @@
                     <button onclick="fecharModalConvite()" class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-50">Cancelar</button>
                     <button onclick="enviarConvite()" class="flex-1 px-4 py-2.5 text-sm font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Enviar convite</button>
                 </div>
-                <p class="text-[11px] text-slate-400">Envia email automático via Supabase. Se o usuário não existir, ele recebe link para criar conta.</p>
+                <p class="text-[11px] text-slate-400">Se o email já tem conta, adiciona direto como membro. Se não existe, envia email automático (SMTP Supabase) — peça para ele criar conta primeiro se o email não for enviado.</p>
+                <div class="border-t border-slate-200 dark:border-slate-700/60 pt-4">
+                    <h4 class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2 flex items-center gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5"></i> Membros atuais</h4>
+                    <div id="lista-membros" class="space-y-1.5 text-xs max-h-[120px] overflow-y-auto"><p class="text-[11px] text-slate-400">Carregando...</p></div>
+                </div>
             </div>
         </div>
     </div>
