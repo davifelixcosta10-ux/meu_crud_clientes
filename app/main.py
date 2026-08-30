@@ -192,7 +192,22 @@ async def signup(request: Request, dados: UserSignUp):
     """
     try:
         res = registrar_usuario(dados)
+        # Supabase pode retornar user None + erro em res.error quando já existe
+        err_msg = ""
+        try:
+            # tenta extrair mensagem de erro do supabase (pode estar em res.error ou res.message)
+            err_obj = getattr(res, "error", None) or getattr(res, "message", None)
+            if err_obj:
+                err_msg = str(err_obj).lower()
+        except Exception:
+            pass
         if not res.user:
+            # email já cadastrado (incluindo pendente de invite) -> mensagem mais útil
+            if "already" in err_msg or "registered" in err_msg or "exists" in err_msg or "duplicate" in err_msg:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Este e-mail já foi convidado ou cadastrado. Peça para o admin da organização adicioná-lo em Gerenciar → Membros → Adicionar (entra direto como membro), ou use o link do email de convite para definir a senha.",
+                )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Erro ao criar usuário. Verifique se o e-mail já está cadastrado.",
@@ -206,7 +221,15 @@ async def signup(request: Request, dados: UserSignUp):
         return {"mensagem": "Usuário cadastrado com sucesso", "user_id": res.user.id}
     except HTTPException:
         raise
-    except Exception:
+    except Exception as e:
+        # loga erro real para debug (Vercel logs)
+        print(f"[ERRO signup] {e}")
+        # tenta extrair mensagem já tratada acima
+        if "already" in str(e).lower() or "registered" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Este e-mail já foi convidado ou cadastrado. Peça para o admin adicioná-lo como membro existente.",
+            )
         # Mensagem genérica para não vazar detalhes internos
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

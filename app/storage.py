@@ -1365,21 +1365,38 @@ def listar_organizacoes(user_id: str) -> list[dict]:
 
 
 def criar_organizacao(user_id: str, nome: str) -> dict:
-    """Cria org e membro admin."""
-    supabase = get_supabase_client()
+    """Cria org e membro admin. Usa admin para bypass RLS quando chamado no signup (sem JWT)."""
     nome = (nome or "").strip()
     if not nome:
         raise ValueError("Nome da organização é obrigatório")
-    res = supabase.table("organizacoes").insert({"nome": nome, "owner_id": user_id}).execute()
-    if not res.data:
-        raise ValueError("Falha ao criar organização")
-    org = res.data[0]
-    try:
-        supabase_admin.table("membros").insert({"org_id": org["id"], "user_id": user_id, "papel": "admin"}).execute()
-    except Exception:
-        pass
-    org["papel"] = "admin"
-    return org
+    # tenta com client normal primeiro (com JWT), fallback para admin (sem JWT, ex: signup)
+    last_err = None
+    for supabase in (get_supabase_client(), get_supabase_admin_client()):
+        try:
+            res = supabase.table("organizacoes").insert({"nome": nome, "owner_id": user_id}).execute()
+            if not res.data:
+                raise ValueError("Falha ao criar organização")
+            org = res.data[0]
+            # tenta criar membro admin (pode falhar se já existe)
+            for sup2 in (supabase, get_supabase_admin_client()):
+                try:
+                    sup2.table("membros").insert({"org_id": org["id"], "user_id": user_id, "papel": "admin"}).execute()
+                    break
+                except Exception as e2:
+                    if "duplicate" in str(e2).lower():
+                        break
+                    last_err = e2
+                    continue
+            org["papel"] = "admin"
+            return org
+        except Exception as e:
+            last_err = e
+            # se for RLS (auth.uid() null no signup), tenta com admin no próximo loop
+            if "row-level" in str(e).lower() or "policy" in str(e).lower() or "violates" in str(e).lower():
+                continue
+            # tenta próximo client
+            continue
+    raise ValueError(f"Falha ao criar organização: {last_err}")
 
 
 def listar_membros_org(org_id: str, user_id: str) -> list[dict]:
