@@ -1394,22 +1394,46 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             raise
         except Exception:
             raise ValueError("Acesso negado à organização")
-    # tenta resolver user_id por email via list_users (requer service_role)
-    target_user_id = None
-    try:
-        # supabase auth admin list
-        users_res = supabase.auth.admin.list_users()
-        # supabase-py retorna objeto com users
-        users = getattr(users_res, "users", None) or getattr(users_res, "data", None) or []
-        if isinstance(users, dict) and "users" in users:
-            users = users["users"]
-        for u in users or []:
-            uemail = getattr(u, "email", None) or (u.get("email") if isinstance(u, dict) else None)
-            if uemail and uemail.lower() == email:
-                target_user_id = getattr(u, "id", None) or (u.get("id") if isinstance(u, dict) else None)
-                break
-    except Exception:
-        pass
+    # helper robusto para achar user_id por email (list + auth schema)
+    def _find_uid(mail: str):
+        ml = mail.lower().strip()
+        # 1) tenta list_users (com paginação simples)
+        try:
+            users_res = supabase.auth.admin.list_users()
+            users = getattr(users_res, "users", None) or getattr(users_res, "data", None) or []
+            if isinstance(users, dict) and "users" in users:
+                users = users["users"]
+            # se for objeto paginado com next_page, tenta pegar mais (supabase-py pode retornar com pagination)
+            # tenta também com per_page grande se o método aceitar
+            for u in users or []:
+                uemail = getattr(u, "email", None) or (u.get("email") if isinstance(u, dict) else None)
+                if uemail and uemail.lower() == ml:
+                    return getattr(u, "id", None) or (u.get("id") if isinstance(u, dict) else None)
+            # tenta buscar direto em auth.users via PostgREST (service_role)
+            try:
+                res_auth = supabase.schema("auth").table("users").select("id, email").eq("email", ml).execute()
+                if res_auth.data and len(res_auth.data) > 0:
+                    return res_auth.data[0].get("id")
+                # tenta case-insensitive com ilike se eq falhou
+                res_auth2 = supabase.schema("auth").table("users").select("id, email").ilike("email", ml).execute()
+                if res_auth2.data and len(res_auth2.data) > 0:
+                    for r in res_auth2.data:
+                        if r.get("email","").lower() == ml:
+                            return r.get("id")
+            except Exception:
+                pass
+        except Exception:
+            pass
+        # 2) tenta via schema direto mesmo se list falhou
+        try:
+            res_auth = supabase.schema("auth").table("users").select("id").eq("email", ml).execute()
+            if res_auth.data and len(res_auth.data) > 0:
+                return res_auth.data[0].get("id")
+        except Exception:
+            pass
+        return None
+
+    target_user_id = _find_uid(email)
     if target_user_id:
         # já existe -> vincula direto
         try:
@@ -1421,55 +1445,58 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
         return {"status": "membro_adicionado", "email": email, "user_id": target_user_id}
     else:
         # não existe -> invite email automático (com redirect para produção, não localhost:3000)
+        # Tenta invite; se já existe (erro already registered) cai no fallback que adiciona como membro
         try:
             site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflowgestoes.vercel.app"
-            # garante https e sem barra final
             site_url = site_url.strip().rstrip("/")
             if not site_url.startswith("http"):
                 site_url = "https://" + site_url
             redirect_to = f"{site_url}/?login=true"
-            # supabase-py aceita data + redirectTo/redirect_to dependendo da versão
             try:
                 invite_res = supabase.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
             except TypeError:
                 invite_res = supabase.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}})
-            # fallback para casos onde lib espera redirectTo camelCase
-            # se a lib não aceitar redirect_to, tenta sem (já tentado acima, então ignora)
+            # Se invite criou um novo usuário, já vincula como membro (mesmo pendente) para quando confirmar já ter acesso
+            try:
+                invited_user = getattr(invite_res, "user", None) or (invite_res.get("user") if isinstance(invite_res, dict) else None) or getattr(invite_res, "data", None)
+                if isinstance(invited_user, dict) and "user" in invited_user:
+                    invited_user = invited_user["user"]
+                invited_id = getattr(invited_user, "id", None) if invited_user else None
+                if not invited_id and isinstance(invited_user, dict):
+                    invited_id = invited_user.get("id")
+                # fallback: tenta achar por email recém criado
+                if not invited_id:
+                    invited_id = _find_uid(email)
+                if invited_id:
+                    try:
+                        supabase.table("membros").insert({"org_id": org_id, "user_id": invited_id, "papel": papel}).execute()
+                    except Exception:
+                        pass  # já é membro ou RLS, ignora e ainda retorna convite_enviado
+            except Exception:
+                pass
             return {"status": "convite_enviado", "email": email, "redirect_to": redirect_to}
         except Exception as e:
-            # Caso o usuário já exista mas list_users falhou (sem permissão ou paginação), tenta adicionar direto
             msg = str(e).lower()
             if "already" in msg or "exists" in msg or "duplicate" in msg or "registered" in msg:
-                # tenta novamente listar após invite falhar por já existir
+                # Usuário já existe (mesmo que _find_uid falhou por paginação) -> tenta achar e adicionar
+                tid = _find_uid(email)
+                if tid:
+                    try:
+                        supabase.table("membros").insert({"org_id": org_id, "user_id": tid, "papel": papel}).execute()
+                        return {"status": "membro_adicionado", "email": email, "user_id": tid}
+                    except Exception as e2:
+                        if "duplicate" in str(e2).lower():
+                            raise ValueError("Usuário já é membro")
+                        # se falhar por outro motivo, tenta novamente via schema direto
+                        pass
+                # fallback extra já dentro de _find_uid tenta schema, se ainda não achou, tenta mais uma vez direto
                 try:
-                    users_res2 = supabase.auth.admin.list_users()
-                    users2 = getattr(users_res2, "users", None) or getattr(users_res2, "data", None) or []
-                    if isinstance(users2, dict) and "users" in users2:
-                        users2 = users2["users"]
-                    for u in users2 or []:
-                        uemail = getattr(u, "email", None) or (u.get("email") if isinstance(u, dict) else None)
-                        if uemail and uemail.lower() == email:
-                            tid = getattr(u, "id", None) or (u.get("id") if isinstance(u, dict) else None)
-                            if tid:
-                                try:
-                                    supabase.table("membros").insert({"org_id": org_id, "user_id": tid, "papel": papel}).execute()
-                                    return {"status": "membro_adicionado", "email": email, "user_id": tid}
-                                except Exception:
-                                    pass
-                except Exception:
-                    pass
-                # fallback extra: busca direta em auth.users via schema (service_role)
-                try:
-                    res_auth = supabase.schema("auth").table("users").select("id").eq("email", email).execute()
+                    res_auth = supabase.schema("auth").table("users").select("id").eq("email", email.lower()).execute()
                     if res_auth.data and len(res_auth.data) > 0:
-                        tid2 = res_auth.data[0].get("id") or res_auth.data[0].get("id")
+                        tid2 = res_auth.data[0].get("id")
                         if tid2:
-                            try:
-                                supabase.table("membros").insert({"org_id": org_id, "user_id": tid2, "papel": papel}).execute()
-                                return {"status": "membro_adicionado", "email": email, "user_id": tid2}
-                            except Exception as e2:
-                                if "duplicate" in str(e2).lower():
-                                    raise ValueError("Usuário já é membro")
+                            supabase.table("membros").insert({"org_id": org_id, "user_id": tid2, "papel": papel}).execute()
+                            return {"status": "membro_adicionado", "email": email, "user_id": tid2}
                 except Exception:
                     pass
             raise ValueError(f"Não foi possível enviar convite automático: {str(e)[:180]}. Verifique SMTP/service_role ou peça para o usuário se cadastrar primeiro e então adicione como membro existente.")
