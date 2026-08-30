@@ -663,3 +663,23 @@ class RelatorioReceitaResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RelatorioChurnItem(BaseModel):
+    mes: str  # YYYY-MM
+    total: int
+    inativos: int
+    churn_percent: float
+
+    class Config:
+        from_attributes = True
+
+
+class RelatorioChurnResponse(BaseModel):
+    total_geral: int
+    total_inativos: int
+    churn_medio: float
+    itens: list[RelatorioChurnItem]
+
+    class Config:
+        from_attributes = True
