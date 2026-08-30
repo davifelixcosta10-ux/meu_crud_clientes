@@ -1437,10 +1437,9 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             # se a lib não aceitar redirect_to, tenta sem (já tentado acima, então ignora)
             return {"status": "convite_enviado", "email": email, "redirect_to": redirect_to}
         except Exception as e:
-            # fallback: se service_role não configurado, retorna erro explicativo
-            # Caso o usuário já exista mas list_users falhou (sem permissão), tenta mensagem mais amigável
+            # Caso o usuário já exista mas list_users falhou (sem permissão ou paginação), tenta adicionar direto
             msg = str(e).lower()
-            if "already" in msg or "exists" in msg or "duplicate" in msg:
+            if "already" in msg or "exists" in msg or "duplicate" in msg or "registered" in msg:
                 # tenta novamente listar após invite falhar por já existir
                 try:
                     users_res2 = supabase.auth.admin.list_users()
@@ -1457,6 +1456,20 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                                     return {"status": "membro_adicionado", "email": email, "user_id": tid}
                                 except Exception:
                                     pass
+                except Exception:
+                    pass
+                # fallback extra: busca direta em auth.users via schema (service_role)
+                try:
+                    res_auth = supabase.schema("auth").table("users").select("id").eq("email", email).execute()
+                    if res_auth.data and len(res_auth.data) > 0:
+                        tid2 = res_auth.data[0].get("id") or res_auth.data[0].get("id")
+                        if tid2:
+                            try:
+                                supabase.table("membros").insert({"org_id": org_id, "user_id": tid2, "papel": papel}).execute()
+                                return {"status": "membro_adicionado", "email": email, "user_id": tid2}
+                            except Exception as e2:
+                                if "duplicate" in str(e2).lower():
+                                    raise ValueError("Usuário já é membro")
                 except Exception:
                     pass
             raise ValueError(f"Não foi possível enviar convite automático: {str(e)[:180]}. Verifique SMTP/service_role ou peça para o usuário se cadastrar primeiro e então adicione como membro existente.")
