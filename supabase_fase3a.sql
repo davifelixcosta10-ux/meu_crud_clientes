@@ -15,11 +15,6 @@ create table if not exists organizacoes (
 );
 create index if not exists idx_orgs_owner on organizacoes(owner_id);
 alter table organizacoes enable row level security;
-drop policy if exists "orgs_member_isolation" on organizacoes;
-create policy "orgs_member_isolation" on organizacoes
-  for all using (
-    owner_id = auth.uid() or exists (select 1 from membros m where m.org_id = organizacoes.id and m.user_id = auth.uid())
-  ) with check (owner_id = auth.uid());
 
 -- 2. Membros
 create table if not exists membros (
@@ -32,6 +27,13 @@ create table if not exists membros (
 create index if not exists idx_membros_user on membros(user_id);
 create index if not exists idx_membros_org on membros(org_id);
 alter table membros enable row level security;
+
+-- Policies org/membros (após ambas as tabelas existirem)
+drop policy if exists "orgs_member_isolation" on organizacoes;
+create policy "orgs_member_isolation" on organizacoes
+  for all using (
+    owner_id = auth.uid() or exists (select 1 from membros m where m.org_id = organizacoes.id and m.user_id = auth.uid())
+  ) with check (owner_id = auth.uid());
 drop policy if exists "membros_isolation" on membros;
 create policy "membros_isolation" on membros
   for all using (
