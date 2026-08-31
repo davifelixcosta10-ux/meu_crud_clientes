@@ -198,7 +198,7 @@ def listar_planos(user_id: str, org_id: str | None = None) -> list[Plano]:
 
 def criar_plano(dados: dict, user_id: str, org_id: str | None = None) -> Plano:
     """
-    Cria plano na org atual (multi-org). Se org_id não vier, usa _get_default_org_id.
+    Cria plano na org atual (multi-org). Requer admin. Se org_id não vier, usa _get_default_org_id.
     """
     supabase = get_supabase_client()
     # resolve org_id
@@ -216,6 +216,9 @@ def criar_plano(dados: dict, user_id: str, org_id: str | None = None) -> Plano:
                 oid = orgs[0]["id"]
         except Exception:
             pass
+    # verifica permissão admin (3A-2)
+    if oid:
+        _verificar_admin(user_id, oid)
     payload = {
         "user_id":   user_id,
         "nome":      dados.get("nome"),
@@ -260,6 +263,15 @@ def atualizar_plano(plano_id: int | str, dados: dict, user_id: str) -> Plano | N
     dados_filtrados = {k: v for k, v in dados.items() if v is not None}
     if not dados_filtrados:
         return None
+    # 3A-2: apenas admin pode editar planos
+    try:
+        _tmp = supabase.table("planos").select("org_id,user_id").eq("id", plano_id).execute()
+        if _tmp.data and _tmp.data[0].get("org_id"):
+            _verificar_admin(user_id, _tmp.data[0].get("org_id"))
+    except ValueError:
+        raise
+    except Exception:
+        pass
     # tenta por RLS org (sem filtrar user_id), fallback para user_id se RLS ainda for por user
     try:
         # verifica se plano pertence a uma org onde user é membro
@@ -285,7 +297,7 @@ def atualizar_plano(plano_id: int | str, dados: dict, user_id: str) -> Plano | N
 
 def deletar_plano(plano_id: int | str, user_id: str) -> bool:
     """
-    Remove um plano do usuário autenticado.
+    Remove um plano (apenas admin - 3A-2).
     
     Filtro duplo: id + user_id (defesa em profundidade + RLS).
     
@@ -299,6 +311,15 @@ def deletar_plano(plano_id: int | str, user_id: str) -> bool:
     Usado em: DELETE /api/planos/{plano_id}
     """
     supabase = get_supabase_client()
+    # 3A-2: apenas admin pode deletar
+    try:
+        _tmp = supabase.table("planos").select("org_id").eq("id", plano_id).execute()
+        if _tmp.data and _tmp.data[0].get("org_id"):
+            _verificar_admin(user_id, _tmp.data[0].get("org_id"))
+    except ValueError:
+        raise
+    except Exception:
+        pass
     # tenta deletar via org (RLS), fallback por user_id
     try:
         plano_atual = supabase.table("planos").select("org_id,user_id").eq("id", plano_id).execute()
@@ -543,8 +564,17 @@ def listar_etapas(user_id: str, org_id: str | None = None) -> list[Etapa]:
 
 
 def criar_etapa(dados: dict, user_id: str) -> Etapa:
-    """Cria nova etapa Kanban."""
+    """Cria nova etapa Kanban (apenas admin - 3A-2)."""
     supabase = get_supabase_client()
+    # 3A-2 admin check
+    _oid = dados.get("org_id")
+    if not _oid:
+        try:
+            _oid = _get_default_org_id(user_id)
+        except Exception:
+            _oid = None
+    if _oid:
+        _verificar_admin(user_id, _oid)
     payload = {
         "user_id": user_id,
         "nome": dados.get("nome"),
@@ -559,8 +589,17 @@ def criar_etapa(dados: dict, user_id: str) -> Etapa:
 
 
 def atualizar_etapa(etapa_id: int | str, dados: dict, user_id: str) -> Etapa | None:
-    """Atualiza etapa (nome, ordem, cor)."""
+    """Atualiza etapa (nome, ordem, cor) - apenas admin."""
     supabase = get_supabase_client()
+    # 3A-2 admin check via etapa org
+    try:
+        _tmp = supabase.table("etapas").select("org_id").eq("id", etapa_id).execute()
+        if _tmp.data and _tmp.data[0].get("org_id"):
+            _verificar_admin(user_id, _tmp.data[0].get("org_id"))
+    except ValueError:
+        raise
+    except Exception:
+        pass
     dados_filtrados = {k: v for k, v in dados.items() if v is not None}
     if not dados_filtrados:
         return None
@@ -577,8 +616,17 @@ def atualizar_etapa(etapa_id: int | str, dados: dict, user_id: str) -> Etapa | N
 
 
 def deletar_etapa(etapa_id: int | str, user_id: str) -> bool:
-    """Remove etapa. Clientes vinculados ficam com etapa_id NULL (tratado no frontend)."""
+    """Remove etapa (apenas admin). Clientes vinculados ficam com etapa_id NULL."""
     supabase = get_supabase_client()
+    # 3A-2 admin check
+    try:
+        _tmp = supabase.table("etapas").select("org_id").eq("id", etapa_id).execute()
+        if _tmp.data and _tmp.data[0].get("org_id"):
+            _verificar_admin(user_id, _tmp.data[0].get("org_id"))
+    except ValueError:
+        raise
+    except Exception:
+        pass
     response = (
         supabase.table("etapas")
         .delete()
@@ -674,7 +722,17 @@ def listar_tags(user_id: str, org_id: str | None = None) -> list[Tag]:
 
 
 def criar_tag(dados: dict, user_id: str) -> Tag:
+    """Cria tag (apenas admin)."""
     supabase = get_supabase_client()
+    # 3A-2 admin check
+    _oid = dados.get("org_id")
+    if not _oid:
+        try:
+            _oid = _get_default_org_id(user_id)
+        except Exception:
+            _oid = None
+    if _oid:
+        _verificar_admin(user_id, _oid)
     payload = {"user_id": user_id, "nome": dados.get("nome"), "cor": dados.get("cor", "indigo")}
     payload = _ensure_org_id(payload, user_id)
     response = supabase.table("tags").insert(payload).execute()
@@ -684,7 +742,17 @@ def criar_tag(dados: dict, user_id: str) -> Tag:
 
 
 def atualizar_tag(tag_id: int | str, dados: dict, user_id: str) -> Tag | None:
+    """Atualiza tag (apenas admin)."""
     supabase = get_supabase_client()
+    # 3A-2 admin check
+    try:
+        _tmp = supabase.table("tags").select("org_id").eq("id", tag_id).execute()
+        if _tmp.data and _tmp.data[0].get("org_id"):
+            _verificar_admin(user_id, _tmp.data[0].get("org_id"))
+    except ValueError:
+        raise
+    except Exception:
+        pass
     dados_filtrados = {k: v for k, v in dados.items() if v is not None}
     if not dados_filtrados:
         return None
@@ -701,7 +769,17 @@ def atualizar_tag(tag_id: int | str, dados: dict, user_id: str) -> Tag | None:
 
 
 def deletar_tag(tag_id: int | str, user_id: str) -> bool:
+    """Deleta tag (apenas admin)."""
     supabase = get_supabase_client()
+    # 3A-2 admin check
+    try:
+        _tmp = supabase.table("tags").select("org_id").eq("id", tag_id).execute()
+        if _tmp.data and _tmp.data[0].get("org_id"):
+            _verificar_admin(user_id, _tmp.data[0].get("org_id"))
+    except ValueError:
+        raise
+    except Exception:
+        pass
     # Remove vínculos primeiro (se FK não for cascade)
     supabase.table("cliente_tags").delete().eq("tag_id", tag_id).execute()
     response = (
@@ -1411,6 +1489,30 @@ def listar_organizacoes(user_id: str) -> list[dict]:
     except Exception:
         pass
     return list(orgs.values())
+
+
+def _verificar_admin(user_id: str, org_id: str | None) -> bool:
+    """Verifica se user é admin na org. Se org_id None, usa default. Levanta ValueError se não for admin."""
+    if not org_id:
+        org_id = _get_default_org_id(user_id)
+    if not org_id:
+        raise ValueError("Organização não encontrada")
+    orgs = listar_organizacoes(user_id)
+    me = next((o for o in orgs if o["id"] == org_id), None)
+    if me and me.get("papel") == "admin":
+        return True
+    # checa owner direto
+    try:
+        supabase = get_supabase_client()
+        ro = supabase.table("organizacoes").select("owner_id").eq("id", org_id).execute()
+        if ro.data and ro.data[0].get("owner_id") == user_id:
+            return True
+        rm = supabase.table("membros").select("papel").eq("org_id", org_id).eq("user_id", user_id).execute()
+        if rm.data and rm.data[0].get("papel") == "admin":
+            return True
+    except Exception:
+        pass
+    raise ValueError("Apenas admin pode realizar esta ação")
 
 
 def criar_organizacao(user_id: str, nome: str) -> dict:

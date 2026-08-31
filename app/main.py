@@ -385,9 +385,14 @@ async def get_planos(org_id: str | None = None, user_id: str = Depends(obter_use
 
 @app.post("/api/planos", response_model=Plano, status_code=status.HTTP_201_CREATED, tags=["Planos"])
 async def post_plano(dados: PlanoCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
-    """Cria um novo plano na org atual."""
+    """Cria um novo plano na org atual (apenas admin - 3A-2)."""
     try:
         return criar_plano(dados.model_dump(mode="json"), user_id, org_id)
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -398,7 +403,7 @@ async def post_plano(dados: PlanoCreate, org_id: str | None = None, user_id: str
 @app.patch("/api/planos/{plano_id}", response_model=Plano, tags=["Planos"])
 async def patch_plano(plano_id: str | int, dados: PlanoUpdate, user_id: str = Depends(obter_user_id)):
     """
-    Atualiza parcialmente um plano (PATCH).
+    Atualiza parcialmente um plano (PATCH) - apenas admin.
     Apenas campos enviados são atualizados (exclude_unset=True).
     """
     try:
@@ -411,18 +416,28 @@ async def patch_plano(plano_id: str | int, dados: PlanoUpdate, user_id: str = De
         return plano
     except HTTPException:
         raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao processar atualização do plano.")
 
 
 @app.delete("/api/planos/{plano_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Planos"])
 async def delete_plano(plano_id: str | int, user_id: str = Depends(obter_user_id)):
-    """Remove um plano do usuário autenticado."""
+    """Remove um plano (apenas admin - 3A-2)."""
     try:
         if not deletar_plano(plano_id, user_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plano não encontrado.")
     except HTTPException:
         raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao remover plano.")
 
@@ -442,17 +457,24 @@ async def get_etapas(org_id: str | None = None, user_id: str = Depends(obter_use
 
 @app.post("/api/etapas", response_model=Etapa, status_code=status.HTTP_201_CREATED, tags=["Etapas"])
 async def post_etapa(dados: EtapaCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Cria etapa (apenas admin - 3A-2)."""
     try:
         payload = dados.model_dump(mode="json")
         if org_id:
             payload["org_id"] = org_id
         return criar_etapa(payload, user_id)
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar etapa.")
 
 
 @app.patch("/api/etapas/{etapa_id}", response_model=Etapa, tags=["Etapas"])
 async def patch_etapa(etapa_id: str | int, dados: EtapaUpdate, user_id: str = Depends(obter_user_id)):
+    """Atualiza etapa (apenas admin - 3A-2)."""
     try:
         campos = dados.model_dump(exclude_unset=True, mode="json")
         if not campos:
@@ -463,17 +485,28 @@ async def patch_etapa(etapa_id: str | int, dados: EtapaUpdate, user_id: str = De
         return etapa
     except HTTPException:
         raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao atualizar etapa.")
 
 
 @app.delete("/api/etapas/{etapa_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Etapas"])
 async def delete_etapa_api(etapa_id: str | int, user_id: str = Depends(obter_user_id)):
+    """Remove etapa (apenas admin - 3A-2)."""
     try:
         if not deletar_etapa(etapa_id, user_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Etapa não encontrada.")
     except HTTPException:
         raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao remover etapa.")
 
@@ -542,17 +575,24 @@ async def get_tags(org_id: str | None = None, user_id: str = Depends(obter_user_
 
 @app.post("/api/tags", response_model=Tag, status_code=status.HTTP_201_CREATED, tags=["Tags"])
 async def post_tag(dados: TagCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Cria tag (apenas admin - 3A-2)."""
     try:
         payload = dados.model_dump(mode="json")
         if org_id:
             payload["org_id"] = org_id
         return criar_tag(payload, user_id)
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar tag.")
 
 
 @app.patch("/api/tags/{tag_id}", response_model=Tag, tags=["Tags"])
 async def patch_tag(tag_id: str | int, dados: TagUpdate, user_id: str = Depends(obter_user_id)):
+    """Atualiza tag (apenas admin - 3A-2)."""
     try:
         campos = dados.model_dump(exclude_unset=True, mode="json")
         if not campos:
@@ -563,17 +603,28 @@ async def patch_tag(tag_id: str | int, dados: TagUpdate, user_id: str = Depends(
         return tag
     except HTTPException:
         raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao atualizar tag.")
 
 
 @app.delete("/api/tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Tags"])
 async def delete_tag_api(tag_id: str | int, user_id: str = Depends(obter_user_id)):
+    """Remove tag (apenas admin - 3A-2)."""
     try:
         if not deletar_tag(tag_id, user_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada.")
     except HTTPException:
         raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao remover tag.")
 
