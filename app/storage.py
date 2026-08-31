@@ -1863,6 +1863,175 @@ def remover_membro_org(org_id: str, target_user_id: str, requester_id: str) -> b
     supabase.table("membros").delete().eq("org_id", org_id).eq("user_id", target_user_id).execute()
     return True
 
+# ============================================================
+# FASE 3B — INTEGRAÇÕES (Calendar / Zapier / Conta Azul)
+# ============================================================
+
+def listar_integracoes(user_id: str, org_id: str | None = None) -> list[dict]:
+    """Lista integrações da org (filtra por org_id se fornecido)."""
+    supabase = get_supabase_client()
+    q = supabase.table("integracoes").select("*")
+    if org_id:
+        q = q.eq("org_id", org_id)
+    else:
+        # tenta por orgs do user (multi-org)
+        try:
+            orgs = listar_organizacoes(user_id)
+            org_ids = [o["id"] for o in orgs]
+            if org_ids:
+                res = supabase.table("integracoes").select("*").in_("org_id", org_ids).execute()
+                if res.data is not None:
+                    return res.data
+        except Exception:
+            pass
+        q = q.eq("user_id", user_id)
+    try:
+        res = q.order("created_at", desc=True).execute()
+        return res.data or []
+    except Exception:
+        return []
+
+def criar_integracao(dados: dict, user_id: str, org_id: str | None = None) -> dict:
+    """Cria integração (apenas admin). Requer tipo válido."""
+    supabase = get_supabase_client()
+    oid = org_id or dados.get("org_id")
+    if not oid:
+        try:
+            oid = _get_default_org_id(user_id)
+        except Exception:
+            oid = None
+    if oid:
+        _verificar_admin(user_id, oid)
+    payload = {
+        "user_id": user_id,
+        "tipo": dados.get("tipo"),
+        "nome": dados.get("nome") or dados.get("tipo"),
+        "config": dados.get("config") or {},
+        "ativo": dados.get("ativo", True),
+    }
+    if oid:
+        payload["org_id"] = oid
+    # valida tipo
+    if payload["tipo"] not in ("calendar","zapier","contaazul","webhook"):
+        raise ValueError("tipo deve ser calendar, zapier, contaazul ou webhook")
+    res = supabase.table("integracoes").insert(payload).execute()
+    if not res.data:
+        raise ValueError("Falha ao criar integração")
+    return res.data[0]
+
+def atualizar_integracao(integracao_id: str, dados: dict, user_id: str) -> dict | None:
+    """Atualiza integração (apenas admin da org)."""
+    supabase = get_supabase_client()
+    # verifica admin via org da integração
+    try:
+        cur = supabase.table("integracoes").select("org_id").eq("id", integracao_id).execute()
+        if cur.data and cur.data[0].get("org_id"):
+            _verificar_admin(user_id, cur.data[0].get("org_id"))
+    except ValueError:
+        raise
+    except Exception:
+        pass
+    dados_filtrados = {k: v for k, v in dados.items() if v is not None}
+    if not dados_filtrados:
+        return None
+    # fallback tenta por org RLS
+    try:
+        res = supabase.table("integracoes").update(dados_filtrados).eq("id", integracao_id).execute()
+        if res.data:
+            return res.data[0]
+    except Exception:
+        pass
+    res = supabase.table("integracoes").update(dados_filtrados).eq("id", integracao_id).eq("user_id", user_id).execute()
+    return res.data[0] if res.data else None
+
+def deletar_integracao(integracao_id: str, user_id: str) -> bool:
+    """Deleta integração (apenas admin)."""
+    supabase = get_supabase_client()
+    try:
+        cur = supabase.table("integracoes").select("org_id").eq("id", integracao_id).execute()
+        if cur.data and cur.data[0].get("org_id"):
+            _verificar_admin(user_id, cur.data[0].get("org_id"))
+    except ValueError:
+        raise
+    except Exception:
+        pass
+    try:
+        res = supabase.table("integracoes").delete().eq("id", integracao_id).execute()
+        return len(res.data) > 0
+    except Exception:
+        res = supabase.table("integracoes").delete().eq("id", integracao_id).eq("user_id", user_id).execute()
+        return len(res.data) > 0
+
+def processar_webhook_zapier(payload: dict, integracao_id: str | None = None) -> dict:
+    """Webhook Zapier/Make: cria cliente a partir de payload genérico.
+    Se integracao_id fornecido, usa org_id da integração para isolamento.
+    Caso contrário usa user_id do dono da integração ou primeiro org encontrada.
+    """
+    supabase = get_supabase_client()
+    org_id = None
+    user_id = None
+    if integracao_id:
+        try:
+            res = supabase.table("integracoes").select("org_id,user_id,tipo,ativo").eq("id", integracao_id).execute()
+            if res.data:
+                org_id = res.data[0].get("org_id")
+                user_id = res.data[0].get("user_id")
+                if not res.data[0].get("ativo"):
+                    raise ValueError("Integração desativada")
+        except Exception as e:
+            raise ValueError(f"Integração não encontrada: {e}")
+    # fallback: tenta achar integracao ativa do tipo zapier/webhook
+    if not org_id and not user_id:
+        # sem integração, tenta usar payload org_id se vier
+        org_id = payload.get("org_id")
+        user_id = payload.get("user_id")
+    # payload cliente mínimo
+    nome = (payload.get("nome") or payload.get("name") or "Lead Zapier").strip()
+    email = (payload.get("email") or "").strip()
+    if not email:
+        raise ValueError("Email é obrigatório no webhook")
+    # monta dados cliente
+    dados_cli = {
+        "nome": nome,
+        "email": email,
+        "telefone": payload.get("telefone") or payload.get("phone"),
+        "empresa": payload.get("empresa") or payload.get("company"),
+        "observacoes": payload.get("observacoes") or payload.get("notes") or f"Criado via Zapier {integracao_id or ''}".strip(),
+        "plano": payload.get("plano"),
+        "ativo": True,
+    }
+    # limpa None
+    dados_cli = {k: v for k, v in dados_cli.items() if v is not None and v != ""}
+    # resolve user_id se não tem
+    if not user_id:
+        # tenta achar user via org
+        if org_id:
+            try:
+                ro = supabase.table("organizacoes").select("owner_id").eq("id", org_id).execute()
+                if ro.data:
+                    user_id = ro.data[0].get("owner_id")
+            except Exception:
+                pass
+        if not user_id:
+            raise ValueError("Não foi possível resolver org/user para webhook")
+    # garante org_id
+    if not org_id:
+        try:
+            org_id = _get_default_org_id(user_id)
+        except Exception:
+            pass
+    # cria cliente via _ensure_org_id path
+    payload_banco = {k: v for k, v in dados_cli.items() if k in _COLUNAS_CLIENTE or k in ["nome","email","plano","ativo","telefone","empresa","observacoes"]}
+    payload_banco["user_id"] = user_id
+    if org_id:
+        payload_banco["org_id"] = org_id
+    else:
+        payload_banco = _ensure_org_id(payload_banco, user_id)
+    res = supabase.table("clientes").insert(payload_banco).execute()
+    if not res.data:
+        raise ValueError("Falha ao criar cliente via webhook")
+    return res.data[0]
+
 # --- Helpers para garantir org_id em criações (migração limpa) ---
 
 def _ensure_org_id(payload: dict, user_id: str):

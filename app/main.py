@@ -41,6 +41,7 @@ from app.models import (
     RelatorioChurnResponse,
     RelatorioLtvResponse,
     Organizacao, OrganizacaoCreate, ConviteCreate,
+    Integracao, IntegracaoCreate, IntegracaoUpdate, WebhookZapierPayload,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -58,6 +59,7 @@ from app.storage import (
     relatorio_churn,
     relatorio_ltv,
     listar_organizacoes, criar_organizacao, listar_membros_org, convidar_membro_org, deletar_organizacao, remover_membro_org, atualizar_organizacao,
+    listar_integracoes, criar_integracao, atualizar_integracao, deletar_integracao, processar_webhook_zapier,
 )
 
 # --- Rate Limiter ---
@@ -844,6 +846,110 @@ async def patch_org(org_id: str, dados: OrganizacaoCreate, user_id: str = Depend
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao renomear organização.")
+
+
+# ============================================================
+# INTEGRAÇÕES — Fase 3B
+# ============================================================
+@app.get("/api/integracoes", tags=["Integrações"])
+async def get_integracoes(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Lista integrações da org (Calendar/Zapier/Conta Azul). Filtra por org_id se fornecido."""
+    try:
+        return listar_integracoes(user_id, org_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar integrações.")
+
+@app.post("/api/integracoes", tags=["Integrações"])
+async def post_integracao(dados: IntegracaoCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Cria integração (apenas admin)."""
+    try:
+        payload = dados.model_dump(mode="json")
+        if org_id:
+            payload["org_id"] = org_id
+        return criar_integracao(payload, user_id, org_id)
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao criar integração.")
+
+@app.patch("/api/integracoes/{integracao_id}", tags=["Integrações"])
+async def patch_integracao(integracao_id: str, dados: IntegracaoUpdate, user_id: str = Depends(obter_user_id)):
+    """Atualiza integração (apenas admin)."""
+    try:
+        campos = dados.model_dump(exclude_unset=True, mode="json")
+        if not campos:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo enviado.")
+        res = atualizar_integracao(integracao_id, campos, user_id)
+        if not res:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integração não encontrada.")
+        return res
+    except HTTPException:
+        raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao atualizar integração.")
+
+@app.delete("/api/integracoes/{integracao_id}", tags=["Integrações"])
+async def delete_integracao(integracao_id: str, user_id: str = Depends(obter_user_id)):
+    """Remove integração (apenas admin)."""
+    try:
+        if not deletar_integracao(integracao_id, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integração não encontrada.")
+        return {"mensagem": "Integração removida"}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao remover integração.")
+
+# Webhook público (sem JWT) para Zapier/Make - usa integracao_id como secret
+@app.post("/api/webhooks/zapier", tags=["Webhooks"])
+async def webhook_zapier(payload: dict, integracao_id: str | None = None):
+    """Recebe payload do Zapier/Make e cria cliente. Se integracao_id fornecido valida integração. Público (sem JWT) para permitir chamada externa."""
+    try:
+        # payload já é dict (FastAPI parseia JSON)
+        res = processar_webhook_zapier(payload, integracao_id)
+        return {"status": "ok", "cliente": res}
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao processar webhook.")
+
+@app.post("/api/webhooks/zapier/{integracao_id}", tags=["Webhooks"])
+async def webhook_zapier_com_id(integracao_id: str, payload: dict):
+    """Alias com integracao_id na URL (mais amigável para Zapier)."""
+    try:
+        res = processar_webhook_zapier(payload, integracao_id)
+        return {"status": "ok", "cliente": res}
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao processar webhook.")
+
+# Placeholder OAuth Calendar - retorna URL para conectar (mock)
+@app.get("/api/integracoes/calendar/auth-url", tags=["Integrações"])
+async def get_calendar_auth_url(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Retorna URL OAuth Google Calendar (placeholder para Fase 3B). Frontend abre popup."""
+    # Em prod real: gerar state, redirect para Google OAuth. Aqui mock.
+    base = os.environ.get("SITE_URL") or "https://daviflow.vercel.app"
+    return {"auth_url": f"{base}/api/integracoes/calendar/callback?org_id={org_id or ''}&state=mock_{user_id[:8]}", "mock": True}
+
+@app.get("/api/integracoes/calendar/callback", tags=["Integrações"])
+async def calendar_callback(code: str | None = None, state: str | None = None, org_id: str | None = None):
+    """Callback OAuth Calendar (mock) - armazena token fictício."""
+    return {"status": "conectado", "code": code, "state": state, "org_id": org_id, "mock": True}
+
 
 
 # ============================================================
