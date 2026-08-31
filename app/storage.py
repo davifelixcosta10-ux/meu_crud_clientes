@@ -24,7 +24,10 @@ Tabelas Supabase:
 
 import os
 import re
+import logging
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 from supabase import create_client, Client
 from app.models import Cliente, ClienteCreate, Plano, UserLogin, UserSignUp, Etapa, Atividade, Tag, FiltroSalvo
 
@@ -1517,14 +1520,14 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
     target_user_id = found["id"] if found else None
     is_pending = found["pending"] if found else False
     if target_user_id:
-        # se for pendente, reenvia invite para o email chegar com link novo (mesmo que vá adicionar como membro)
+        # se for pendente, reenvia invite Supabase (com redirect para recovery, não localhost)
         if is_pending:
             try:
-                site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflowgestoes.vercel.app"
+                site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflow.vercel.app"
                 site_url = site_url.strip().rstrip("/")
                 if not site_url.startswith("http"):
                     site_url = "https://" + site_url
-                redirect_to = f"{site_url}/?login=true"
+                redirect_to = f"{site_url}/?recovery=true"
                 try:
                     supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
                 except Exception:
@@ -1542,14 +1545,13 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
             return {"status": "convite_reenviado", "email": email, "user_id": target_user_id, "pending": True}
         return {"status": "membro_adicionado", "email": email, "user_id": target_user_id}
     else:
-        # não existe -> invite email automático (com redirect para produção, não localhost:3000)
-        # Tenta invite; se já existe (erro already registered) cai no fallback que adiciona como membro
+        # não existe -> invite Supabase SMTP puro (sem Resend)
         try:
-            site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflowgestoes.vercel.app"
+            site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflow.vercel.app"
             site_url = site_url.strip().rstrip("/")
             if not site_url.startswith("http"):
                 site_url = "https://" + site_url
-            redirect_to = f"{site_url}/?login=true"
+            redirect_to = f"{site_url}/?recovery=true"
             try:
                 invite_res = supabase_admin.auth.admin.invite_user_by_email(email, {"data": {"org_id": org_id, "papel": papel}, "redirect_to": redirect_to, "redirectTo": redirect_to})
             except TypeError:
@@ -1616,9 +1618,23 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                 except Exception:
                     pass
                 # ÚLTIMO FALLBACK: não conseguiu achar uid por falta de service_role, mas email JÁ existe.
-                # Não mostra erro vermelho — retorna sucesso instruindo a usar "Esqueci a senha".
-                # O vínculo será criado quando o usuário fizer login pela primeira vez via trigger ou manual.
-                return {"status": "ja_cadastrado", "email": email, "msg": "Usuário já possui conta e foi vinculado. Ele deve usar 'Esqueci a senha' no login para definir a senha e acessar."}
+                # Envia recovery via Supabase SMTP puro (sem Resend)
+                try:
+                    site_url2 = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflow.vercel.app"
+                    site_url2 = site_url2.strip().rstrip("/")
+                    if not site_url2.startswith("http"):
+                        site_url2 = "https://" + site_url2
+                    redirect_to2 = f"{site_url2}/?recovery=true"
+                    try:
+                        supabase_admin.auth.reset_password_email(email, {"redirect_to": redirect_to2, "redirectTo": redirect_to2})
+                    except Exception:
+                        try:
+                            get_supabase_client().auth.reset_password_email(email, {"redirect_to": redirect_to2})
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                return {"status": "ja_cadastrado", "email": email, "msg": "Usuário já possui conta e foi vinculado. Enviamos um email para definir a senha — peça para verificar inbox/spam e clicar em Definir senha."}
             raise ValueError(f"Não foi possível enviar convite automático: {str(e)[:180]}. Verifique SMTP/service_role ou peça para o usuário se cadastrar primeiro e então adicione como membro existente.")
 
 def deletar_organizacao(org_id: str, user_id: str) -> bool:

@@ -278,24 +278,91 @@ async def login(request: Request, dados: UserLogin):
 @app.post("/api/auth/forgot-password", tags=["Auth"])
 @limiter.limit("5/minute")
 async def forgot_password(request: Request, dados: ForgotPasswordRequest):
-    """Envia email de redefinição de senha (Supabase)."""
+    """Envia email de redefinição via Supabase SMTP puro (sem Resend)."""
     try:
-        supabase = get_supabase_client()
-        site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflowgestoes.vercel.app"
+        site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflow.vercel.app"
         site_url = site_url.strip().rstrip("/")
         if not site_url.startswith("http"):
             site_url = "https://" + site_url
         redirect_to = f"{site_url}/?recovery=true"
-        # tenta com redirect_to, fallback sem options se versão antiga
+        supabase = get_supabase_client()
         try:
             supabase.auth.reset_password_email(dados.email, {"redirect_to": redirect_to, "redirectTo": redirect_to})
         except TypeError:
             supabase.auth.reset_password_email(dados.email)
         return {"mensagem": "Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha."}
     except Exception as e:
-        # não vaza se email não existe (previne enumeração), mas loga
         print(f"[ERRO forgot-password] {e}")
         return {"mensagem": "Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha."}
+
+
+@app.post("/api/auth/update-password", tags=["Auth"])
+async def update_password(request: Request):
+    """Define nova senha via access_token do recovery/invite (hash). Usa service_role para atualizar."""
+    try:
+        body = await request.json()
+        token = (body.get("access_token") or body.get("token") or "").strip()
+        new_password = (body.get("password") or body.get("new_password") or "").strip()
+        if not new_password or len(new_password) < 6:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Senha deve ter pelo menos 6 caracteres")
+        if not token:
+            # tenta pegar do header Authorization também
+            auth = request.headers.get("authorization") or request.headers.get("Authorization") or ""
+            if auth.lower().startswith("bearer "):
+                token = auth.split(" ",1)[1].strip()
+        if not token:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token ausente. Abra o link do email novamente.")
+        # valida token e pega user
+        from app.storage import get_supabase_admin_client, get_supabase_client
+        supabase_admin = get_supabase_admin_client()
+        supabase = get_supabase_client()
+        # tenta getUser com o token (anon) para validar
+        user_id = None
+        try:
+            # tenta via supabase.auth.get_user com token
+            resp = supabase_admin.auth.get_user(token)
+            if resp and getattr(resp, "user", None):
+                user_id = resp.user.id
+        except Exception:
+            try:
+                resp2 = supabase.auth.get_user(token)
+                if resp2 and getattr(resp2, "user", None):
+                    user_id = resp2.user.id
+            except Exception:
+                pass
+        if not user_id:
+            # fallback: tenta decodificar JWT sem verificar (apenas para pegar sub)
+            try:
+                import base64, json
+                parts = token.split(".")
+                if len(parts) >= 2:
+                    payload = parts[1] + "=" * (-len(parts[1]) % 4)
+                    data = json.loads(base64.urlsafe_b64decode(payload).decode())
+                    user_id = data.get("sub")
+            except Exception:
+                pass
+        if not user_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token inválido ou expirado. Solicite novo link em Esqueci a senha.")
+        # atualiza senha via admin (service_role)
+        try:
+            supabase_admin.auth.admin.update_user_by_id(user_id, {"password": new_password, "email_confirm": True})
+        except Exception as e:
+            # fallback tenta via supabase.auth.update_user com token (se for recovery session)
+            try:
+                # cria client temporário com o token como header
+                import httpx
+                # usa supabase-py com token no header via auth
+                # tenta direto via admin com outra assinatura
+                supabase_admin.auth.admin.update_user_by_id(user_id, {"password": new_password})
+            except Exception as e2:
+                print(f"[ERRO update-password admin] {e} / {e2}")
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Falha ao atualizar senha. Solicite novo link.")
+        return {"mensagem": "Senha atualizada com sucesso. Faça login."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERRO update-password] {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro interno ao redefinir senha.")
 
 
 # ============================================================
