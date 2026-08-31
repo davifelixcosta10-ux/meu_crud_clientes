@@ -66,17 +66,6 @@
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Supabase JS (para recovery com access_token do hash) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
-    <script>
-        // Cliente Supabase para recovery (usa anon key do data/arquivos.env via meta, fallback para sb_publishable se não tiver)
-        window._SUPABASE_URL = window._SUPABASE_URL || "https://dtkmuelpxqezoqmpnevo.supabase.co";
-        window._SUPABASE_ANON = window._SUPABASE_ANON || "sb_publishable_placeholder";
-        try {
-            // tenta carregar anon key de /api/config se existir, senão usa placeholder e vai tentar via hash mesmo
-            window.supabaseRecovery = window.supabase ? window.supabase.createClient(window._SUPABASE_URL, window._SUPABASE_ANON) : null;
-        } catch(e) { window.supabaseRecovery = null; }
-    </script>
 
     <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="style.css">
