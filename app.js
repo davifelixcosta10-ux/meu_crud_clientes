@@ -398,9 +398,13 @@ function atualizarPermissoesUI() {
     const btnIntegracoes = document.getElementById('btn-toolbar-integracoes');
     [btnPlanos, btnEtapas, btnTags, btnIntegracoes].forEach(btn => {
         if (!btn) return;
-        btn.style.display = isAdmin ? '' : 'none';
+        // 3B-fix: membro vê porém desabilitado (cinza) em vez de hidden
+        btn.style.display = '';
         btn.disabled = !isAdmin;
-        btn.title = isAdmin ? btn.getAttribute('title') || '' : 'Apenas admin pode gerenciar';
+        btn.classList.toggle('opacity-50', !isAdmin);
+        btn.classList.toggle('cursor-not-allowed', !isAdmin);
+        btn.title = isAdmin ? (btn.getAttribute('data-title') || btn.getAttribute('title') || '') : 'Apenas admin pode gerenciar';
+        if (!btn.getAttribute('data-title') && btn.getAttribute('title')) btn.setAttribute('data-title', btn.getAttribute('title'));
     });
     // modal gerenciar
     const secConvite = document.getElementById('gerenciar-secao-convite-form');
