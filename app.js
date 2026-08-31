@@ -384,12 +384,45 @@ async function carregarOrgs(retry = 0) {
         else orgsCache = [];
     }
 }
+function isCurrentOrgAdmin() {
+    const org = orgsCache.find(o => o.id === currentOrgId);
+    return org?.papel === 'admin';
+}
+function atualizarPermissoesUI() {
+    const isAdmin = isCurrentOrgAdmin();
+    // toolbar
+    const btnPlanos = document.getElementById('btn-toolbar-planos');
+    const btnEtapas = document.getElementById('btn-toolbar-etapas');
+    const btnTags = document.getElementById('btn-toolbar-tags');
+    [btnPlanos, btnEtapas, btnTags].forEach(btn => {
+        if (!btn) return;
+        btn.style.display = isAdmin ? '' : 'none';
+        btn.disabled = !isAdmin;
+        btn.title = isAdmin ? btn.getAttribute('title') || '' : 'Apenas admin pode gerenciar';
+    });
+    // modal gerenciar
+    const secConvite = document.getElementById('gerenciar-secao-convite-form');
+    const btnConvite = document.getElementById('btn-gerenciar-convite');
+    const secRename = document.getElementById('gerenciar-secao-rename');
+    const secPerigo = document.getElementById('gerenciar-secao-perigo');
+    const aviso = document.getElementById('gerenciar-aviso-membro');
+    const emailInput = document.getElementById('gerenciar-email-input');
+    const papelSelect = document.getElementById('gerenciar-papel-select');
+    if (secConvite) secConvite.classList.toggle('hidden', !isAdmin);
+    if (btnConvite) btnConvite.classList.toggle('hidden', !isAdmin);
+    if (emailInput) emailInput.disabled = !isAdmin;
+    if (papelSelect) papelSelect.disabled = !isAdmin;
+    if (secRename) secRename.classList.toggle('hidden', !isAdmin);
+    if (secPerigo) secPerigo.classList.toggle('hidden', !isAdmin);
+    if (aviso) aviso.classList.toggle('hidden', isAdmin);
+}
 function renderizarOrgsSelect() {
     const sel = document.getElementById('org-select');
     if (!sel) return;
     if (orgsCache.length === 0) {
         sel.innerHTML = '<option value="">Minha organização</option>';
         sel.classList.add('hidden');
+        atualizarPermissoesUI();
         return;
     }
     sel.classList.remove('hidden');
@@ -400,6 +433,7 @@ function renderizarOrgsSelect() {
         const org = orgsCache.find(o => o.id === currentOrgId);
         conviteNome.textContent = org ? `Organização: ${org.nome}` : '';
     }
+    atualizarPermissoesUI();
 }
 function trocarOrg(orgId) {
     currentOrgId = orgId || null;
@@ -615,6 +649,7 @@ function abrirModalGerenciarOrg() {
     if (renameInput) renameInput.value = org ? org.nome : '';
     const orgNomeMembros = document.getElementById('gerenciar-org-nome-membros');
     if (orgNomeMembros) orgNomeMembros.textContent = org ? `Organização: ${org.nome}` : '';
+    atualizarPermissoesUI();
     modal.classList.remove('hidden');
     requestAnimationFrame(() => {
         modal.querySelector('.modal-box')?.classList.remove('scale-95','opacity-0');
@@ -1112,7 +1147,7 @@ function kanbanCardHTML(cliente) {
         </div>
     </div>`;
 }
-function abrirModalEtapas() { renderizarListaEtapasGerenciamento(); resetarFormEtapa(); abrirModal('modal-etapas'); }
+function abrirModalEtapas() { if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode gerenciar etapas', 'erro'); return; } renderizarListaEtapasGerenciamento(); resetarFormEtapa(); abrirModal('modal-etapas'); }
 function fecharModalEtapas() { fecharModal('modal-etapas'); }
 function renderizarListaEtapasGerenciamento() {
     const container = document.getElementById('lista-etapas-gerenciamento');
@@ -1177,6 +1212,7 @@ async function salvarEtapa(event) {
             const method = id ? 'PATCH' : 'POST';
             const resp = await fetchAuth(url, { method, body: JSON.stringify(payload) });
             if (!resp) return;
+            if (resp.status === 403) { const err = await resp.json().catch(()=>({detail:'Apenas admin pode realizar esta ação'})); exibirToast(err.detail || 'Apenas admin pode gerenciar etapas', 'erro'); throw new Error(err.detail); }
             if (!resp.ok) throw new Error('Erro ao salvar etapa');
             exibirToast('Etapa salva!', 'sucesso');
             await carregarEtapas();
@@ -1214,6 +1250,7 @@ async function deletarEtapa(id) {
             if (!modoDemo) {
                 const resp = await fetchAuth(`${API_BASE_URL}/etapas/${id}`, { method: 'DELETE' });
                 if (!resp) return;
+                if (resp.status === 403) { const err = await resp.json().catch(()=>({detail:'Apenas admin pode realizar esta ação'})); exibirToast(err.detail || 'Apenas admin pode excluir etapas', 'erro'); throw new Error(err.detail); }
                 if (!resp.ok) throw new Error('Erro ao excluir');
                 exibirToast('Etapa removida!', 'sucesso');
                 await carregarEtapas();
@@ -1264,7 +1301,7 @@ function renderizarTagsSelects() {
     });
     if (window.lucide) lucide.createIcons();
 }
-function abrirModalTags() { renderizarListaTagsGerenciamento(); resetarFormTag(); abrirModal('modal-tags'); }
+function abrirModalTags() { if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode gerenciar tags', 'erro'); return; } renderizarListaTagsGerenciamento(); resetarFormTag(); abrirModal('modal-tags'); }
 function fecharModalTags() { fecharModal('modal-tags'); }
 function renderizarListaTagsGerenciamento() {
     const container = document.getElementById('lista-tags-gerenciamento');
@@ -1319,6 +1356,7 @@ async function salvarTag(event) {
             const method = id ? 'PATCH' : 'POST';
             const resp = await fetchAuth(url, { method, body: JSON.stringify(payload) });
             if (!resp) return;
+            if (resp.status === 403) { const err = await resp.json().catch(()=>({detail:'Apenas admin pode gerenciar tags'})); exibirToast(err.detail || 'Apenas admin pode gerenciar tags', 'erro'); throw new Error(err.detail); }
             if (!resp.ok) throw new Error('Erro');
             exibirToast('Tag salva!', 'sucesso');
             await carregarTags();
@@ -1340,6 +1378,7 @@ async function deletarTag(id) {
             if (!modoDemo) {
                 const resp = await fetchAuth(`${API_BASE_URL}/tags/${id}`, { method: 'DELETE' });
                 if (!resp) return;
+                if (resp.status === 403) { const err = await resp.json().catch(()=>({detail:'Apenas admin pode gerenciar tags'})); exibirToast(err.detail || 'Apenas admin pode excluir tags', 'erro'); throw new Error(err.detail); }
                 if (!resp.ok) throw new Error('Erro');
                 exibirToast('Tag removida!', 'sucesso');
                 await carregarTags();
@@ -3165,6 +3204,7 @@ function fecharModalDetalhes() {
 //     Lista, color picker, edição inline, fallback modoDemo
 // ============================================================
 function abrirModalPlanos() {
+    if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode gerenciar planos', 'erro'); return; }
     renderizarListaPlanosGerenciamento();
     resetarFormPlano();
     abrirModal('modal-planos');
@@ -3266,7 +3306,7 @@ async function salvarPlanoCustom(event) {
                 body: JSON.stringify(payload)
             });
             if (!response) return; // Redirect handled by fetchAuth
-
+            if (response.status === 403) { const err = await response.json().catch(()=>({detail:'Apenas admin pode gerenciar planos'})); exibirToast(err.detail || 'Apenas admin pode gerenciar planos', 'erro'); throw new Error(err.detail); }
             if (!response.ok) throw new Error(`Erro ao salvar plano`);
 
             exibirToast(`Plano "${nome}" salvo com sucesso!`, 'sucesso');
@@ -3302,7 +3342,7 @@ async function deletarPlanoCustom(id) {
                     method: 'DELETE',
                 });
                 if (!response) return;
-
+                if (response.status === 403) { const err = await response.json().catch(()=>({detail:'Apenas admin pode gerenciar planos'})); exibirToast(err.detail || 'Apenas admin pode excluir planos', 'erro'); throw new Error(err.detail); }
                 if (!response.ok) throw new Error(`Erro ao excluir plano`);
 
                 exibirToast('Plano removido com sucesso!', 'sucesso');
