@@ -856,8 +856,9 @@ async def get_integracoes(org_id: str | None = None, user_id: str = Depends(obte
     """Lista integrações da org (Calendar/Zapier/Conta Azul). Filtra por org_id se fornecido."""
     try:
         return listar_integracoes(user_id, org_id)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar integrações.")
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar integrações: {str(e)[:300]}")
 
 @app.post("/api/integracoes", tags=["Integrações"])
 async def post_integracao(dados: IntegracaoCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
@@ -872,8 +873,9 @@ async def post_integracao(dados: IntegracaoCreate, org_id: str | None = None, us
         if "admin" in msg or "permiss" in msg:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao criar integração.")
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao criar integração: {str(e)[:300]}")
 
 @app.patch("/api/integracoes/{integracao_id}", tags=["Integrações"])
 async def patch_integracao(integracao_id: str, dados: IntegracaoUpdate, user_id: str = Depends(obter_user_id)):
