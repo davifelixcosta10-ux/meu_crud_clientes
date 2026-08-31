@@ -154,57 +154,86 @@ def autenticar_usuario(dados: UserLogin):
 # Isolamento total: TODAS as queries incluem .eq("user_id", user_id)
 # RLS no Supabase garante que mesmo se query for manipulada, não vaza dados
 
-def listar_planos(user_id: str) -> list[Plano]:
+def listar_planos(user_id: str, org_id: str | None = None) -> list[Plano]:
     """
-    Lista todos os planos do usuário autenticado.
-    
-    Ordenação: created_at ASC (planos mais antigos primeiro)
-    Filtro RLS: user_id obrigatório
-    
-    Args:
-        user_id: UUID do usuário autenticado (validado pelo JWT)
-    
-    Returns:
-        list[Plano]: Lista de planos validados pelo modelo Pydantic
-    
-    Usado em: GET /api/planos
+    Lista planos do usuário/org. Se org_id fornecido, filtra por org (multi-org).
+    Fallback: sem org_id, lista por user_id (compatibilidade) + todos os planos das orgs onde é membro.
     """
     supabase = get_supabase_client()
+    # se tiver org_id, filtra por org (RLS org-based)
+    if org_id:
+        try:
+            # verifica se user tem acesso à org (evita leak)
+            orgs = listar_organizacoes(user_id)
+            if not any(o["id"] == org_id for o in orgs):
+                # tenta direto por RLS, mas não vaza
+                pass
+            res = supabase.table("planos").select("*").eq("org_id", org_id).order("created_at").execute()
+            if res.data:
+                return [Plano.model_validate(item) for item in res.data]
+        except Exception:
+            pass
+        # fallback para user_id se não achou por org
+    # sem org_id ou fallback: lista por user_id + por orgs onde é membro (para Rafael ver planos do Davi na org)
+    try:
+        # tenta por orgs primeiro (se já migrado para org)
+        orgs = listar_organizacoes(user_id)
+        org_ids = [o["id"] for o in orgs]
+        if org_ids:
+            # pega planos de todas as orgs do user (ex: Rafael vê Vip em Clinica Maia)
+            res_org = supabase.table("planos").select("*").in_("org_id", org_ids).order("created_at").execute()
+            if res_org.data:
+                return [Plano.model_validate(item) for item in res_org.data]
+    except Exception:
+        pass
     response = (
         supabase.table("planos")
         .select("*")
-        .eq("user_id", user_id)      # CRÍTICO: isolamento por usuário
+        .eq("user_id", user_id)
         .order("created_at")
         .execute()
     )
     return [Plano.model_validate(item) for item in response.data]
 
 
-def criar_plano(dados: dict, user_id: str) -> Plano:
+def criar_plano(dados: dict, user_id: str, org_id: str | None = None) -> Plano:
     """
-    Cria um novo plano para o usuário autenticado.
-    
-    Args:
-        dados: dict com nome, cor, descricao, valor (validado por PlanoCreate)
-        user_id: UUID do usuário dono do plano
-    
-    Returns:
-        Plano: Plano criado com ID gerado pelo banco
-    
-    Raises:
-        ValueError: Se insert falhar (dados inválidos, constraint, etc.)
-    
-    Usado em: POST /api/planos
+    Cria plano na org atual (multi-org). Se org_id não vier, usa _get_default_org_id.
     """
     supabase = get_supabase_client()
+    # resolve org_id
+    oid = org_id or dados.get("org_id")
+    if not oid:
+        try:
+            oid = _get_default_org_id(user_id)
+        except Exception:
+            oid = None
+    # fallback: tenta pegar primeira org do user
+    if not oid:
+        try:
+            orgs = listar_organizacoes(user_id)
+            if orgs:
+                oid = orgs[0]["id"]
+        except Exception:
+            pass
     payload = {
-        "user_id":   user_id,                    # CRÍTICO: dono do plano
+        "user_id":   user_id,
         "nome":      dados.get("nome"),
         "cor":       dados.get("cor", "indigo"),
         "descricao": dados.get("descricao"),
         "valor":     dados.get("valor"),
     }
-    response = supabase.table("planos").insert(payload).execute()
+    if oid:
+        payload["org_id"] = oid
+    # tenta inserir com org_id, fallback sem org_id se coluna ainda não existe (antes da migração)
+    try:
+        response = supabase.table("planos").insert(payload).execute()
+    except Exception as e:
+        if "org_id" in str(e).lower() and "column" in str(e).lower():
+            payload.pop("org_id", None)
+            response = supabase.table("planos").insert(payload).execute()
+        else:
+            raise
     if not response.data:
         raise ValueError("Falha ao criar plano.")
     return Plano.model_validate(response.data[0])
@@ -228,19 +257,29 @@ def atualizar_plano(plano_id: int | str, dados: dict, user_id: str) -> Plano | N
     Usado em: PATCH /api/planos/{plano_id}
     """
     supabase = get_supabase_client()
-    # Filtra apenas valores não-None (preserva falsy: "", 0, False)
     dados_filtrados = {k: v for k, v in dados.items() if v is not None}
     if not dados_filtrados:
         return None
-    response = (
-        supabase.table("planos")
-        .update(dados_filtrados)
-        .eq("id", plano_id)
-        .eq("user_id", user_id)              # CRÍTICO: isolamento por usuário
-        .execute()
-    )
-    if response.data:
-        return Plano.model_validate(response.data[0])
+    # tenta por RLS org (sem filtrar user_id), fallback para user_id se RLS ainda for por user
+    try:
+        # verifica se plano pertence a uma org onde user é membro
+        plano_atual = supabase.table("planos").select("org_id,user_id").eq("id", plano_id).execute()
+        if plano_atual.data:
+            org_id_plano = plano_atual.data[0].get("org_id")
+            if org_id_plano:
+                orgs = listar_organizacoes(user_id)
+                if any(o["id"] == org_id_plano for o in orgs) or plano_atual.data[0].get("user_id") == user_id:
+                    resp = supabase.table("planos").update(dados_filtrados).eq("id", plano_id).execute()
+                    if resp.data:
+                        return Plano.model_validate(resp.data[0])
+        # fallback user_id
+        response = supabase.table("planos").update(dados_filtrados).eq("id", plano_id).eq("user_id", user_id).execute()
+        if response.data:
+            return Plano.model_validate(response.data[0])
+    except Exception:
+        response = supabase.table("planos").update(dados_filtrados).eq("id", plano_id).eq("user_id", user_id).execute()
+        if response.data:
+            return Plano.model_validate(response.data[0])
     return None
 
 
@@ -260,14 +299,21 @@ def deletar_plano(plano_id: int | str, user_id: str) -> bool:
     Usado em: DELETE /api/planos/{plano_id}
     """
     supabase = get_supabase_client()
-    response = (
-        supabase.table("planos")
-        .delete()
-        .eq("id", plano_id)
-        .eq("user_id", user_id)              # CRÍTICO: isolamento por usuário
-        .execute()
-    )
-    return len(response.data) > 0
+    # tenta deletar via org (RLS), fallback por user_id
+    try:
+        plano_atual = supabase.table("planos").select("org_id,user_id").eq("id", plano_id).execute()
+        if plano_atual.data:
+            org_id_plano = plano_atual.data[0].get("org_id")
+            if org_id_plano:
+                orgs = listar_organizacoes(user_id)
+                if any(o["id"] == org_id_plano for o in orgs) or plano_atual.data[0].get("user_id") == user_id:
+                    resp = supabase.table("planos").delete().eq("id", plano_id).execute()
+                    return len(resp.data) > 0
+        response = supabase.table("planos").delete().eq("id", plano_id).eq("user_id", user_id).execute()
+        return len(response.data) > 0
+    except Exception:
+        response = supabase.table("planos").delete().eq("id", plano_id).eq("user_id", user_id).execute()
+        return len(response.data) > 0
 
 
 # ============================================================

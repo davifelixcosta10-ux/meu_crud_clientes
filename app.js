@@ -853,7 +853,8 @@ async function verificarStatusAPI() {
 // ============================================================
 async function carregarPlanos() {
     try {
-        const response = await fetchAuth(`${API_BASE_URL}/planos`, { method: 'GET' });
+        const qs = (typeof getOrgQS === 'function' ? getOrgQS() : '');
+        const response = await fetchAuth(`${API_BASE_URL}/planos${qs}`, { method: 'GET' });
         if (!response) return; // Redirect handled by fetchAuth
 
         if (response.ok) {
@@ -3256,7 +3257,8 @@ async function salvarPlanoCustom(event) {
 
     try {
         if (!modoDemo) {
-            const url    = id ? `${API_BASE_URL}/planos/${id}` : `${API_BASE_URL}/planos`;
+            const qs = (typeof getOrgQS === 'function' ? getOrgQS() : '');
+            const url    = id ? `${API_BASE_URL}/planos/${id}${qs}` : `${API_BASE_URL}/planos${qs}`;
             const method = id ? 'PATCH' : 'POST';
 
             const response = await fetchAuth(url, {

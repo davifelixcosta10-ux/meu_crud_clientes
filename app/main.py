@@ -372,10 +372,10 @@ async def update_password(request: Request):
 # Isolamento total via RLS: user_id em todas as queries
 
 @app.get("/api/planos", response_model=list[Plano], tags=["Planos"])
-async def get_planos(user_id: str = Depends(obter_user_id)):
-    """Lista todos os planos do usuário autenticado."""
+async def get_planos(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Lista planos da org (filtra por org_id se fornecido)."""
     try:
-        return listar_planos(user_id)
+        return listar_planos(user_id, org_id)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -384,10 +384,10 @@ async def get_planos(user_id: str = Depends(obter_user_id)):
 
 
 @app.post("/api/planos", response_model=Plano, status_code=status.HTTP_201_CREATED, tags=["Planos"])
-async def post_plano(dados: PlanoCreate, user_id: str = Depends(obter_user_id)):
-    """Cria um novo plano para o usuário autenticado."""
+async def post_plano(dados: PlanoCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Cria um novo plano na org atual."""
     try:
-        return criar_plano(dados.model_dump(mode="json"), user_id)
+        return criar_plano(dados.model_dump(mode="json"), user_id, org_id)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
