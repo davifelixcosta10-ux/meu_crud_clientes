@@ -571,8 +571,9 @@ async def delete_atividade_api(atividade_id: str | int, user_id: str = Depends(o
 async def get_tags(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
     try:
         return listar_tags(user_id, org_id)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar tags.")
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao buscar tags: {str(e)[:300]}")
 
 
 @app.post("/api/tags", response_model=Tag, status_code=status.HTTP_201_CREATED, tags=["Tags"])
@@ -635,8 +636,9 @@ async def delete_tag_api(tag_id: str | int, user_id: str = Depends(obter_user_id
 async def get_tags_cliente(cliente_id: str | int, user_id: str = Depends(obter_user_id)):
     try:
         return listar_tags_cliente(cliente_id, user_id)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar tags do cliente.")
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao buscar tags do cliente: {str(e)[:300]}")
 
 
 @app.post("/api/clientes/{cliente_id}/tags", tags=["Tags"])
@@ -720,7 +722,7 @@ async def get_relatorio_conversao(periodo: int | None = None, org_id: str | None
     try:
         return relatorio_conversao(user_id, periodo, org_id)
     except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de conversão.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório de conversão: {str(e)[:300]}")
 
 
 @app.get("/api/relatorios/receita", response_model=RelatorioReceitaResponse, tags=["Relatórios"])
@@ -728,8 +730,9 @@ async def get_relatorio_receita(periodo: int | None = None, org_id: str | None =
     """Retorna receita prevista (em_dia) por plano e por mês. Filtra por org_id se fornecido."""
     try:
         return relatorio_receita(user_id, periodo, org_id)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de receita.")
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório de receita: {str(e)[:300]}")
 
 
 @app.get("/api/relatorios/churn", response_model=RelatorioChurnResponse, tags=["Relatórios"])
@@ -737,8 +740,9 @@ async def get_relatorio_churn(periodo: int | None = None, org_id: str | None = N
     """Retorna churn por mês (inativos/total). Filtra por org_id se fornecido."""
     try:
         return relatorio_churn(user_id, periodo, org_id)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de churn.")
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório de churn: {str(e)[:300]}")
 
 
 @app.get("/api/relatorios/ltv", response_model=RelatorioLtvResponse, tags=["Relatórios"])
@@ -747,7 +751,7 @@ async def get_relatorio_ltv(periodo: int | None = None, org_id: str | None = Non
     try:
         return relatorio_ltv(user_id, periodo, org_id)
     except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório de LTV.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório de LTV: {str(e)[:300]}")
 
 
 # ============================================================
