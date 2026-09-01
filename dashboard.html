@@ -441,6 +441,11 @@
                     <span class="hidden md:inline">Planos</span>
                 </button>
 
+                <button id="btn-toolbar-apikeys" onclick="abrirModalApiKeys()" type="button" class="btn-ghost whitespace-nowrap" title="API Keys (X-API-Key)">
+                    <i data-lucide="key" class="w-4 h-4 text-slate-500"></i>
+                    <span class="hidden md:inline">API</span>
+                </button>
+
                 <button id="btn-toolbar-integracoes" onclick="abrirModalIntegracoes()" type="button" class="btn-ghost whitespace-nowrap" title="Integrações (Calendar, Zapier, Conta Azul)">
                     <i data-lucide="plug" class="w-4 h-4 text-slate-500"></i>
                     <span class="hidden md:inline">Integrações</span>
@@ -1451,6 +1456,19 @@
             <div id="detalhes-body" class="overflow-y-auto flex-1 px-5 sm:px-6 py-5 space-y-4 text-sm">
                 <!-- Populado via JS -->
             </div>
+            <!-- Anexos Fase 3C -->
+            <div id="detalhes-anexos" class="px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/30 dark:bg-slate-800/10">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5"><i data-lucide="paperclip" class="w-3.5 h-3.5"></i> Anexos</h4>
+                    <span class="text-[10px] text-slate-400">máx 10MB</span>
+                </div>
+                <div id="anexos-lista" class="space-y-2 text-xs mb-3"><p class="text-[11px] text-slate-400">Nenhum anexo</p></div>
+                <label for="anexo-file-input" class="flex items-center justify-center gap-2 w-full p-3 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer text-xs text-slate-500">
+                    <i data-lucide="upload" class="w-4 h-4"></i> Clique ou arraste arquivo aqui (10MB)
+                    <input id="anexo-file-input" type="file" class="hidden" onchange="uploadAnexo(this.files[0])">
+                </label>
+                <div id="anexo-dropzone" class="hidden"></div>
+            </div>
 
             <!-- Footer -->
             <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 flex-shrink-0 bg-slate-50/50 dark:bg-slate-800/20 rounded-b-2xl">
@@ -1871,6 +1889,34 @@
                     <h4 class="text-xs font-bold uppercase tracking-widest text-slate-500">Clientes desta organização</h4>
                     <p class="text-[11px] text-slate-400">Lista com opção de remover (excluir) cliente da org atual.</p>
                     <div id="lista-clientes-gerenciar" class="space-y-1.5 text-xs max-h-[240px] overflow-y-auto"><p class="text-[11px] text-slate-400">Carregando...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         MODAL: API KEYS (Fase 3C) — X-API-Key
+         ==================================================== -->
+    <div id="modal-apikeys" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box flex flex-col max-h-[92vh] sm:mx-4 scale-95 opacity-0">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="key" class="w-4 h-4 text-indigo-600"></i> API Keys</h3>
+                <button onclick="fecharModalApiKeys()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 space-y-4">
+                <p class="text-xs text-slate-500">Use <code>X-API-Key: davi_...</code> no header para acessar <code>/api/clientes-public</code> e webhooks sem JWT. Guarde a chave — aparece só uma vez.</p>
+                <div class="flex gap-2">
+                    <input id="apikey-nome-input" type="text" placeholder="Nome da chave (ex: Zapier prod)" class="flex-1 px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50">
+                    <button onclick="criarApiKey()" class="px-4 py-2.5 text-sm font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Gerar</button>
+                </div>
+                <div id="apikey-nova" class="hidden p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-xs">
+                    <p class="font-bold text-amber-800 dark:text-amber-200">Chave gerada (copie agora):</p>
+                    <code id="apikey-plain" class="block mt-1 p-2 bg-white dark:bg-slate-900 rounded border text-[11px] break-all"></code>
+                    <button onclick="copiarApiKey()" class="mt-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-600 text-white">Copiar</button>
+                </div>
+                <div class="border-t pt-4">
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Chaves ativas</h4>
+                    <div id="lista-apikeys" class="space-y-2 text-xs"><p class="text-[11px] text-slate-400">Carregando...</p></div>
                 </div>
             </div>
         </div>

@@ -2032,6 +2032,220 @@ def processar_webhook_zapier(payload: dict, integracao_id: str | None = None) ->
         raise ValueError("Falha ao criar cliente via webhook")
     return res.data[0]
 
+# ============================================================
+# FASE 3C — ANEXOS + API KEYS
+# ============================================================
+import hashlib, secrets, base64
+
+def listar_anexos(cliente_id: str | int, user_id: str, org_id: str | None = None) -> list[dict]:
+    supabase = get_supabase_client()
+    # verifica acesso ao cliente (org)
+    try:
+        # tenta por org se fornecido, senão por user
+        q = supabase.table("anexos").select("*").eq("cliente_id", cliente_id)
+        if org_id:
+            q = q.eq("org_id", org_id)
+        else:
+            # filtra por orgs do user para não vazar
+            try:
+                orgs = listar_organizacoes(user_id)
+                org_ids = [o["id"] for o in orgs]
+                if org_ids:
+                    # se cliente pertence a uma dessas orgs, lista; senão fallback user_id
+                    pass
+            except Exception:
+                pass
+        res = q.order("created_at", desc=True).execute()
+        return res.data or []
+    except Exception:
+        return []
+
+def criar_anexo(dados: dict, user_id: str, org_id: str | None = None, file_bytes: bytes | None = None) -> dict:
+    supabase = get_supabase_client()
+    cliente_id = dados.get("cliente_id")
+    if not cliente_id:
+        raise ValueError("cliente_id é obrigatório")
+    # verifica cliente pertence à org do user
+    cli = supabase.table("clientes").select("id,org_id,user_id").eq("id", cliente_id).execute()
+    if not cli.data:
+        raise ValueError("Cliente não encontrado")
+    # resolve org_id
+    oid = org_id or dados.get("org_id") or cli.data[0].get("org_id")
+    if not oid:
+        try:
+            oid = _get_default_org_id(user_id)
+        except Exception:
+            oid = None
+    if oid:
+        # verifica membro
+        orgs = listar_organizacoes(user_id)
+        if not any(o["id"] == oid for o in orgs):
+            # tenta verificar via cliente org
+            if cli.data[0].get("org_id") != oid:
+                raise ValueError("Acesso negado à organização do cliente")
+    else:
+        raise ValueError("Organização não encontrada")
+    nome = (dados.get("nome") or "arquivo").strip()
+    if len(nome) > 255:
+        nome = nome[:255]
+    # tamanho e mime
+    tamanho = dados.get("tamanho") or (len(file_bytes) if file_bytes else 0)
+    if tamanho and int(tamanho) > 10*1024*1024:
+        raise ValueError("Arquivo excede 10MB")
+    mime = dados.get("mime") or "application/octet-stream"
+    # path único: org_id/cliente_id/uuid_nome
+    import uuid as _uuid
+    safe_name = "".join(c if c.isalnum() or c in "._-" else "_" for c in nome)
+    path = f"{oid}/{cliente_id}/{_uuid.uuid4().hex}_{safe_name}"
+    # upload para Storage se tiver bytes
+    if file_bytes:
+        try:
+            supabase.storage.from_("anexos").upload(path, file_bytes, {"content-type": mime})
+        except Exception as e:
+            # fallback: tenta sem options
+            try:
+                supabase.storage.from_("anexos").upload(path, file_bytes)
+            except Exception as e2:
+                raise ValueError(f"Falha no upload Storage: {e2}")
+    elif dados.get("content_base64"):
+        try:
+            b = base64.b64decode(dados.get("content_base64"))
+            if len(b) > 10*1024*1024:
+                raise ValueError("Arquivo excede 10MB")
+            supabase.storage.from_("anexos").upload(path, b, {"content-type": mime})
+            tamanho = len(b)
+        except Exception as e:
+            raise ValueError(f"Falha ao decodificar/upload base64: {e}")
+    payload = {
+        "org_id": oid,
+        "user_id": user_id,
+        "cliente_id": cliente_id,
+        "nome": nome,
+        "path": path,
+        "tamanho": tamanho or 0,
+        "mime": mime,
+    }
+    res = supabase.table("anexos").insert(payload).execute()
+    if not res.data:
+        raise ValueError("Falha ao criar anexo")
+    return res.data[0]
+
+def deletar_anexo(anexo_id: str, user_id: str) -> bool:
+    supabase = get_supabase_client()
+    # busca para verificar org
+    cur = supabase.table("anexos").select("org_id,path").eq("id", anexo_id).execute()
+    if not cur.data:
+        return False
+    oid = cur.data[0].get("org_id")
+    if oid:
+        _verificar_admin(user_id, oid)  # apenas admin pode deletar? ou membro pode? por enquanto admin
+        # alternativa: permite membro se for da org (is_org_member). Vamos permitir membro da org:
+        try:
+            orgs = listar_organizacoes(user_id)
+            if not any(o["id"] == oid for o in orgs):
+                raise ValueError("Acesso negado")
+        except ValueError:
+            raise
+        except Exception:
+            pass
+    # remove do Storage
+    try:
+        path = cur.data[0].get("path")
+        if path:
+            supabase.storage.from_("anexos").remove([path])
+    except Exception:
+        pass
+    # remove metadata: tenta por id (RLS org já filtra), fallback por user_id
+    try:
+        res = supabase.table("anexos").delete().eq("id", anexo_id).execute()
+        return len(res.data) > 0
+    except Exception:
+        res = supabase.table("anexos").delete().eq("id", anexo_id).eq("user_id", user_id).execute()
+        return len(res.data) > 0
+
+def listar_api_keys(user_id: str, org_id: str | None = None) -> list[dict]:
+    supabase = get_supabase_client()
+    q = supabase.table("api_keys").select("id,org_id,user_id,nome,prefix,ultimo_uso,created_at")
+    if org_id:
+        q = q.eq("org_id", org_id)
+    else:
+        try:
+            orgs = listar_organizacoes(user_id)
+            org_ids = [o["id"] for o in orgs]
+            if org_ids:
+                res = supabase.table("api_keys").select("id,org_id,user_id,nome,prefix,ultimo_uso,created_at").in_("org_id", org_ids).execute()
+                if res.data is not None:
+                    return res.data
+        except Exception:
+            pass
+        q = q.eq("user_id", user_id)
+    res = q.order("created_at", desc=True).execute()
+    return res.data or []
+
+def criar_api_key(nome: str, user_id: str, org_id: str | None = None) -> dict:
+    supabase = get_supabase_client()
+    nome = (nome or "").strip()
+    if not nome:
+        raise ValueError("Nome da chave é obrigatório")
+    oid = org_id
+    if not oid:
+        try:
+            oid = _get_default_org_id(user_id)
+        except Exception:
+            oid = None
+    if oid:
+        _verificar_admin(user_id, oid)
+    # gera chave plain: davi_<32 random>
+    plain = "davi_" + secrets.token_urlsafe(32)
+    key_hash = hashlib.sha256(plain.encode()).hexdigest()
+    prefix = plain[:8]
+    payload = {
+        "user_id": user_id,
+        "nome": nome,
+        "key_hash": key_hash,
+        "prefix": prefix,
+    }
+    if oid:
+        payload["org_id"] = oid
+    res = supabase.table("api_keys").insert(payload).execute()
+    if not res.data:
+        raise ValueError("Falha ao criar API key")
+    row = res.data[0]
+    row["plain_key"] = plain  # retorna apenas na criação
+    return row
+
+def deletar_api_key(key_id: str, user_id: str) -> bool:
+    supabase = get_supabase_client()
+    cur = supabase.table("api_keys").select("org_id").eq("id", key_id).execute()
+    if cur.data and cur.data[0].get("org_id"):
+        try:
+            _verificar_admin(user_id, cur.data[0].get("org_id"))
+        except ValueError:
+            raise
+        except Exception:
+            pass
+    res = supabase.table("api_keys").delete().eq("id", key_id).execute()
+    if res.data:
+        return True
+    res = supabase.table("api_keys").delete().eq("id", key_id).eq("user_id", user_id).execute()
+    return len(res.data) > 0
+
+def verificar_api_key(plain_key: str) -> dict | None:
+    """Verifica X-API-Key (plain) contra hash. Retorna row com org_id/user_id se válida."""
+    if not plain_key or not plain_key.startswith("davi_"):
+        return None
+    h = hashlib.sha256(plain_key.encode()).hexdigest()
+    supabase = get_supabase_client()
+    res = supabase.table("api_keys").select("org_id,user_id,id").eq("key_hash", h).execute()
+    if not res.data:
+        return None
+    # atualiza ultimo_uso async (não bloqueia)
+    try:
+        supabase.table("api_keys").update({"ultimo_uso": __import__("datetime").datetime.utcnow().isoformat()}).eq("key_hash", h).execute()
+    except Exception:
+        pass
+    return res.data[0]
+
 # --- Helpers para garantir org_id em criações (migração limpa) ---
 
 def _ensure_org_id(payload: dict, user_id: str):

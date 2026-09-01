@@ -396,7 +396,8 @@ function atualizarPermissoesUI() {
     const btnEtapas = document.getElementById('btn-toolbar-etapas');
     const btnTags = document.getElementById('btn-toolbar-tags');
     const btnIntegracoes = document.getElementById('btn-toolbar-integracoes');
-    [btnPlanos, btnEtapas, btnTags, btnIntegracoes].forEach(btn => {
+    const btnApiKeys = document.getElementById('btn-toolbar-apikeys');
+    [btnPlanos, btnEtapas, btnTags, btnIntegracoes, btnApiKeys].forEach(btn => {
         if (!btn) return;
         // 3B-fix: membro vê porém desabilitado (cinza) em vez de hidden
         btn.style.display = '';
@@ -931,6 +932,134 @@ async function toggleContaAzul(ativo) {
         await carregarIntegracoes();
     } catch(e) { exibirToast('Erro Conta Azul', 'erro'); }
 }
+
+// ============================================================
+// 3C — ANEXOS + API KEYS
+// ============================================================
+let anexosCache = [];
+let apiKeysCache = [];
+let detalhesClienteIdAtual = null;
+
+async function carregarAnexos(clienteId) {
+    const container = document.getElementById('anexos-lista');
+    if (!container) return;
+    detalhesClienteIdAtual = clienteId;
+    container.innerHTML = '<p class="text-[11px] text-slate-400">Carregando...</p>';
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/clientes/${clienteId}/anexos${getOrgQuery()}`, { method: 'GET' });
+        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro ao carregar anexos</p>'; return; }
+        const data = await resp.json();
+        anexosCache = Array.isArray(data) ? data : [];
+        renderizarAnexos();
+    } catch(e) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro</p>'; }
+}
+function renderizarAnexos() {
+    const container = document.getElementById('anexos-lista');
+    if (!container) return;
+    if (anexosCache.length === 0) { container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhum anexo</p>'; return; }
+    container.innerHTML = anexosCache.map(a => {
+        const kb = (a.tamanho/1024).toFixed(1);
+        return `<div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><i data-lucide="file" class="w-3.5 h-3.5 text-slate-400"></i><span class="text-xs font-semibold truncate">${escaparHTML(a.nome)}</span><span class="text-[10px] text-slate-400">${escaparHTML(a.mime)} • ${kb}KB</span></div><button onclick="deletarAnexo('${a.id}')" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50" title="Remover"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`;
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+}
+async function uploadAnexo(file) {
+    if (!file) return;
+    if (file.size > 10*1024*1024) { exibirToast('Arquivo excede 10MB', 'erro'); return; }
+    if (!detalhesClienteIdAtual) { exibirToast('Selecione um cliente', 'erro'); return; }
+    const reader = new FileReader();
+    reader.onload = async () => {
+        try {
+            const base64 = reader.result.split(',')[1];
+            const payload = { cliente_id: detalhesClienteIdAtual, nome: file.name, tamanho: file.size, mime: file.type || 'application/octet-stream', content_base64: base64 };
+            const resp = await fetchAuth(`${API_BASE_URL}/clientes/${detalhesClienteIdAtual}/anexos${getOrgQuery()}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!resp || !resp.ok) { const err = await resp.json().catch(()=>({})); exibirToast(err.detail || 'Erro ao enviar anexo', 'erro'); return; }
+            exibirToast('Anexo enviado!', 'sucesso');
+            await carregarAnexos(detalhesClienteIdAtual);
+        } catch(e) { exibirToast('Erro ao enviar', 'erro'); }
+    };
+    reader.readAsDataURL(file);
+    // reset input
+    const inp = document.getElementById('anexo-file-input');
+    if (inp) inp.value = '';
+}
+async function deletarAnexo(id) {
+    confirmarAcao('Remover anexo?', 'O arquivo será removido do Storage e da lista. Deseja continuar?', async () => {
+        try {
+            const resp = await fetchAuth(`${API_BASE_URL}/anexos/${id}`, { method: 'DELETE' });
+            if (!resp || !resp.ok) { const err = await resp.json().catch(()=>({})); if (resp && resp.status===403) exibirToast(err.detail||'Apenas admin', 'erro'); else exibirToast(err.detail||'Erro ao remover', 'erro'); return; }
+            exibirToast('Anexo removido', 'sucesso');
+            await carregarAnexos(detalhesClienteIdAtual);
+        } catch(e) { exibirToast('Erro ao remover', 'erro'); }
+    });
+}
+// API Keys
+async function carregarApiKeys() {
+    const container = document.getElementById('lista-apikeys');
+    if (!container) return;
+    container.innerHTML = '<p class="text-[11px] text-slate-400">Carregando...</p>';
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/api-keys${getOrgQuery()}`, { method: 'GET' });
+        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro ao carregar</p>'; return; }
+        const data = await resp.json();
+        apiKeysCache = Array.isArray(data) ? data : [];
+        renderizarApiKeys();
+    } catch(e) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro</p>'; }
+}
+function renderizarApiKeys() {
+    const container = document.getElementById('lista-apikeys');
+    if (!container) return;
+    if (apiKeysCache.length === 0) { container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhuma chave. Gere a primeira.</p>'; return; }
+    container.innerHTML = apiKeysCache.map(k => `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border"><div><div class="text-xs font-bold">${escaparHTML(k.nome)}</div><div class="text-[10px] text-slate-400 font-mono">${escaparHTML(k.prefix)}•••• • ${k.created_at ? new Date(k.created_at).toLocaleDateString() : ''}</div></div><button onclick="deletarApiKey('${k.id}')" class="p-1 text-rose-500 hover:bg-rose-50 rounded-lg"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`).join('');
+    if (window.lucide) lucide.createIcons();
+}
+function abrirModalApiKeys() {
+    const modal = document.getElementById('modal-apikeys');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    requestAnimationFrame(()=>{ modal.querySelector('.modal-box')?.classList.remove('scale-95','opacity-0'); modal.querySelector('.modal-box')?.classList.add('scale-100','opacity-100'); });
+    carregarApiKeys();
+    if (window.lucide) lucide.createIcons();
+}
+function fecharModalApiKeys() {
+    const modal = document.getElementById('modal-apikeys');
+    if (!modal) return;
+    modal.querySelector('.modal-box')?.classList.add('scale-95','opacity-0');
+    setTimeout(()=> modal.classList.add('hidden'), 200);
+}
+async function criarApiKey() {
+    const input = document.getElementById('apikey-nome-input');
+    const nome = (input?.value || '').trim();
+    if (!nome) { exibirToast('Informe o nome da chave', 'erro'); return; }
+    if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode gerar chaves', 'erro'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/api-keys${getOrgQuery()}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome }) });
+        if (!resp || !resp.ok) { const err = await resp.json().catch(()=>({})); if (resp && resp.status===403) exibirToast(err.detail||'Apenas admin', 'erro'); else exibirToast(err.detail||'Erro ao gerar', 'erro'); return; }
+        const data = await resp.json();
+        const box = document.getElementById('apikey-nova');
+        const code = document.getElementById('apikey-plain');
+        if (box && code && data.plain_key) { code.textContent = data.plain_key; box.classList.remove('hidden'); }
+        input.value = '';
+        exibirToast('API Key gerada! Copie agora (só aparece uma vez).', 'sucesso');
+        await carregarApiKeys();
+    } catch(e) { exibirToast('Erro ao gerar chave', 'erro'); }
+}
+function copiarApiKey() {
+    const code = document.getElementById('apikey-plain');
+    if (!code || !code.textContent) return;
+    navigator.clipboard.writeText(code.textContent).then(()=> exibirToast('Chave copiada!', 'sucesso'));
+}
+async function deletarApiKey(id) {
+    confirmarAcao('Revogar chave?', 'A chave deixará de funcionar imediatamente. Deseja continuar?', async () => {
+        try {
+            const resp = await fetchAuth(`${API_BASE_URL}/api-keys/${id}`, { method: 'DELETE' });
+            if (!resp || !resp.ok) { const err = await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro ao revogar', 'erro'); return; }
+            exibirToast('Chave revogada', 'sucesso');
+            await carregarApiKeys();
+        } catch(e) { exibirToast('Erro ao revogar', 'erro'); }
+    });
+}
+
 
 
 // ============================================================
@@ -3287,6 +3416,8 @@ function abrirModalDetalhes(id) {
         </div>
     `;
 
+    // Carrega anexos (Fase 3C)
+    carregarAnexos(cliente.id);
     // Carrega timeline de atividades para este cliente
     carregarAtividades(cliente.id).then(atividades => {
         const atvContainer = document.getElementById('detalhes-atividades');

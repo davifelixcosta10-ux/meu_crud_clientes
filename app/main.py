@@ -42,6 +42,7 @@ from app.models import (
     RelatorioLtvResponse,
     Organizacao, OrganizacaoCreate, ConviteCreate,
     Integracao, IntegracaoCreate, IntegracaoUpdate, WebhookZapierPayload,
+    Anexo, AnexoCreate, ApiKey, ApiKeyCreate,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -60,6 +61,8 @@ from app.storage import (
     relatorio_ltv,
     listar_organizacoes, criar_organizacao, listar_membros_org, convidar_membro_org, deletar_organizacao, remover_membro_org, atualizar_organizacao,
     listar_integracoes, criar_integracao, atualizar_integracao, deletar_integracao, processar_webhook_zapier,
+    listar_anexos, criar_anexo, deletar_anexo,
+    listar_api_keys, criar_api_key, deletar_api_key, verificar_api_key,
 )
 
 # --- Rate Limiter ---
@@ -162,6 +165,26 @@ async def obter_user_id(authorization: str = Header(None)) -> str:
             detail="Token inválido ou expirado.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+async def obter_user_id_com_api_key(
+    authorization: str = Header(None),
+    x_api_key: str = Header(None, alias="X-API-Key"),
+) -> str:
+    """Tenta X-API-Key primeiro (para API pública), senão JWT Bearer.
+    Permite integração via Zapier/Make sem JWT, usando chave gerada em /api/api-keys.
+    """
+    # 1. Tenta API Key
+    if x_api_key:
+        try:
+            row = verificar_api_key(x_api_key.strip())
+            if row and row.get("user_id"):
+                return row["user_id"]
+        except Exception:
+            pass
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="X-API-Key inválida ou expirada.")
+    # 2. Fallback para JWT
+    return await obter_user_id(authorization)
 
 
 # ============================================================
@@ -955,6 +978,106 @@ async def get_calendar_auth_url(org_id: str | None = None, user_id: str = Depend
 async def calendar_callback(code: str | None = None, state: str | None = None, org_id: str | None = None):
     """Callback OAuth Calendar (mock) - armazena token fictício."""
     return {"status": "conectado", "code": code, "state": state, "org_id": org_id, "mock": True}
+
+
+# ============================================================
+# ANEXOS + API KEYS — Fase 3C
+# ============================================================
+@app.get("/api/clientes/{cliente_id}/anexos", tags=["Anexos"])
+async def get_anexos(cliente_id: str, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Lista anexos de um cliente (filtra por org se fornecido)."""
+    try:
+        return listar_anexos(cliente_id, user_id, org_id)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar anexos: {str(e)[:300]}")
+
+@app.post("/api/clientes/{cliente_id}/anexos", tags=["Anexos"])
+async def post_anexo(cliente_id: str, dados: AnexoCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Upload anexo (base64 ou multipart futuro). Limite 10MB. Requer ser membro da org."""
+    try:
+        payload = dados.model_dump(mode="json")
+        payload["cliente_id"] = cliente_id
+        if org_id:
+            payload["org_id"] = org_id
+        # tamanho já validado em storage
+        return criar_anexo(payload, user_id, org_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao criar anexo: {str(e)[:300]}")
+
+@app.delete("/api/anexos/{anexo_id}", tags=["Anexos"])
+async def delete_anexo(anexo_id: str, user_id: str = Depends(obter_user_id)):
+    """Remove anexo (metadata + Storage). Apenas admin da org."""
+    try:
+        if not deletar_anexo(anexo_id, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Anexo não encontrado.")
+        return {"mensagem": "Anexo removido"}
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao remover anexo: {str(e)[:300]}")
+
+@app.get("/api/api-keys", tags=["API Keys"])
+async def get_api_keys(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Lista API keys da org (sem expor hash)."""
+    try:
+        return listar_api_keys(user_id, org_id)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar chaves: {str(e)[:300]}")
+
+@app.post("/api/api-keys", tags=["API Keys"])
+async def post_api_key(dados: ApiKeyCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Gera nova API key (retorna plain_key apenas uma vez)."""
+    try:
+        row = criar_api_key(dados.nome, user_id, org_id)
+        return row
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao criar chave: {str(e)[:300]}")
+
+@app.delete("/api/api-keys/{key_id}", tags=["API Keys"])
+async def delete_api_key(key_id: str, user_id: str = Depends(obter_user_id)):
+    """Revoga API key."""
+    try:
+        if not deletar_api_key(key_id, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chave não encontrada.")
+        return {"mensagem": "Chave revogada"}
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao revogar chave: {str(e)[:300]}")
+
+# Exemplo de endpoint que aceita X-API-Key além de JWT
+@app.get("/api/clientes-public", tags=["API Keys"])
+async def listar_clientes_via_api_key(org_id: str | None = None, user_id: str = Depends(obter_user_id_com_api_key)):
+    """Lista clientes via JWT ou X-API-Key (para Zapier/contaazul externo)."""
+    try:
+        return carregar_clientes(user_id, org_id)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)[:300]}")
+
 
 
 
