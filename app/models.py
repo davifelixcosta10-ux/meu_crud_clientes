@@ -814,3 +814,51 @@ class WebhookZapierPayload(BaseModel):
     # permite campos extras
     class Config:
         extra = "allow"
+
+
+class AnexoCreate(BaseModel):
+    cliente_id: Union[int, str]
+    nome: str
+    path: Optional[str] = None
+    tamanho: Optional[int] = 0
+    mime: Optional[str] = "application/octet-stream"
+    # para upload base64 (frontend envia content_base64)
+    content_base64: Optional[str] = None
+
+
+class Anexo(BaseModel):
+    id: Union[int, str]
+    org_id: Optional[str] = None
+    user_id: str
+    cliente_id: Union[int, str]
+    nome: str
+    path: str
+    tamanho: int = 0
+    mime: str = "application/octet-stream"
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ApiKeyCreate(BaseModel):
+    nome: str
+    # org_id opcional via query param
+    class Config:
+        from_attributes = True
+
+
+class ApiKey(BaseModel):
+    id: Union[int, str]
+    org_id: Optional[str] = None
+    user_id: str
+    nome: str
+    key_hash: str
+    prefix: str
+    ultimo_uso: Optional[str] = None
+    created_at: Optional[str] = None
+    # chave plain só retornada na criação (não armazenada)
+    plain_key: Optional[str] = None
+
+    class Config:
+        from_attributes = True
