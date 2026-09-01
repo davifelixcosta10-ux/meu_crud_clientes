@@ -1109,7 +1109,7 @@ function aplicarVertical(slug) {
     localStorage.setItem('daviflow_vertical', currentVertical);
     const sel = document.getElementById('vertical-select');
     if (sel) sel.value = currentVertical;
-    // Mapeamento simples de renomeação e visibilidade (MVP 4A)
+    // Renomeia labels
     const mapRenomeia = {
         hospital: { cargo: 'Especialidade', empresa: 'Setor/Unidade' },
         lava_rapido_oficina: { empresa: 'Veículo/Oficina' },
@@ -1118,7 +1118,6 @@ function aplicarVertical(slug) {
         dentista: {},
     };
     const ren = mapRenomeia[slug] || {};
-    // Renomeia labels cargo/empresa se existirem
     document.querySelectorAll('label[for="criar-cargo"], label[for="editar-cargo"]').forEach(l => {
         const base = 'Cargo';
         l.textContent = ren.cargo || base;
@@ -1129,21 +1128,158 @@ function aplicarVertical(slug) {
         if (ren.empresa) l.textContent = ren.empresa;
         else l.textContent = base;
     });
-    // Esconde campos extras por vertical (MVP: só log, não remove dados)
-    const escondeMap = {
-        hospital: ['placa','km','modelo','dente'],
-        lava_rapido_oficina: ['dente','procedimento','convenio'],
-        dentista: ['placa','km','modelo'],
-        academia: ['placa','km','modelo','dente'],
-        geral: [],
-    };
-    const esconder = escondeMap[slug] || [];
-    // Marca no console para debug
-    console.log('[vertical] aplicando', slug, 'esconde', esconder, 'renomeia', ren);
-    // Mostra toast informativo apenas quando troca manual (não no load inicial silencioso)
-    // Não faz hide real de inputs nesta versão MVP — apenas prepara para 4B
-    // Para 4A completo, descomentar hide abaixo:
-    // esconder.forEach(campo => { document.querySelectorAll(`[data-vertical-campo="${campo}"]`).forEach(el=> el.classList.add('hidden')); });
+    // Renderiza campos extras por vertical (4A)
+    ['criar','editar'].forEach(prefix => {
+        const container = document.getElementById(prefix+'-vertical-extras');
+        const camposDiv = document.getElementById(prefix+'-vertical-campos');
+        const nomeSpan = document.getElementById(prefix+'-vertical-nome');
+        if (!container || !camposDiv) return;
+        if (slug === 'geral') {
+            container.classList.add('hidden');
+            camposDiv.innerHTML = '';
+            return;
+        }
+        container.classList.remove('hidden');
+        if (nomeSpan) nomeSpan.textContent = '('+slug+')';
+        let html = '';
+        if (slug === 'hospital') {
+            html = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="form-label">Convênio</label><input id="${prefix}-cc-convenio" type="text" placeholder="Ex: Unimed" class="form-input"></div>
+                    <div><label class="form-label">Leito</label><input id="${prefix}-cc-leito" type="text" placeholder="Ex: 101-A" class="form-input"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="form-label">Prontuário</label><input id="${prefix}-cc-prontuario" type="text" placeholder="Ex: 2026-001" class="form-input"></div>
+                    <div><label class="form-label">CRM Médico</label><input id="${prefix}-cc-crm" type="text" placeholder="Ex: 123456-SP" class="form-input"></div>
+                </div>
+                <div><label class="form-label">Status Internação</label><select id="${prefix}-cc-status_int" class="form-input"><option value="">Selecione</option><option value="internado">Internado</option><option value="alta">Alta</option><option value="triagem">Triagem</option></select></div>
+            `;
+        } else if (slug === 'lava_rapido_oficina') {
+            html = `
+                <div id="${prefix}-carros-container" class="space-y-3"></div>
+                <button type="button" onclick="adicionarCarro('${prefix}')" class="w-full py-2 text-xs font-semibold rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 flex items-center justify-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Adicionar veículo</button>
+                <div class="grid grid-cols-2 gap-3 pt-2 border-t">
+                    <div><label class="form-label">Serviço</label><select id="${prefix}-cc-servico" class="form-input"><option value="">Selecione</option><option value="lavagem">Lavagem</option><option value="troca_oleo">Troca de óleo</option><option value="revisao">Revisão</option><option value="outro">Outro</option></select></div>
+                    <div><label class="form-label">KM</label><input id="${prefix}-cc-km" type="number" placeholder="Ex: 45000" class="form-input"></div>
+                </div>
+            `;
+        } else if (slug === 'dentista') {
+            html = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="form-label">Dente (1-32 FDI)</label><input id="${prefix}-cc-dente" type="number" min="1" max="32" placeholder="Ex: 11" class="form-input"></div>
+                    <div><label class="form-label">Procedimento</label><select id="${prefix}-cc-procedimento" class="form-input"><option value="">Selecione</option><option value="limpeza">Limpeza</option><option value="canal">Canal</option><option value="ortodontia">Ortodontia</option><option value="implante">Implante</option><option value="outro">Outro</option></select></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="form-label">Convênio Odonto</label><input id="${prefix}-cc-conv_odo" type="text" placeholder="Ex: Amil Dental" class="form-input"></div>
+                    <div><label class="form-label">Retorno (6m)</label><input id="${prefix}-cc-retorno" type="date" class="form-input"></div>
+                </div>
+            `;
+        } else if (slug === 'academia') {
+            html = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="form-label">Plano Mensal</label><input id="${prefix}-cc-plano_mensal" type="text" placeholder="Ex: Mensal R$ 89" class="form-input"></div>
+                    <div><label class="form-label">Treino</label><select id="${prefix}-cc-treino" class="form-input"><option value="">Selecione</option><option value="A">Treino A</option><option value="B">Treino B</option><option value="C">Treino C</option><option value="ABC">ABC</option></select></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="form-label">Frequência/semana</label><input id="${prefix}-cc-freq" type="number" min="1" max="7" placeholder="Ex: 3" class="form-input"></div>
+                    <div><label class="form-label">Último check-in</label><input id="${prefix}-cc-checkin" type="date" class="form-input"></div>
+                </div>
+            `;
+        }
+        camposDiv.innerHTML = html;
+        if (window.lucide) lucide.createIcons();
+        // Para oficina, garante 1 carro inicial
+        if (slug === 'lava_rapido_oficina') {
+            const cont = document.getElementById(prefix+'-carros-container');
+            if (cont && cont.children.length === 0) adicionarCarro(prefix);
+        }
+    });
+    console.log('[vertical] aplicando', slug);
+}
+function adicionarCarro(prefix) {
+    const cont = document.getElementById(prefix+'-carros-container');
+    if (!cont) return;
+    const idx = cont.children.length + 1;
+    const div = document.createElement('div');
+    div.className = 'p-3 rounded-xl border border-amber-100 dark:border-amber-800/40 bg-white dark:bg-slate-800/40 space-y-2';
+    div.innerHTML = `
+        <div class="flex items-center justify-between"><span class="text-xs font-bold text-amber-700 dark:text-amber-300">Veículo ${idx}</span><button type="button" onclick="this.closest('div').parentElement.removeChild(this.closest('div').parentElement.children[0] ? this.closest('div') : this.closest('div'))" class="text-[10px] text-rose-500 hover:underline">Remover</button></div>
+        <div class="grid grid-cols-3 gap-2">
+            <input data-cc="placa" type="text" placeholder="Placa ABC1D23" maxlength="8" class="form-input text-xs" style="text-transform:uppercase">
+            <input data-cc="modelo" type="text" placeholder="Modelo" class="form-input text-xs">
+            <input data-cc="km_carro" type="number" placeholder="KM" class="form-input text-xs">
+        </div>
+    `;
+    // Corrige remover (simplificado)
+    div.querySelector('button').onclick = () => div.remove();
+    cont.appendChild(div);
+}
+function coletarCamposCustom(prefix) {
+    const slug = currentVertical;
+    if (slug === 'geral') return {};
+    const out = {};
+    const g = id => document.getElementById(prefix+'-cc-'+id)?.value?.trim();
+    if (slug === 'hospital') {
+        if (g('convenio')) out.convenio = g('convenio');
+        if (g('leito')) out.leito = g('leito');
+        if (g('prontuario')) out.prontuario = g('prontuario');
+        if (g('crm')) out.crm_medico_responsavel = g('crm');
+        if (g('status_int')) out.status_internacao = g('status_int');
+    } else if (slug === 'lava_rapido_oficina') {
+        const carros = [];
+        document.querySelectorAll('#'+prefix+'-carros-container [data-cc="placa"]').forEach((el, i) => {
+            const row = el.closest('div').parentElement;
+            // Na verdade cada carro div tem 3 inputs, pegar pela ordem
+            const placa = el.value.trim().toUpperCase();
+            const modelo = row.querySelector('[data-cc="modelo"]')?.value.trim();
+            const km = row.querySelector('[data-cc="km_carro"]')?.value.trim();
+            if (placa || modelo) carros.push({ placa, modelo, km });
+        });
+        // Fallback: coleta direta se estrutura diferente
+        if (carros.length === 0) {
+            document.querySelectorAll('#'+prefix+'-carros-container > div').forEach(div => {
+                const placa = div.querySelector('[data-cc="placa"]')?.value.trim().toUpperCase();
+                const modelo = div.querySelector('[data-cc="modelo"]')?.value.trim();
+                const km = div.querySelector('[data-cc="km_carro"]')?.value.trim();
+                if (placa || modelo) {
+                    // evita duplicar se já adicionado
+                    if (!carros.find(c=>c.placa===placa && c.modelo===modelo)) carros.push({ placa, modelo, km });
+                }
+            });
+        }
+        if (carros.length) out.carros = carros;
+        // Também suporta campos antigos single
+        if (g('servico')) out.servico = g('servico');
+        if (g('km')) out.km = g('km');
+    } else if (slug === 'dentista') {
+        if (g('dente')) out.dente = g('dente');
+        if (g('procedimento')) out.procedimento = g('procedimento');
+        if (g('conv_odo')) out.convenio_odonto = g('conv_odo');
+        if (g('retorno')) out.data_retorno = g('retorno');
+    } else if (slug === 'academia') {
+        if (g('plano_mensal')) out.plano_mensal = g('plano_mensal');
+        if (g('treino')) out.treino = g('treino');
+        if (g('freq')) out.frequencia_semanal = g('freq');
+        if (g('checkin')) out.ultimo_checkin = g('checkin');
+    }
+    return out;
+}
+function preencherCamposCustom(prefix, campos) {
+    if (!campos) return;
+    const g = (id, val) => { const el=document.getElementById(prefix+'-cc-'+id); if(el && val) el.value=val; };
+    if (currentVertical === 'hospital') {
+        g('convenio', campos.convenio); g('leito', campos.leito); g('prontuario', campos.prontuario); g('crm', campos.crm_medico_responsavel); g('status_int', campos.status_internacao);
+    } else if (currentVertical === 'lava_rapido_oficina') {
+        if (Array.isArray(campos.carros)) {
+            const cont=document.getElementById(prefix+'-carros-container');
+            if(cont){ cont.innerHTML=''; campos.carros.forEach(c=>{ adicionarCarro(prefix); const last=cont.lastElementChild; if(last){ last.querySelector('[data-cc="placa"]').value=c.placa||''; last.querySelector('[data-cc="modelo"]').value=c.modelo||''; last.querySelector('[data-cc="km_carro"]').value=c.km||''; } }); }
+        }
+        g('servico', campos.servico); g('km', campos.km);
+    } else if (currentVertical === 'dentista') {
+        g('dente', campos.dente); g('procedimento', campos.procedimento); g('conv_odo', campos.convenio_odonto); g('retorno', campos.data_retorno);
+    } else if (currentVertical === 'academia') {
+        g('plano_mensal', campos.plano_mensal); g('treino', campos.treino); g('freq', campos.frequencia_semanal); g('checkin', campos.ultimo_checkin);
+    }
 }
 async function trocarVertical(slug) {
     if (!slug) slug = 'geral';
@@ -3124,6 +3260,12 @@ function abrirModalCriar() {
     document.querySelectorAll('#criar-tags-container .tag-checkbox').forEach(cb => cb.checked = false);
     limparErrosForm('form-criar');
 
+    aplicarVertical(currentVertical);
+    // garante 1 carro para oficina
+    if (currentVertical === 'lava_rapido_oficina') {
+        const cont=document.getElementById('criar-carros-container');
+        if(cont && cont.children.length===0) adicionarCarro('criar');
+    }
     abrirModal('modal-criar');
 }
 
@@ -3164,7 +3306,8 @@ async function salvarNovoCliente(event) {
         valor_plano:     document.getElementById('criar-valor-plano')?.value.trim() || null,
         vencimento_dia:  document.getElementById('criar-vencimento')?.value ? parseInt(document.getElementById('criar-vencimento').value) : null,
         status_pagamento: document.getElementById('criar-status-pagamento')?.value || null,
-        data_cadastro:   new Date().toISOString().split('T')[0]
+        data_cadastro:   new Date().toISOString().split('T')[0],
+        campos_custom:   coletarCamposCustom('criar')
     };
 
     setButtonLoading(btnSubmit, true, 'Cadastrando...');
@@ -3222,6 +3365,8 @@ async function salvarNovoCliente(event) {
 function abrirModalEditar(id) {
     const cliente = clientesCache.find(c => String(c.id) === String(id));
     if (!cliente) return;
+    // 4A: garante vertical campos renderizados antes de preencher
+    aplicarVertical(currentVertical);
 
     document.getElementById('editar-id').value            = cliente.id;
     document.getElementById('editar-id-label').textContent = cliente.id;
@@ -3318,6 +3463,7 @@ async function salvarEdicaoCliente(event) {
         valor_plano:     document.getElementById('editar-valor-plano')?.value.trim() || null,
         vencimento_dia:  document.getElementById('editar-vencimento')?.value ? parseInt(document.getElementById('editar-vencimento').value) : null,
         status_pagamento: document.getElementById('editar-status-pagamento')?.value || null,
+        campos_custom:   coletarCamposCustom('editar'),
     };
 
     setButtonLoading(btnSubmit, true, 'Salvando...');
@@ -3563,6 +3709,27 @@ function abrirModalDetalhes(id) {
         }).join('');
         if (window.lucide) lucide.createIcons();
     });
+
+    // 4A: mostra campos_custom no detalhes
+    if (cliente.campos_custom && Object.keys(cliente.campos_custom).length) {
+        const cc = cliente.campos_custom;
+        let ccHtml = '<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60"><h4 class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Vertical — ' + escaparHTML(currentVertical) + '</h4><div class="grid grid-cols-2 gap-2 text-xs">';
+        for (const [k,v] of Object.entries(cc)) {
+            if (Array.isArray(v)) {
+                ccHtml += `<div class="col-span-2"><span class="text-slate-400">${escaparHTML(k)}:</span> <strong class="text-slate-800 dark:text-slate-200">${v.map(x=> escaparHTML((x.placa||'')+' '+(x.modelo||'')+(x.km?' ('+x.km+'km)':''))).join(' • ')}</strong></div>`;
+            } else {
+                ccHtml += `<div><span class="text-slate-400">${escaparHTML(k)}:</span> <strong class="text-slate-800 dark:text-slate-200">${escaparHTML(String(v))}</strong></div>`;
+            }
+        }
+        ccHtml += '</div></div>';
+        // injeta antes do footer de atividades
+        const detBody = document.getElementById('detalhes-body');
+        if (detBody) {
+            const first = detBody.querySelector('div');
+            // append at end before atividades
+            detBody.insertAdjacentHTML('beforeend', ccHtml);
+        }
+    }
 
     document.getElementById('btn-editar-de-detalhes').onclick = () => {
         fecharModalDetalhes();
