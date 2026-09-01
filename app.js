@@ -1399,6 +1399,22 @@ function setSecao(secao, pushState=true) {
     if (secao === 'agenda') {
         carregarAtividadesAgenda();
     }
+    // Sincroniza Tabela|Kanban toggle com secao
+    const btnTabela = document.getElementById('btn-view-tabela');
+    const btnKanban = document.getElementById('btn-view-kanban');
+    if (btnTabela && btnKanban) {
+        if (secao === 'kanban') {
+            btnTabela.classList.remove('bg-white','dark:bg-slate-700','shadow-sm','border','border-slate-200','dark:border-slate-600','font-bold','text-slate-900','dark:text-white');
+            btnTabela.classList.add('text-slate-500','dark:text-slate-400','font-semibold');
+            btnKanban.classList.add('bg-white','dark:bg-slate-700','shadow-sm','border','border-slate-200','dark:border-slate-600','font-bold','text-slate-900','dark:text-white');
+            btnKanban.classList.remove('text-slate-500','dark:text-slate-400','font-semibold');
+        } else if (secao === 'clientes') {
+            btnKanban.classList.remove('bg-white','dark:bg-slate-700','shadow-sm','border','border-slate-200','dark:border-slate-600','font-bold','text-slate-900','dark:text-white');
+            btnKanban.classList.add('text-slate-500','dark:text-slate-400','font-semibold');
+            btnTabela.classList.add('bg-white','dark:bg-slate-700','shadow-sm','border','border-slate-200','dark:border-slate-600','font-bold','text-slate-900','dark:text-white');
+            btnTabela.classList.remove('text-slate-500','dark:text-slate-400','font-semibold');
+        }
+    }
     // Update sidebar org/vertical info
     const org = orgsCache.find(o=>o.id===currentOrgId);
     const sideOrg = document.getElementById('sidebar-org-nome');
