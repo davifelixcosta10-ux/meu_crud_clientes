@@ -1016,6 +1016,11 @@ function renderizarApiKeys() {
 function abrirModalApiKeys() {
     const modal = document.getElementById('modal-apikeys');
     if (!modal) return;
+    // esconde plain_key antiga (só mostra logo após gerar)
+    const box = document.getElementById('apikey-nova');
+    if (box) box.classList.add('hidden');
+    const code = document.getElementById('apikey-plain');
+    if (code) code.textContent = '';
     modal.classList.remove('hidden');
     requestAnimationFrame(()=>{ modal.querySelector('.modal-box')?.classList.remove('scale-95','opacity-0'); modal.querySelector('.modal-box')?.classList.add('scale-100','opacity-100'); });
     carregarApiKeys();
@@ -1026,6 +1031,9 @@ function fecharModalApiKeys() {
     if (!modal) return;
     modal.querySelector('.modal-box')?.classList.add('scale-95','opacity-0');
     setTimeout(()=> modal.classList.add('hidden'), 200);
+    // limpa plain_key ao fechar por segurança
+    const box = document.getElementById('apikey-nova');
+    if (box) box.classList.add('hidden');
 }
 async function criarApiKey() {
     const input = document.getElementById('apikey-nome-input');
