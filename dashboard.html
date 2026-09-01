@@ -441,6 +441,11 @@
                     <span class="hidden md:inline">Planos</span>
                 </button>
 
+                <button id="btn-toolbar-integracoes" onclick="abrirModalIntegracoes()" type="button" class="btn-ghost whitespace-nowrap" title="Integrações (Calendar, Zapier, Conta Azul)">
+                    <i data-lucide="plug" class="w-4 h-4 text-slate-500"></i>
+                    <span class="hidden md:inline">Integrações</span>
+                </button>
+
                 <button onclick="exportarCSV()" type="button" class="btn-ghost whitespace-nowrap" title="Exportar dados da tabela para CSV">
                     <i data-lucide="download" class="w-4 h-4 text-slate-500"></i>
                     <span class="hidden md:inline">Exportar</span>
@@ -1866,6 +1871,63 @@
                     <h4 class="text-xs font-bold uppercase tracking-widest text-slate-500">Clientes desta organização</h4>
                     <p class="text-[11px] text-slate-400">Lista com opção de remover (excluir) cliente da org atual.</p>
                     <div id="lista-clientes-gerenciar" class="space-y-1.5 text-xs max-h-[240px] overflow-y-auto"><p class="text-[11px] text-slate-400">Carregando...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         MODAL: INTEGRAÇÕES (Fase 3B) — Calendar / Zapier / Conta Azul
+         ==================================================== -->
+    <div id="modal-integracoes" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box flex flex-col max-h-[92vh] sm:mx-4 scale-95 opacity-0">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="plug" class="w-4 h-4 text-indigo-600"></i> Integrações</h3>
+                <button onclick="fecharModalIntegracoes()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700/60"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 space-y-6">
+                <!-- Calendar -->
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 flex items-center justify-center"><i data-lucide="calendar" class="w-4 h-4 text-indigo-600"></i></div>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Google Calendar</h4>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">em breve</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Conecte sua agenda para criar eventos a partir de atividades (follow-up → evento). OAuth mock na Fase 3B.</p>
+                    <button onclick="conectarCalendar()" class="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Conectar Calendar</button>
+                    <span id="calendar-status" class="text-[11px] text-slate-400 ml-2"></span>
+                </div>
+                <!-- Zapier -->
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-500/10 border border-orange-200/60 flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-orange-600"></i></div>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Zapier / Make</h4>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">ativo</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3">Use o webhook abaixo no Zapier/Make para criar clientes automaticamente. Envie JSON com <code>nome,email,telefone</code>.</p>
+                    <div class="flex gap-2">
+                        <input id="zapier-webhook-url" readonly class="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300" placeholder="Clique em Criar para gerar URL">
+                        <button onclick="copiarWebhookUrl()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700/60">Copiar</button>
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="criarIntegracaoZapier()" class="px-4 py-2 text-xs font-bold rounded-xl bg-orange-600 text-white hover:bg-orange-700">Criar webhook Zapier</button>
+                        <button onclick="testarWebhookZapier()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700/60">Testar</button>
+                    </div>
+                </div>
+                <!-- Conta Azul -->
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700/60 p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/60 flex items-center justify-center"><i data-lucide="banknote" class="w-4 h-4 text-emerald-600"></i></div>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Conta Azul</h4>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">planejado</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-3">Sincronize financeiro (em breve). Nesta fase salva config e mostra toggle.</p>
+                    <label class="flex items-center gap-2 text-xs"><input id="contaazul-toggle" type="checkbox" onchange="toggleContaAzul(this.checked)" class="rounded"> Ativar sync Conta Azul (mock)</label>
+                </div>
+                <!-- Lista integrações -->
+                <div class="border-t border-slate-200 dark:border-slate-700/60 pt-4">
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Integrações ativas</h4>
+                    <div id="lista-integracoes" class="space-y-2 text-xs"><p class="text-[11px] text-slate-400">Carregando...</p></div>
                 </div>
             </div>
         </div>

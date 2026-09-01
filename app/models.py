@@ -754,3 +754,63 @@ class ConviteCreate(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class IntegracaoCreate(BaseModel):
+    """Cria integração por org (calendar/zapier/contaazul/webhook)."""
+
+    tipo: str  # calendar|zapier|contaazul|webhook
+    nome: Optional[str] = None
+    config: Optional[dict] = None
+    ativo: Optional[bool] = True
+
+    @validator("tipo")
+    def tipo_must_be_valid(cls, v):
+        allowed = {"calendar", "zapier", "contaazul", "webhook"}
+        if v not in allowed:
+            raise ValueError(f"tipo deve ser um de: {', '.join(sorted(allowed))}")
+        return v
+
+
+class IntegracaoUpdate(BaseModel):
+    tipo: Optional[str] = None
+    nome: Optional[str] = None
+    config: Optional[dict] = None
+    ativo: Optional[bool] = None
+
+    @validator("tipo")
+    def tipo_must_be_valid(cls, v):
+        if v is None:
+            return v
+        allowed = {"calendar", "zapier", "contaazul", "webhook"}
+        if v not in allowed:
+            raise ValueError(f"tipo deve ser um de: {', '.join(sorted(allowed))}")
+        return v
+
+
+class Integracao(BaseModel):
+    id: Union[int, str]
+    org_id: Optional[str] = None
+    user_id: str
+    tipo: str
+    nome: Optional[str] = None
+    config: Optional[dict] = None
+    ativo: bool = True
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class WebhookZapierPayload(BaseModel):
+    """Payload genérico para webhook Zapier/Make -> cria cliente."""
+
+    nome: Optional[str] = None
+    email: Optional[EmailStr] = None
+    telefone: Optional[str] = None
+    plano: Optional[str] = None
+    empresa: Optional[str] = None
+    observacoes: Optional[str] = None
+    # permite campos extras
+    class Config:
+        extra = "allow"

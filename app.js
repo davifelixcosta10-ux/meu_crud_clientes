@@ -327,6 +327,7 @@ async function inicializarApp() {
     await carregarTags();
     await carregarFiltrosSalvos();
     await carregarClientes();
+    await carregarIntegracoes();
     setViewMode(viewMode, true);
     restaurarEstadoRelatorios();
     await carregarRelatorios();
@@ -394,11 +395,16 @@ function atualizarPermissoesUI() {
     const btnPlanos = document.getElementById('btn-toolbar-planos');
     const btnEtapas = document.getElementById('btn-toolbar-etapas');
     const btnTags = document.getElementById('btn-toolbar-tags');
-    [btnPlanos, btnEtapas, btnTags].forEach(btn => {
+    const btnIntegracoes = document.getElementById('btn-toolbar-integracoes');
+    [btnPlanos, btnEtapas, btnTags, btnIntegracoes].forEach(btn => {
         if (!btn) return;
-        btn.style.display = isAdmin ? '' : 'none';
+        // 3B-fix: membro vê porém desabilitado (cinza) em vez de hidden
+        btn.style.display = '';
         btn.disabled = !isAdmin;
-        btn.title = isAdmin ? btn.getAttribute('title') || '' : 'Apenas admin pode gerenciar';
+        btn.classList.toggle('opacity-50', !isAdmin);
+        btn.classList.toggle('cursor-not-allowed', !isAdmin);
+        btn.title = isAdmin ? (btn.getAttribute('data-title') || btn.getAttribute('title') || '') : 'Apenas admin pode gerenciar';
+        if (!btn.getAttribute('data-title') && btn.getAttribute('title')) btn.setAttribute('data-title', btn.getAttribute('title'));
     });
     // modal gerenciar
     const secConvite = document.getElementById('gerenciar-secao-convite-form');
@@ -441,7 +447,7 @@ function trocarOrg(orgId) {
     else localStorage.removeItem('daviflow_org_id');
     renderizarOrgsSelect();
     // recarrega dados da org
-    Promise.all([carregarClientes(), carregarEtapas(), carregarTags(), carregarFiltrosSalvos(), carregarRelatorios()]).then(() => {
+    Promise.all([carregarClientes(), carregarEtapas(), carregarTags(), carregarFiltrosSalvos(), carregarRelatorios(), carregarIntegracoes()]).then(() => {
         if (window.lucide) lucide.createIcons();
     });
 }
@@ -802,6 +808,130 @@ async function removerClienteGerenciar(clienteId) {
         } catch(e) { exibirToast('Erro ao excluir', 'erro'); }
     });
 }
+
+// ============================================================
+// 3B — INTEGRAÇÕES (Calendar / Zapier / Conta Azul)
+// ============================================================
+let integracoesCache = [];
+async function carregarIntegracoes() {
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/integracoes${getOrgQuery()}`, { method: 'GET' });
+        if (!resp || !resp.ok) { integracoesCache = []; renderizarIntegracoes(); return; }
+        const data = await resp.json();
+        integracoesCache = Array.isArray(data) ? data : [];
+        renderizarIntegracoes();
+    } catch(e) { integracoesCache = []; renderizarIntegracoes(); }
+}
+function renderizarIntegracoes() {
+    const container = document.getElementById('lista-integracoes');
+    if (!container) return;
+    if (integracoesCache.length === 0) {
+        container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhuma integração ativa. Crie um webhook Zapier.</p>';
+        return;
+    }
+    container.innerHTML = integracoesCache.map(i => {
+        const tipoIcon = i.tipo === 'zapier' ? 'zap' : i.tipo === 'calendar' ? 'calendar' : 'banknote';
+        const tipoLabel = i.tipo;
+        return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2"><i data-lucide="${tipoIcon}" class="w-3.5 h-3.5 text-slate-500"></i><span class="font-semibold">${escaparHTML(i.nome || tipoLabel)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-full ${i.ativo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${i.ativo ? 'ativa' : 'inativa'}</span><span class="text-[10px] text-slate-400">${escaparHTML(i.tipo)}</span></div><button onclick="deletarIntegracao('${i.id}')" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50" title="Remover (apenas admin)"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`;
+    }).join('');
+    // atualiza webhook url se tiver zapier
+    const zap = integracoesCache.find(x => x.tipo === 'zapier' || x.tipo === 'webhook');
+    const input = document.getElementById('zapier-webhook-url');
+    if (input && zap) {
+        const base = window.location.origin;
+        input.value = `${base}/api/webhooks/zapier/${zap.id}`;
+    }
+    if (window.lucide) lucide.createIcons();
+}
+function abrirModalIntegracoes() {
+    // membro pode ver mas não criar - mostra aviso se não admin
+    if (!isCurrentOrgAdmin()) {
+        // permite abrir em modo leitura
+    }
+    const modal = document.getElementById('modal-integracoes');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        modal.querySelector('.modal-box')?.classList.remove('scale-95','opacity-0');
+        modal.querySelector('.modal-box')?.classList.add('scale-100','opacity-100');
+    });
+    carregarIntegracoes();
+    if (window.lucide) lucide.createIcons();
+}
+function fecharModalIntegracoes() {
+    const modal = document.getElementById('modal-integracoes');
+    if (!modal) return;
+    modal.querySelector('.modal-box')?.classList.add('scale-95','opacity-0');
+    setTimeout(() => modal.classList.add('hidden'), 200);
+}
+async function criarIntegracaoZapier() {
+    if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode criar integrações', 'erro'); return; }
+    if (!currentOrgId) { exibirToast('Selecione uma organização', 'erro'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/integracoes${getOrgQuery()}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: 'zapier', nome: 'Zapier webhook', config: {}, ativo: true }) });
+        if (!resp || !resp.ok) { const err = await resp.json().catch(()=>({})); if (resp && resp.status === 403) exibirToast(err.detail || 'Apenas admin pode criar', 'erro'); else exibirToast(err.detail || 'Erro ao criar integração', 'erro'); return; }
+        exibirToast('Webhook Zapier criado!', 'sucesso');
+        await carregarIntegracoes();
+    } catch(e) { exibirToast('Erro ao criar webhook', 'erro'); }
+}
+async function deletarIntegracao(id) {
+    if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode remover', 'erro'); return; }
+    confirmarAcao('Remover integração?', 'A URL do webhook deixará de funcionar. Deseja continuar?', async () => {
+        try {
+            const resp = await fetchAuth(`${API_BASE_URL}/integracoes/${id}`, { method: 'DELETE' });
+            if (!resp || !resp.ok) { const err = await resp.json().catch(()=>({})); if (resp && resp.status === 403) exibirToast(err.detail || 'Apenas admin', 'erro'); else exibirToast(err.detail || 'Erro ao remover', 'erro'); return; }
+            exibirToast('Integração removida', 'sucesso');
+            await carregarIntegracoes();
+        } catch(e) { exibirToast('Erro ao remover', 'erro'); }
+    });
+}
+function copiarWebhookUrl() {
+    const input = document.getElementById('zapier-webhook-url');
+    if (!input || !input.value) { exibirToast('Crie um webhook primeiro', 'info'); return; }
+    navigator.clipboard.writeText(input.value).then(()=> exibirToast('URL copiada!', 'sucesso')).catch(()=> exibirToast(input.value, 'info'));
+}
+async function testarWebhookZapier() {
+    const input = document.getElementById('zapier-webhook-url');
+    if (!input || !input.value) { exibirToast('Crie um webhook primeiro', 'info'); return; }
+    const url = input.value;
+    try {
+        const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: 'Teste Zapier', email: 'teste_zapier_'+Date.now()+'@exemplo.com', telefone: '(11) 99999-0000' }) });
+        const data = await resp.json().catch(()=>({}));
+        if (resp.ok) { exibirToast('Teste ok! Cliente criado: '+(data.cliente?.email || ''), 'sucesso'); await carregarClientes(); }
+        else exibirToast(data.detail || 'Erro no teste', 'erro');
+    } catch(e) { exibirToast('Erro ao testar webhook', 'erro'); }
+}
+async function conectarCalendar() {
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/integracoes/calendar/auth-url${getOrgQuery()}`, { method: 'GET' });
+        if (!resp || !resp.ok) { exibirToast('Erro ao conectar Calendar', 'erro'); return; }
+        const data = await resp.json();
+        const status = document.getElementById('calendar-status');
+        if (status) status.textContent = 'Mock conectado: ' + (data.auth_url || '');
+        exibirToast('Calendar conectado (mock)!', 'sucesso');
+        // cria integração calendar mock se não existe
+        if (!integracoesCache.find(x=>x.tipo==='calendar')) {
+            await fetchAuth(`${API_BASE_URL}/integracoes${getOrgQuery()}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: 'calendar', nome: 'Google Calendar', config: { mock: true }, ativo: true }) });
+            await carregarIntegracoes();
+        }
+    } catch(e) { exibirToast('Erro Calendar', 'erro'); }
+}
+async function toggleContaAzul(ativo) {
+    if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode alterar', 'erro'); document.getElementById('contaazul-toggle').checked = !ativo; return; }
+    try {
+        const existente = integracoesCache.find(x=>x.tipo==='contaazul');
+        if (ativo && !existente) {
+            await fetchAuth(`${API_BASE_URL}/integracoes${getOrgQuery()}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: 'contaazul', nome: 'Conta Azul', config: { sync: true }, ativo: true }) });
+        } else if (!ativo && existente) {
+            await fetchAuth(`${API_BASE_URL}/integracoes/${existente.id}`, { method: 'DELETE' });
+        } else if (existente) {
+            await fetchAuth(`${API_BASE_URL}/integracoes/${existente.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ativo }) });
+        }
+        exibirToast(ativo ? 'Conta Azul ativado (mock)' : 'Conta Azul desativado', ativo ? 'sucesso' : 'info');
+        await carregarIntegracoes();
+    } catch(e) { exibirToast('Erro Conta Azul', 'erro'); }
+}
+
 
 // ============================================================
 // 1. TEMA DARK / LIGHT — persiste em localStorage.theme
