@@ -43,6 +43,7 @@ from app.models import (
     Organizacao, OrganizacaoCreate, ConviteCreate,
     Integracao, IntegracaoCreate, IntegracaoUpdate, WebhookZapierPayload,
     Anexo, AnexoCreate, ApiKey, ApiKeyCreate,
+    Vertical, VerticalUpdate,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -63,6 +64,7 @@ from app.storage import (
     listar_integracoes, criar_integracao, atualizar_integracao, deletar_integracao, processar_webhook_zapier,
     listar_anexos, criar_anexo, deletar_anexo,
     listar_api_keys, criar_api_key, deletar_api_key, verificar_api_key,
+    listar_verticais, get_org_vertical, set_org_vertical,
 )
 
 # --- Rate Limiter ---
@@ -1077,6 +1079,45 @@ async def listar_clientes_via_api_key(org_id: str | None = None, user_id: str = 
     except Exception as e:
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)[:300]}")
+
+
+# ============================================================
+# VERTICAIS — Fase 4A
+# ============================================================
+@app.get("/api/verticais", tags=["Verticais"])
+async def get_verticais(user_id: str = Depends(obter_user_id)):
+    """Lista verticais disponíveis (geral, hospital, lava_rapido_oficina, dentista, academia)."""
+    try:
+        return listar_verticais()
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar verticais: {str(e)[:300]}")
+
+@app.get("/api/orgs/{org_id}/vertical", tags=["Verticais"])
+async def get_vertical(org_id: str, user_id: str = Depends(obter_user_id)):
+    """Retorna vertical atual da org."""
+    try:
+        slug = get_org_vertical(org_id)
+        return {"org_id": org_id, "vertical": slug}
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao buscar vertical: {str(e)[:300]}")
+
+@app.patch("/api/orgs/{org_id}/vertical", tags=["Verticais"])
+async def patch_vertical(org_id: str, dados: VerticalUpdate, user_id: str = Depends(obter_user_id)):
+    """Atualiza vertical da org (apenas admin)."""
+    try:
+        row = set_org_vertical(org_id, dados.vertical, user_id)
+        return {"org_id": org_id, "vertical": row.get("vertical")}
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atualizar vertical: {str(e)[:300]}")
+
 
 
 

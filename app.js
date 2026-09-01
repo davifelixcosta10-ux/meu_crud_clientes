@@ -322,6 +322,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function inicializarApp() {
     await carregarOrgs();
+    await carregarVerticais();
+    await carregarVerticalOrg();
+    // mostra modal escolha na primeira visita se vertical geral e sem escolha previa
+    if (!localStorage.getItem('daviflow_vertical_escolhido') && currentVertical === 'geral') {
+        setTimeout(()=> abrirModalVertical(), 800);
+    } else {
+        aplicarVertical(currentVertical);
+    }
     await carregarPlanos();
     await carregarEtapas();
     await carregarTags();
@@ -447,6 +455,7 @@ function trocarOrg(orgId) {
     if (currentOrgId) localStorage.setItem('daviflow_org_id', currentOrgId);
     else localStorage.removeItem('daviflow_org_id');
     renderizarOrgsSelect();
+    carregarVerticalOrg();
     // recarrega dados da org
     Promise.all([carregarClientes(), carregarEtapas(), carregarTags(), carregarFiltrosSalvos(), carregarRelatorios(), carregarIntegracoes()]).then(() => {
         if (window.lucide) lucide.createIcons();
@@ -939,6 +948,8 @@ async function toggleContaAzul(ativo) {
 let anexosCache = [];
 let apiKeysCache = [];
 let detalhesClienteIdAtual = null;
+let verticaisCache = [];
+let currentVertical = localStorage.getItem('daviflow_vertical') || 'geral';
 
 async function carregarAnexos(clienteId) {
     const container = document.getElementById('anexos-lista');
@@ -1067,6 +1078,103 @@ async function deletarApiKey(id) {
         } catch(e) { exibirToast('Erro ao revogar', 'erro'); }
     });
 }
+
+// ============================================================
+// 4A — VERTICAIS
+// ============================================================
+async function carregarVerticais() {
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/verticais`, { method: 'GET' });
+        if (!resp || !resp.ok) return;
+        verticaisCache = await resp.json();
+    } catch(e) {}
+}
+async function carregarVerticalOrg() {
+    if (!currentOrgId) return;
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/vertical`, { method: 'GET' });
+        if (!resp || !resp.ok) return;
+        const data = await resp.json();
+        if (data.vertical) {
+            currentVertical = data.vertical;
+            localStorage.setItem('daviflow_vertical', currentVertical);
+            const sel = document.getElementById('vertical-select');
+            if (sel) sel.value = currentVertical;
+            aplicarVertical(currentVertical);
+        }
+    } catch(e) {}
+}
+function aplicarVertical(slug) {
+    currentVertical = slug || 'geral';
+    localStorage.setItem('daviflow_vertical', currentVertical);
+    const sel = document.getElementById('vertical-select');
+    if (sel) sel.value = currentVertical;
+    // Mapeamento simples de renomeação e visibilidade (MVP 4A)
+    const mapRenomeia = {
+        hospital: { cargo: 'Especialidade', empresa: 'Setor/Unidade' },
+        lava_rapido_oficina: { empresa: 'Veículo/Oficina' },
+        academia: { cargo: 'Treino' },
+        geral: {},
+        dentista: {},
+    };
+    const ren = mapRenomeia[slug] || {};
+    // Renomeia labels cargo/empresa se existirem
+    document.querySelectorAll('label[for="criar-cargo"], label[for="editar-cargo"]').forEach(l => {
+        const base = 'Cargo';
+        l.textContent = ren.cargo || base;
+        if (ren.cargo) l.innerHTML = `${ren.cargo} <span class="text-[10px] text-slate-400">(vertical)</span>`;
+    });
+    document.querySelectorAll('label[for="criar-empresa"], label[for="editar-empresa"]').forEach(l => {
+        const base = 'Empresa';
+        if (ren.empresa) l.textContent = ren.empresa;
+        else l.textContent = base;
+    });
+    // Esconde campos extras por vertical (MVP: só log, não remove dados)
+    const escondeMap = {
+        hospital: ['placa','km','modelo','dente'],
+        lava_rapido_oficina: ['dente','procedimento','convenio'],
+        dentista: ['placa','km','modelo'],
+        academia: ['placa','km','modelo','dente'],
+        geral: [],
+    };
+    const esconder = escondeMap[slug] || [];
+    // Marca no console para debug
+    console.log('[vertical] aplicando', slug, 'esconde', esconder, 'renomeia', ren);
+    // Mostra toast informativo apenas quando troca manual (não no load inicial silencioso)
+    // Não faz hide real de inputs nesta versão MVP — apenas prepara para 4B
+    // Para 4A completo, descomentar hide abaixo:
+    // esconder.forEach(campo => { document.querySelectorAll(`[data-vertical-campo="${campo}"]`).forEach(el=> el.classList.add('hidden')); });
+}
+async function trocarVertical(slug) {
+    if (!slug) slug = 'geral';
+    if (!currentOrgId) { aplicarVertical(slug); return; }
+    if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode trocar vertical da org', 'erro'); const sel=document.getElementById('vertical-select'); if(sel) sel.value=currentVertical; return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/vertical`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vertical: slug }) });
+        if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro ao trocar vertical', 'erro'); document.getElementById('vertical-select').value=currentVertical; return; }
+        exibirToast(`Vertical alterada para ${slug}`, 'sucesso');
+        aplicarVertical(slug);
+    } catch(e) { exibirToast('Erro ao trocar vertical', 'erro'); }
+}
+function selecionarVertical(slug) {
+    localStorage.setItem('daviflow_vertical_escolhido', '1');
+    fecharModalVertical();
+    trocarVertical(slug);
+}
+function abrirModalVertical() {
+    const modal = document.getElementById('modal-vertical');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    requestAnimationFrame(()=>{ modal.querySelector('.modal-box')?.classList.remove('scale-95','opacity-0'); modal.querySelector('.modal-box')?.classList.add('scale-100','opacity-100'); });
+    if (window.lucide) lucide.createIcons();
+}
+function fecharModalVertical() {
+    const modal = document.getElementById('modal-vertical');
+    if (!modal) return;
+    modal.querySelector('.modal-box')?.classList.add('scale-95','opacity-0');
+    setTimeout(()=> modal.classList.add('hidden'), 200);
+}
+
 
 
 

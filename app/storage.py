@@ -352,6 +352,7 @@ _COLUNAS_CLIENTE = [
     "data_nascimento", "genero", "empresa", "cargo", "observacoes",
     "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "estado",
     "etapa_id", "valor_plano", "vencimento_dia", "status_pagamento",
+    "campos_custom",
 ]
 
 
@@ -2245,6 +2246,40 @@ def verificar_api_key(plain_key: str) -> dict | None:
     except Exception:
         pass
     return res.data[0]
+
+# ============================================================
+# FASE 4A — VERTICAIS
+# ============================================================
+
+def listar_verticais() -> list[dict]:
+    supabase = get_supabase_client()
+    res = supabase.table("verticais").select("*").order("slug").execute()
+    return res.data or []
+
+def get_org_vertical(org_id: str) -> str:
+    supabase = get_supabase_client()
+    res = supabase.table("organizacoes").select("vertical").eq("id", org_id).execute()
+    if res.data and res.data[0].get("vertical"):
+        return res.data[0].get("vertical")
+    return "geral"
+
+def set_org_vertical(org_id: str, vertical: str, user_id: str) -> dict:
+    if vertical not in ("geral","hospital","lava_rapido_oficina","dentista","academia","custom"):
+        raise ValueError("vertical inválida")
+    supabase = get_supabase_client()
+    # apenas admin pode trocar vertical
+    _verificar_admin(user_id, org_id)
+    res = supabase.table("organizacoes").update({"vertical": vertical}).eq("id", org_id).execute()
+    if not res.data:
+        raise ValueError("Falha ao atualizar vertical")
+    return res.data[0]
+
+def get_vertical_config(slug: str) -> dict | None:
+    supabase = get_supabase_client()
+    res = supabase.table("verticais").select("config_json").eq("slug", slug).execute()
+    if res.data:
+        return res.data[0].get("config_json")
+    return None
 
 # --- Helpers para garantir org_id em criações (migração limpa) ---
 

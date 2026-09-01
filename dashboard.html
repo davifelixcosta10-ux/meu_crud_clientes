@@ -108,6 +108,13 @@
                 <select id="org-select" onchange="trocarOrg(this.value)" class="hidden sm:inline-flex px-2.5 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-700/40 text-slate-700 dark:text-slate-300 max-w-[150px] truncate focus:outline-none focus:ring-2 focus:ring-indigo-500/30" title="Organização">
                     <option value="">Minha organização</option>
                 </select>
+                <select id="vertical-select" onchange="trocarVertical(this.value)" class="hidden sm:inline-flex px-2.5 py-2 text-xs font-semibold rounded-xl border border-indigo-200 dark:border-indigo-700/60 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 max-w-[140px] truncate focus:outline-none focus:ring-2 focus:ring-indigo-500/30" title="Vertical">
+                    <option value="geral">Geral</option>
+                    <option value="hospital">Hospital</option>
+                    <option value="lava_rapido_oficina">Oficina</option>
+                    <option value="dentista">Dentista</option>
+                    <option value="academia">Academia</option>
+                </select>
                 <button onclick="abrirModalGerenciarOrg()" type="button" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-700/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all" title="Gerenciar organização">
                     <i data-lucide="settings-2" class="w-4 h-4"></i>
                     <span class="hidden lg:inline">Gerenciar</span>
@@ -1890,6 +1897,43 @@
                     <p class="text-[11px] text-slate-400">Lista com opção de remover (excluir) cliente da org atual.</p>
                     <div id="lista-clientes-gerenciar" class="space-y-1.5 text-xs max-h-[240px] overflow-y-auto"><p class="text-[11px] text-slate-400">Carregando...</p></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         MODAL: ESCOLHA VERTICAL (Fase 4A) — Templates por Tipo de Empresa
+         ==================================================== -->
+    <div id="modal-vertical" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box flex flex-col max-h-[92vh] sm:mx-4 scale-95 opacity-0">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700/60">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-indigo-600"></i> Escolha seu tipo de empresa</h3>
+                <p class="text-xs text-slate-500 mt-1">Selecione o template que melhor descreve seu negócio. Você pode trocar depois no header. Campos irrelevantes serão escondidos.</p>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto">
+                <button onclick="selecionarVertical('geral')" class="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700/60 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-left">
+                    <div class="flex items-center gap-2 mb-1"><i data-lucide="briefcase" class="w-4 h-4 text-slate-500"></i><span class="font-bold text-sm">Geral</span></div>
+                    <p class="text-xs text-slate-500">30+ campos genéricos — padrão atual</p>
+                </button>
+                <button onclick="selecionarVertical('hospital')" class="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700/60 hover:border-indigo-500 hover:bg-indigo-50 text-left">
+                    <div class="flex items-center gap-2 mb-1"><i data-lucide="heart-pulse" class="w-4 h-4 text-rose-500"></i><span class="font-bold text-sm">Hospital / Clínica</span></div>
+                    <p class="text-xs text-slate-500">Convênio, leito, prontuário, CRM</p>
+                </button>
+                <button onclick="selecionarVertical('lava_rapido_oficina')" class="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700/60 hover:border-indigo-500 hover:bg-indigo-50 text-left">
+                    <div class="flex items-center gap-2 mb-1"><i data-lucide="car" class="w-4 h-4 text-amber-600"></i><span class="font-bold text-sm">Lava Rápido / Oficina</span></div>
+                    <p class="text-xs text-slate-500">Placa, modelo, KM, serviço</p>
+                </button>
+                <button onclick="selecionarVertical('dentista')" class="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700/60 hover:border-indigo-500 hover:bg-indigo-50 text-left">
+                    <div class="flex items-center gap-2 mb-1"><i data-lucide="smile" class="w-4 h-4 text-cyan-600"></i><span class="font-bold text-sm">Dentista</span></div>
+                    <p class="text-xs text-slate-500">Dente FDI, procedimento, convênio odonto</p>
+                </button>
+                <button onclick="selecionarVertical('academia')" class="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700/60 hover:border-indigo-500 hover:bg-indigo-50 text-left sm:col-span-2">
+                    <div class="flex items-center gap-2 mb-1"><i data-lucide="dumbbell" class="w-4 h-4 text-violet-600"></i><span class="font-bold text-sm">Academia</span></div>
+                    <p class="text-xs text-slate-500">Plano mensal, treino A/B/C, frequência, check-in</p>
+                </button>
+            </div>
+            <div class="px-6 py-3 border-t flex justify-end">
+                <button onclick="fecharModalVertical()" class="btn-ghost">Depois</button>
             </div>
         </div>
     </div>
