@@ -70,7 +70,49 @@
     </script>
     <script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
-<body class="h-full bg-slate-100 dark:bg-[#0f172a] text-slate-900 dark:text-slate-100 antialiased font-sans flex flex-col min-h-screen transition-colors duration-200">
+<body class="h-full bg-slate-100 dark:bg-[#0f172a] text-slate-900 dark:text-slate-100 antialiased font-sans flex min-h-screen transition-colors duration-200">
+
+    <!-- SIDEBAR 4B — Vercel style -->
+    <aside id="sidebar" class="hidden lg:flex w-[240px] flex-shrink-0 flex-col bg-white dark:bg-[#0f172a] border-r border-slate-200 dark:border-slate-800 sticky top-0 h-screen overflow-y-auto">
+        <div class="px-4 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div>
+            <div>
+                <p class="text-sm font-black tracking-tight">DaviFlow</p>
+                <p class="text-[11px] text-slate-400">Painel</p>
+            </div>
+        </div>
+        <nav class="flex-1 px-3 py-4 space-y-1">
+            <button onclick="setSecao('overview')" data-secao="overview" class="sidebar-link active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/40"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview</button>
+            <button onclick="setSecao('clientes')" data-secao="clientes" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100"><i data-lucide="users" class="w-4 h-4"></i> Clientes</button>
+            <button onclick="setSecao('kanban')" data-secao="kanban" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="kanban" class="w-4 h-4"></i> Kanban</button>
+            <button onclick="setSecao('relatorios')" data-secao="relatorios" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Relatórios</button>
+            <button onclick="setSecao('agenda')" data-secao="agenda" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="calendar" class="w-4 h-4"></i> Agenda</button>
+            <button onclick="setSecao('config')" data-secao="config" class="sidebar-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="settings" class="w-4 h-4"></i> Configurações</button>
+        </nav>
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span id="sidebar-org-nome" class="truncate font-semibold"></span>
+                <span id="sidebar-vertical-nome" class="px-1.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 text-[10px]"></span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Vercel-style sidebar • 4B</p>
+        </div>
+    </aside>
+    <!-- Mobile drawer overlay -->
+    <div id="sidebar-overlay" onclick="toggleSidebarMobile(false)" class="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden"></div>
+    <aside id="sidebar-mobile" class="lg:hidden fixed left-0 top-0 w-[280px] h-screen bg-white dark:bg-[#0f172a] border-r border-slate-200 dark:border-slate-800 z-50 transform -translate-x-full transition-transform duration-200 flex flex-col">
+        <div class="px-4 py-5 border-b flex items-center justify-between">
+            <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div><span class="font-black text-sm">DaviFlow</span></div>
+            <button onclick="toggleSidebarMobile(false)" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <nav class="flex-1 px-3 py-4 space-y-1">
+            <button onclick="setSecao('overview'); toggleSidebarMobile(false)" class="sidebar-link-mobile w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview</button>
+            <button onclick="setSecao('clientes'); toggleSidebarMobile(false)" class="sidebar-link-mobile w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"><i data-lucide="users" class="w-4 h-4"></i> Clientes</button>
+            <button onclick="setSecao('kanban'); toggleSidebarMobile(false)" class="sidebar-link-mobile w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"><i data-lucide="kanban" class="w-4 h-4"></i> Kanban</button>
+            <button onclick="setSecao('relatorios'); toggleSidebarMobile(false)" class="sidebar-link-mobile w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Relatórios</button>
+            <button onclick="setSecao('agenda'); toggleSidebarMobile(false)" class="sidebar-link-mobile w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"><i data-lucide="calendar" class="w-4 h-4"></i> Agenda</button>
+            <button onclick="setSecao('config'); toggleSidebarMobile(false)" class="sidebar-link-mobile w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"><i data-lucide="settings" class="w-4 h-4"></i> Configurações</button>
+        </nav>
+    </aside>
 
     <div class="flex-1 flex flex-col max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 gap-4 sm:gap-5">
 
@@ -78,6 +120,8 @@
              HEADER
              ================================================ -->
         <header class="bg-white dark:bg-[#1e293b] rounded-2xl px-4 sm:px-6 py-3.5 sm:py-4 shadow-sm border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between gap-4">
+            <!-- Mobile hamburger -->
+            <button onclick="toggleSidebarMobile(true)" class="lg:hidden p-2 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 mr-1"><i data-lucide="menu" class="w-4 h-4"></i></button>
             <!-- Brand -->
             <div class="flex items-center gap-3 min-w-0">
                 <a href="/" class="flex-shrink-0 w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-sm hover:opacity-90 transition-opacity" title="Voltar ao site">
@@ -85,7 +129,7 @@
                 </a>
                 <div class="min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <h1 class="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight">DaviFlow</h1>
+                        <div class="flex items-center gap-2"><h1 class="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight">DaviFlow</h1><span id="breadcrumb-secao" class="hidden sm:inline-flex items-center gap-1 text-xs text-slate-400">/ <span id="breadcrumb-text">Overview</span></span></div>
                         <!-- API Status badge -->
                         <div id="api-status-badge"
                             class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-slate-100 text-slate-500 dark:bg-slate-700/80 dark:text-slate-400 border border-slate-200 dark:border-slate-600/60 transition-all duration-300">
@@ -141,10 +185,8 @@
             </div>
         </header>
 
-        <!-- ================================================
-             METRICS — Fase 1: + Atrasados (1B) e Receita (1D)
-             ================================================ -->
-        <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- SECAO OVERVIEW -->
+        <section id="secao-overview" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 
             <!-- Total -->
             <div class="metric-card">
@@ -259,10 +301,8 @@
 
         </section>
 
-        <!-- ================================================
-             RELATÓRIOS — Fase 2A Conversão + Receita
-             ================================================ -->
-        <section id="relatorios-section" class="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm p-4 sm:p-5">
+        <!-- SECAO RELATORIOS -->
+        <section id="secao-relatorios" class="hidden"><section id="relatorios-section" class="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm p-4 sm:p-5">
             <div class="flex items-center justify-between gap-3 mb-4 cursor-pointer" onclick="toggleRelatoriosSection()">
                 <div class="flex items-center gap-2.5">
                     <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 flex items-center justify-center">
@@ -386,11 +426,10 @@
             </div>
             </div>
         </section>
+        </section>
 
-        <!-- ================================================
-             TOOLBAR
-             ================================================ -->
-        <section class="bg-white dark:bg-[#1e293b] px-4 py-3.5 sm:px-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col gap-3">
+        <!-- SECAO CLIENTES -->
+        <section id="secao-clientes" class="bg-white dark:bg-[#1e293b] px-4 py-3.5 sm:px-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col gap-3">
             <!-- Search -->
             <div class="relative w-full">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -471,8 +510,8 @@
             </div>
         </section>
 
-        <!-- VIEW TOGGLE — Tabela | Kanban -->
-        <section class="flex items-center justify-between gap-3">
+        <!-- VIEW TOGGLE — Tabela | Kanban (só em Clientes/Kanban) -->
+        <section id="secao-view-toggle" class="flex items-center justify-between gap-3">
             <div class="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
                 <button id="btn-view-tabela" onclick="setViewMode('tabela')" type="button"
                     class="px-4 py-1.5 text-xs font-bold rounded-lg bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white transition-all">
@@ -494,7 +533,7 @@
         <!-- ================================================
              MAIN: TABLE / CARDS
              ================================================ -->
-        <main class="relative bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm overflow-hidden flex-1 flex flex-col" style="min-height: 320px;">
+        <main id="secao-clientes-main" class="relative bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm overflow-hidden flex-1 flex flex-col" style="min-height: 320px;">
 
             <!-- LOADING SKELETON -->
             <div id="loading-state" class="absolute inset-0 z-10 bg-white dark:bg-[#1e293b] rounded-2xl flex flex-col">
@@ -612,14 +651,42 @@
             </div>
         </main>
 
-        <!-- KANBAN BOARD — Fase 1A (hidden até toggle) -->
-        <section id="kanban-board" class="hidden flex-1 flex-col bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm overflow-hidden" style="min-height: 320px;">
+        <!-- SECAO KANBAN -->
+        <section id="secao-kanban" class="hidden flex-1 flex-col"><section id="kanban-board" class="hidden flex-1 flex-col bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm overflow-hidden" style="min-height: 320px;">
             <div id="kanban-container" class="flex gap-4 p-4 overflow-x-auto flex-1 items-start">
                 <!-- Colunas renderizadas via JS: renderizarKanban() -->
                 <div class="flex items-center justify-center w-full py-16 text-sm text-slate-400 dark:text-slate-500">
                     <i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> Carregando Kanban...
                 </div>
             </div>
+        </section>
+        </section>
+
+        <!-- SECAO AGENDA — Fase 4B -->
+        <section id="secao-agenda" class="hidden bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm p-4 sm:p-6 flex-1 flex flex-col">
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 flex items-center justify-center"><i data-lucide="calendar" class="w-4 h-4 text-amber-600"></i></div>
+                <div><h2 class="text-sm font-bold">Agenda</h2><p class="text-xs text-slate-400">Timeline de atividades (follow-ups) • Fase 1B</p></div>
+                <button onclick="carregarAtividadesAgenda()" class="ml-auto p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+            </div>
+            <div id="agenda-lista" class="space-y-2 flex-1 overflow-y-auto"><p class="text-xs text-slate-400">Carregando agenda...</p></div>
+        </section>
+
+        <!-- SECAO CONFIG — Link para 4C -->
+        <section id="secao-config" class="hidden bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm p-6 flex-1 flex flex-col">
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border flex items-center justify-center"><i data-lucide="settings" class="w-4 h-4 text-slate-600"></i></div>
+                <div><h2 class="text-sm font-bold">Configurações</h2><p class="text-xs text-slate-400">Planos, etapas, tags, perfil, organização — em 4C</p></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <button onclick="abrirModalPlanos()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>Planos</strong><br><span class="text-slate-400">Gerenciar planos</span></button>
+                <button onclick="abrirModalEtapas()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>Etapas</strong><br><span class="text-slate-400">Kanban</span></button>
+                <button onclick="abrirModalTags()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>Tags</strong><br><span class="text-slate-400">Segmentação</span></button>
+                <button onclick="abrirModalGerenciarOrg()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>Organização</strong><br><span class="text-slate-400">Membros e vertical</span></button>
+                <button onclick="abrirModalApiKeys()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>API Keys</strong><br><span class="text-slate-400">X-API-Key</span></button>
+                <button onclick="abrirModalIntegracoes()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>Integrações</strong><br><span class="text-slate-400">Calendar/Zapier</span></button>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-4 text-center">Fase 4C trará página dedicada com abas <code> Geral | Organização | Planos | Etapas | Tags | Notificações | Conta</code></p>
         </section>
 
         <!-- FOOTER -->
@@ -629,7 +696,7 @@
                 <span class="text-slate-600 dark:text-slate-500">·</span>
                 <span>Painel de Gestão Operacional</span>
                 <span class="text-slate-600 dark:text-slate-500">·</span>
-                <code class="bg-slate-200/70 dark:bg-slate-800/60 px-1.5 py-0.5 rounded font-mono text-[10px]" id="footer-api-url">localhost:8000</code>
+                <code class="bg-slate-200/70 dark:bg-slate-800/60 px-1.5 py-0.5 rounded font-mono text-[10px] hidden sm:inline" id="footer-api-url">daviflow.vercel.app</code>
             </div>
             <div class="flex items-center justify-center gap-3 text-[10px]">
                 <a href="/privacidade.html" class="text-slate-500 hover:text-slate-300 transition-colors">Política de Privacidade</a>
