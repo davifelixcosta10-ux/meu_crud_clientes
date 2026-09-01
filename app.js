@@ -1417,7 +1417,10 @@ function renderizarConfigPlanos() {
     const cont = document.getElementById('config-planos-lista');
     if (!cont) return;
     if (planosCache.length===0) { cont.innerHTML='<p class="text-slate-400">Nenhum plano</p>'; return; }
-    cont.innerHTML = planosCache.map(p=> `<div class="flex items-center justify-between p-2 rounded border"><span class="font-bold text-xs">${escaparHTML(p.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100">${escaparHTML(p.cor)} • ${escaparHTML(p.valor||'')}</span></div>`).join('');
+    cont.innerHTML = planosCache.map(p=> {
+        const estilo = (typeof MAPA_CORES_PLANO !== 'undefined' && MAPA_CORES_PLANO[p.cor]) ? MAPA_CORES_PLANO[p.cor] : MAPA_CORES_PLANO.slate;
+        return `<div class="flex items-center justify-between p-2 rounded border bg-white dark:bg-slate-800/40"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${estilo.dot} flex-shrink-0"></span><span class="font-bold text-xs">${escaparHTML(p.nome)}</span></div><span class="text-[10px] px-1.5 py-0.5 rounded-full ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(p.valor||'')}</span></div>`;
+    }).join('');
 }
 function renderizarConfigEtapas() {
     const cont = document.getElementById('config-etapas-lista');
