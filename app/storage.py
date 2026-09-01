@@ -2281,6 +2281,76 @@ def get_vertical_config(slug: str) -> dict | None:
         return res.data[0].get("config_json")
     return None
 
+def get_usuario_me(user_id: str) -> dict:
+    supabase = get_supabase_client()
+    supa_admin = get_supabase_admin_client()
+    try:
+        # tenta via admin get_user_by_id
+        res = supa_admin.auth.admin.get_user_by_id(user_id)
+        user = getattr(res, "user", None) or (res.get("user") if isinstance(res, dict) else None)
+        if user:
+            email = getattr(user, "email", None) or (user.get("email") if isinstance(user, dict) else "")
+            meta = getattr(user, "user_metadata", None) or getattr(user, "raw_user_meta_data", None) or (user.get("user_metadata") if isinstance(user, dict) else {}) or {}
+            if not meta and isinstance(user, dict):
+                meta = user.get("raw_user_meta_data") or {}
+            # tenta pegar vertical da org atual
+            vertical = None
+            org_id = None
+            try:
+                org_id = _get_default_org_id(user_id)
+                if org_id:
+                    vertical = get_org_vertical(org_id)
+            except Exception:
+                pass
+            return {
+                "id": user_id,
+                "email": email or "",
+                "nome_completo": meta.get("nome_completo") or meta.get("full_name") or "",
+                "nome_empresa": meta.get("nome_empresa") or meta.get("company") or "",
+                "vertical": vertical or "geral",
+                "org_id": org_id,
+            }
+    except Exception:
+        pass
+    # fallback
+    return {"id": user_id, "email": "", "nome_completo": "", "nome_empresa": "", "vertical": "geral", "org_id": None}
+
+def update_usuario_me(user_id: str, dados: dict) -> dict:
+    supa_admin = get_supabase_admin_client()
+    meta = {}
+    if "nome_completo" in dados and dados["nome_completo"] is not None:
+        meta["nome_completo"] = dados["nome_completo"]
+    if "nome_empresa" in dados and dados["nome_empresa"] is not None:
+        meta["nome_empresa"] = dados["nome_empresa"]
+    try:
+        if meta:
+            supa_admin.auth.admin.update_user_by_id(user_id, {"user_metadata": meta})
+    except Exception as e:
+        # fallback tenta via supabase normal
+        try:
+            supabase = get_supabase_client()
+            supabase.auth.update_user({"data": meta})
+        except Exception:
+            pass
+    # se vertical vier, atualiza org
+    if dados.get("vertical"):
+        try:
+            oid = _get_default_org_id(user_id)
+            if oid:
+                set_org_vertical(oid, dados["vertical"], user_id)
+        except Exception:
+            pass
+    return get_usuario_me(user_id)
+
+def alterar_senha_usuario(user_id: str, nova_senha: str) -> bool:
+    supa_admin = get_supabase_admin_client()
+    try:
+        supa_admin.auth.admin.update_user_by_id(user_id, {"password": nova_senha})
+        return True
+    except Exception as e:
+        raise ValueError(f"Falha ao alterar senha: {str(e)[:200]}")
+
+
 # --- Helpers para garantir org_id em criações (migração limpa) ---
 
 def _ensure_org_id(payload: dict, user_id: str):

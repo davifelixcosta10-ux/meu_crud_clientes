@@ -1320,6 +1320,161 @@ function fecharModalVertical() {
 }
 
 // ============================================================
+// 4C — CONFIGURAÇÕES (7 abas)
+// ============================================================
+function trocarAbaConfig(aba) {
+    const abas = ['geral','org','planos','etapas','tags','notif','conta'];
+    abas.forEach(a => {
+        const btn = document.getElementById('tab-config-'+a);
+        const conteudo = document.getElementById('config-conteudo-'+a);
+        if (btn) {
+            if (a === aba) { btn.classList.add('bg-indigo-600','text-white'); btn.classList.remove('bg-slate-100','dark:bg-slate-800','text-slate-600'); }
+            else { btn.classList.remove('bg-indigo-600','text-white'); btn.classList.add('bg-slate-100','dark:bg-slate-800','text-slate-600'); }
+        }
+        if (conteudo) conteudo.classList.toggle('hidden', a !== aba);
+    });
+    if (aba === 'geral') carregarConfigGeral();
+    if (aba === 'org') carregarConfigOrg();
+    if (aba === 'planos') renderizarConfigPlanos();
+    if (aba === 'etapas') renderizarConfigEtapas();
+    if (aba === 'tags') renderizarConfigTags();
+    if (aba === 'notif') {
+        document.getElementById('notif-email-atrasado').checked = localStorage.getItem('daviflow_notif_email_atrasado') === '1';
+        document.getElementById('notif-push-vence').checked = localStorage.getItem('daviflow_notif_push_vence') === '1';
+    }
+    if (window.lucide) lucide.createIcons();
+}
+async function carregarConfigGeral() {
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/usuarios/me`, { method: 'GET' });
+        if (!resp || !resp.ok) return;
+        const data = await resp.json();
+        document.getElementById('config-nome').value = data.nome_completo || '';
+        document.getElementById('config-empresa').value = data.nome_empresa || '';
+        document.getElementById('config-email').value = data.email || '';
+        document.getElementById('config-vertical').value = data.vertical || currentVertical || 'geral';
+    } catch(e) {}
+}
+async function salvarConfigGeral() {
+    const payload = {
+        nome_completo: document.getElementById('config-nome')?.value.trim() || null,
+        nome_empresa: document.getElementById('config-empresa')?.value.trim() || null,
+        vertical: document.getElementById('config-vertical')?.value || null,
+    };
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/usuarios/me`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro ao salvar', 'erro'); return; }
+        exibirToast('Configurações salvas!', 'sucesso');
+        const data = await resp.json();
+        if (data.vertical) { currentVertical = data.vertical; localStorage.setItem('daviflow_vertical', currentVertical); aplicarVertical(currentVertical); document.getElementById('vertical-select').value = currentVertical; }
+    } catch(e) { exibirToast('Erro ao salvar', 'erro'); }
+}
+async function carregarConfigOrg() {
+    const org = orgsCache.find(o=>o.id===currentOrgId);
+    const info = document.getElementById('config-org-info');
+    if (info) {
+        if (org) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${escaparHTML(org.papel||'membro')}</span></div><div class="text-[11px] text-slate-400 mt-1">${escaparHTML(org.id.slice(0,8))}... • ${org.vertical||'geral'}</div>`;
+        else info.innerHTML = '<p class="text-xs text-slate-400">Nenhuma org selecionada</p>';
+    }
+    const input = document.getElementById('config-org-nome');
+    if (input && org) input.value = org.nome;
+    // membros
+    const cont = document.getElementById('config-org-membros');
+    if (cont) {
+        cont.innerHTML = '<p class="text-[11px] text-slate-400">Carregando...</p>';
+        try {
+            const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/membros`, { method: 'GET' });
+            if (!resp || !resp.ok) { cont.innerHTML = '<p class="text-rose-400">Erro</p>'; return; }
+            const membros = await resp.json();
+            const isAdmin = org?.papel === 'admin';
+            cont.innerHTML = membros.map(m=> `<div class="flex items-center justify-between p-1.5 rounded border"><span class="font-mono text-[10px]">${escaparHTML(m.user_id.slice(0,8))}... ${escaparHTML(m.papel)}</span>${isAdmin ? `<button onclick="removerMembro('${m.user_id}')" class="text-rose-500 text-[10px]">Remover</button>` : ''}</div>`).join('');
+        } catch(e) { cont.innerHTML = '<p class="text-rose-400">Erro</p>'; }
+    }
+}
+async function renomearOrgConfig() {
+    const nome = document.getElementById('config-org-nome')?.value.trim();
+    if (!nome) { exibirToast('Informe nome', 'erro'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome }) });
+        if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro', 'erro'); return; }
+        exibirToast('Organização renomeada', 'sucesso');
+        await carregarOrgs();
+    } catch(e) { exibirToast('Erro', 'erro'); }
+}
+async function convidarOrgConfig() {
+    const email = document.getElementById('config-convite-email')?.value.trim();
+    const papel = document.getElementById('config-convite-papel')?.value || 'membro';
+    if (!email) { exibirToast('Informe email', 'erro'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/convites`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, papel }) });
+        if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro', 'erro'); return; }
+        exibirToast('Convite enviado', 'sucesso');
+        document.getElementById('config-convite-email').value='';
+        carregarConfigOrg();
+    } catch(e) { exibirToast('Erro', 'erro'); }
+}
+function renderizarConfigPlanos() {
+    const cont = document.getElementById('config-planos-lista');
+    if (!cont) return;
+    if (planosCache.length===0) { cont.innerHTML='<p class="text-slate-400">Nenhum plano</p>'; return; }
+    cont.innerHTML = planosCache.map(p=> {
+        const estilo = (typeof MAPA_CORES_PLANO !== 'undefined' && MAPA_CORES_PLANO[p.cor]) ? MAPA_CORES_PLANO[p.cor] : MAPA_CORES_PLANO.slate;
+        return `<div class="flex items-center justify-between p-2 rounded border bg-white dark:bg-slate-800/40"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${estilo.dot} flex-shrink-0"></span><span class="font-bold text-xs">${escaparHTML(p.nome)}</span></div><span class="text-[10px] px-1.5 py-0.5 rounded-full ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(p.valor||'')}</span></div>`;
+    }).join('');
+}
+function renderizarConfigEtapas() {
+    const cont = document.getElementById('config-etapas-lista');
+    if (!cont) return;
+    if (etapasCache.length===0) { cont.innerHTML='<p class="text-slate-400">Nenhuma etapa</p>'; return; }
+    cont.innerHTML = etapasCache.map(e=> `<div class="flex items-center justify-between p-2 rounded border"><span class="text-xs">${escaparHTML(e.nome)} • ordem ${e.ordem}</span><span class="w-2 h-2 rounded-full" style="background:${e.cor}"></span></div>`).join('');
+}
+function renderizarConfigTags() {
+    const cont = document.getElementById('config-tags-lista');
+    if (!cont) return;
+    if (tagsCache.length===0) { cont.innerHTML='<p class="text-slate-400">Nenhuma tag</p>'; return; }
+    cont.innerHTML = tagsCache.map(t=> `<div class="flex items-center justify-between p-2 rounded border"><span class="text-xs">${escaparHTML(t.nome)}</span><span class="w-3 h-3 rounded-full" style="background:${t.cor}"></span></div>`).join('');
+}
+function salvarNotificacoes() {
+    const email = document.getElementById('notif-email-atrasado')?.checked;
+    const push = document.getElementById('notif-push-vence')?.checked;
+    localStorage.setItem('daviflow_notif_email_atrasado', email ? '1':'0');
+    localStorage.setItem('daviflow_notif_push_vence', push ? '1':'0');
+    exibirToast('Notificações salvas (local)', 'sucesso');
+}
+async function alterarSenhaConfig() {
+    const nova = document.getElementById('config-nova-senha')?.value;
+    if (!nova || nova.length<6) { exibirToast('Senha mínimo 6', 'erro'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/usuarios/alterar-senha`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nova_senha: nova }) });
+        if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro', 'erro'); return; }
+        exibirToast('Senha alterada!', 'sucesso');
+        document.getElementById('config-nova-senha').value='';
+    } catch(e) { exibirToast('Erro', 'erro'); }
+}
+async function exportarDados() {
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/usuarios/me/export`, { method: 'GET' });
+        if (!resp || !resp.ok) { exibirToast('Erro ao exportar', 'erro'); return; }
+        const data = await resp.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href=url; a.download=`daviflow-export-${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url);
+        exibirToast('Exportado!', 'sucesso');
+    } catch(e) { exibirToast('Erro ao exportar', 'erro'); }
+}
+async function deletarConta() {
+    confirmarAcao('Deletar conta?', 'Isso apaga seu usuário e todos os dados em cascata. Deseja continuar? Digite CONFIRMAR.', async () => {
+        try {
+            const resp = await fetchAuth(`${API_BASE_URL}/usuarios/me`, { method: 'DELETE' });
+            if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro', 'erro'); return; }
+            exibirToast('Conta deletada. Redirecionando...', 'sucesso');
+            setTimeout(()=> { localStorage.clear(); window.location.href='/?login=true'; }, 1500);
+        } catch(e) { exibirToast('Erro', 'erro'); }
+    });
+}
+
+
+// ============================================================
 // 4B — SIDEBAR & SECAO ROUTING (Vercel style)
 // ============================================================
 let secaoAtiva = localStorage.getItem('daviflow_secao') || 'overview';
@@ -1398,6 +1553,10 @@ function setSecao(secao, pushState=true) {
     }
     if (secao === 'agenda') {
         carregarAtividadesAgenda();
+    }
+    if (secao === 'config') {
+        trocarAbaConfig('geral');
+        carregarConfigGeral();
     }
     // Sincroniza Tabela|Kanban toggle com secao
     const btnTabela = document.getElementById('btn-view-tabela');
