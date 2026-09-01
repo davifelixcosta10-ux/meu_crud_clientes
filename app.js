@@ -1361,14 +1361,14 @@ function setSecao(secao, pushState=true) {
     // Secoes visibility
     const secoes = {
         overview: ['secao-overview'],
-        clientes: ['secao-clientes','secao-clientes-main'],
-        kanban: ['secao-kanban','kanban-board'],
+        clientes: ['secao-clientes','secao-clientes-main','secao-view-toggle'],
+        kanban: ['secao-kanban','kanban-board','secao-view-toggle'],
         relatorios: ['secao-relatorios','relatorios-section'],
         agenda: ['secao-agenda'],
         config: ['secao-config'],
     };
     // Hide all first
-    ['secao-overview','secao-clientes','secao-clientes-main','secao-kanban','kanban-board','secao-relatorios','relatorios-section','secao-agenda','secao-config'].forEach(id => {
+    ['secao-overview','secao-clientes','secao-clientes-main','secao-view-toggle','secao-kanban','kanban-board','secao-relatorios','relatorios-section','secao-agenda','secao-config'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
         // For flex sections, ensure they are hidden properly
@@ -1405,6 +1405,19 @@ function setSecao(secao, pushState=true) {
     if (sideOrg) sideOrg.textContent = org ? org.nome : 'Sem org';
     const sideVert = document.getElementById('sidebar-vertical-nome');
     if (sideVert) sideVert.textContent = currentVertical || 'geral';
+    // Footer API URL - hide localhost in prod
+    const footerApi = document.getElementById('footer-api-url');
+    if (footerApi) {
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (isLocal) {
+            footerApi.textContent = window.location.host;
+            footerApi.classList.remove('hidden');
+        } else {
+            footerApi.textContent = window.location.hostname;
+            // mantém hidden em mobile (hidden sm:inline) já no HTML, mas garante
+            if (window.innerWidth < 640) footerApi.classList.add('hidden');
+        }
+    }
     if (window.lucide) lucide.createIcons();
 }
 function toggleSidebarMobile(show) {
