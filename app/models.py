@@ -259,6 +259,8 @@ class Cliente(BaseModel):
     # Fase 1 — Kanban e Financeiro
     etapa_id: Optional[Union[int, str]] = None  # FK para etapas (Kanban)
     valor_plano: Optional[str] = None      # ex: "R$ 150" (informativo)
+    # Fase 4A — Verticais
+    campos_custom: Optional[dict] = None
 
     @validator("valor_plano", pre=True)
     def valor_plano_para_string(cls, v):
@@ -336,6 +338,8 @@ class ClienteCreate(BaseModel):
     valor_plano: Optional[str] = None
     vencimento_dia: Optional[int] = None
     status_pagamento: Optional[str] = None
+    # Fase 4A — Verticais
+    campos_custom: Optional[dict] = None
 
     @validator("cpf")
     def cpf_must_have_valid_format(cls, v):
@@ -419,6 +423,8 @@ class ClienteUpdate(BaseModel):
     valor_plano: Optional[str] = None
     vencimento_dia: Optional[int] = None
     status_pagamento: Optional[str] = None
+    # Fase 4A — Verticais
+    campos_custom: Optional[dict] = None
 
     @validator("valor_plano", pre=True)
     def valor_plano_para_string(cls, v):
@@ -862,3 +868,26 @@ class ApiKey(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class Vertical(BaseModel):
+    id: Union[int, str]
+    slug: str
+    nome: str
+    descricao: Optional[str] = None
+    config_json: Optional[dict] = None
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class VerticalUpdate(BaseModel):
+    vertical: str
+
+    @validator("vertical")
+    def vertical_must_be_valid(cls, v):
+        allowed = {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}
+        if v not in allowed:
+            raise ValueError(f"vertical deve ser um de: {', '.join(allowed)}")
+        return v
