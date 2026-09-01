@@ -1158,9 +1158,8 @@ function aplicarVertical(slug) {
             html = `
                 <div id="${prefix}-carros-container" class="space-y-3"></div>
                 <button type="button" onclick="adicionarCarro('${prefix}')" class="w-full py-2 text-xs font-semibold rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 flex items-center justify-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Adicionar veículo</button>
-                <div class="grid grid-cols-2 gap-3 pt-2 border-t">
-                    <div><label class="form-label">Serviço</label><select id="${prefix}-cc-servico" class="form-input"><option value="">Selecione</option><option value="lavagem">Lavagem</option><option value="troca_oleo">Troca de óleo</option><option value="revisao">Revisão</option><option value="outro">Outro</option></select></div>
-                    <div><label class="form-label">KM</label><input id="${prefix}-cc-km" type="number" placeholder="Ex: 45000" class="form-input"></div>
+                <div class="pt-2 border-t">
+                    <label class="form-label">Serviço</label><select id="${prefix}-cc-servico" class="form-input"><option value="">Selecione</option><option value="lavagem">Lavagem</option><option value="troca_oleo">Troca de óleo</option><option value="revisao">Revisão</option><option value="outro">Outro</option></select>
                 </div>
             `;
         } else if (slug === 'dentista') {
@@ -1178,10 +1177,6 @@ function aplicarVertical(slug) {
             html = `
                 <div class="grid grid-cols-2 gap-3">
                     <div><label class="form-label">Plano Mensal</label><input id="${prefix}-cc-plano_mensal" type="text" placeholder="Ex: Mensal R$ 89" class="form-input"></div>
-                    <div><label class="form-label">Treino</label><select id="${prefix}-cc-treino" class="form-input"><option value="">Selecione</option><option value="A">Treino A</option><option value="B">Treino B</option><option value="C">Treino C</option><option value="ABC">ABC</option></select></div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div><label class="form-label">Frequência/semana</label><input id="${prefix}-cc-freq" type="number" min="1" max="7" placeholder="Ex: 3" class="form-input"></div>
                     <div><label class="form-label">Último check-in</label><input id="${prefix}-cc-checkin" type="date" class="form-input"></div>
                 </div>
             `;
