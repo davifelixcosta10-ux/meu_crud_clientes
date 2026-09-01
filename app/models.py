@@ -891,3 +891,40 @@ class VerticalUpdate(BaseModel):
         if v not in allowed:
             raise ValueError(f"vertical deve ser um de: {', '.join(allowed)}")
         return v
+
+
+class UsuarioMe(BaseModel):
+    id: str
+    email: str
+    nome_completo: Optional[str] = None
+    nome_empresa: Optional[str] = None
+    vertical: Optional[str] = None
+    org_id: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class UsuarioUpdate(BaseModel):
+    nome_completo: Optional[str] = None
+    nome_empresa: Optional[str] = None
+    vertical: Optional[str] = None
+
+    @validator("vertical")
+    def vertical_must_be_valid(cls, v):
+        if v is None:
+            return v
+        allowed = {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}
+        if v not in allowed:
+            raise ValueError(f"vertical deve ser um de: {', '.join(allowed)}")
+        return v
+
+
+class AlterarSenhaRequest(BaseModel):
+    nova_senha: str
+
+    @validator("nova_senha")
+    def senha_must_be_valid(cls, v):
+        if len(v) < 6:
+            raise ValueError("Senha deve ter no mínimo 6 caracteres")
+        return v

@@ -672,21 +672,77 @@
             <div id="agenda-lista" class="space-y-2 flex-1 overflow-y-auto"><p class="text-xs text-slate-400">Carregando agenda...</p></div>
         </section>
 
-        <!-- SECAO CONFIG — Link para 4C -->
-        <section id="secao-config" class="hidden bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm p-6 flex-1 flex flex-col">
-            <div class="flex items-center gap-2 mb-4">
-                <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border flex items-center justify-center"><i data-lucide="settings" class="w-4 h-4 text-slate-600"></i></div>
-                <div><h2 class="text-sm font-bold">Configurações</h2><p class="text-xs text-slate-400">Planos, etapas, tags, perfil, organização — em 4C</p></div>
+        <!-- SECAO CONFIG — Fase 4C -->
+        <section id="secao-config" class="hidden bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex-1 flex flex-col overflow-hidden">
+            <div class="px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-700/60">
+                <div class="flex items-center gap-2"><div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 border flex items-center justify-center"><i data-lucide="settings" class="w-4 h-4 text-slate-600"></i></div><div><h2 class="text-sm font-bold">Configurações</h2><p class="text-xs text-slate-400">Geral • Organização • Planos • Etapas • Tags • Notificações • Conta</p></div></div>
+                <div class="flex gap-1 mt-4 overflow-x-auto pb-1">
+                    <button onclick="trocarAbaConfig('geral')" id="tab-config-geral" class="px-3 py-1.5 text-xs font-bold rounded-full bg-indigo-600 text-white whitespace-nowrap">Geral</button>
+                    <button onclick="trocarAbaConfig('org')" id="tab-config-org" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 whitespace-nowrap">Organização</button>
+                    <button onclick="trocarAbaConfig('planos')" id="tab-config-planos" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 whitespace-nowrap">Planos</button>
+                    <button onclick="trocarAbaConfig('etapas')" id="tab-config-etapas" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 whitespace-nowrap">Etapas</button>
+                    <button onclick="trocarAbaConfig('tags')" id="tab-config-tags" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 whitespace-nowrap">Tags</button>
+                    <button onclick="trocarAbaConfig('notif')" id="tab-config-notif" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 whitespace-nowrap">Notificações</button>
+                    <button onclick="trocarAbaConfig('conta')" id="tab-config-conta" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 whitespace-nowrap">Conta</button>
+                </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <button onclick="abrirModalPlanos()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>Planos</strong><br><span class="text-slate-400">Gerenciar planos</span></button>
-                <button onclick="abrirModalEtapas()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>Etapas</strong><br><span class="text-slate-400">Kanban</span></button>
-                <button onclick="abrirModalTags()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>Tags</strong><br><span class="text-slate-400">Segmentação</span></button>
-                <button onclick="abrirModalGerenciarOrg()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>Organização</strong><br><span class="text-slate-400">Membros e vertical</span></button>
-                <button onclick="abrirModalApiKeys()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>API Keys</strong><br><span class="text-slate-400">X-API-Key</span></button>
-                <button onclick="abrirModalIntegracoes()" class="p-4 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 text-left"><strong>Integrações</strong><br><span class="text-slate-400">Calendar/Zapier</span></button>
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                <!-- Geral -->
+                <div id="config-conteudo-geral" class="space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Geral</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div><label class="form-label">Nome completo</label><input id="config-nome" type="text" class="form-input" placeholder="Seu nome"></div>
+                        <div><label class="form-label">Empresa</label><input id="config-empresa" type="text" class="form-input" placeholder="Sua empresa"></div>
+                    </div>
+                    <div><label class="form-label">Email (readonly)</label><input id="config-email" type="text" readonly class="form-input bg-slate-50 dark:bg-slate-800/50"></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="form-label">Vertical</label><select id="config-vertical" class="form-input"><option value="geral">Geral</option><option value="hospital">Hospital</option><option value="lava_rapido_oficina">Oficina</option><option value="dentista">Dentista</option><option value="academia">Academia</option></select></div>
+                        <div><label class="form-label">Tema</label><button onclick="toggleTemaManual()" class="w-full py-2.5 rounded-xl border text-xs font-semibold">Alternar tema</button></div>
+                    </div>
+                    <button onclick="salvarConfigGeral()" class="btn-primary">Salvar Geral</button>
+                </div>
+                <!-- Org -->
+                <div id="config-conteudo-org" class="hidden space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Organização</h3>
+                    <div id="config-org-info" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border text-sm"></div>
+                    <div><label class="form-label">Renomear organização</label><div class="flex gap-2"><input id="config-org-nome" type="text" class="form-input flex-1" placeholder="Novo nome"><button onclick="renomearOrgConfig()" class="btn-ghost">Renomear</button></div></div>
+                    <div><label class="form-label">Membros</label><div id="config-org-membros" class="space-y-1.5 text-xs max-h-[200px] overflow-y-auto"></div></div>
+                    <div class="grid grid-cols-3 gap-2"><input id="config-convite-email" type="email" placeholder="colega@exemplo.com" class="col-span-2 form-input text-xs"><select id="config-convite-papel" class="form-input text-xs"><option value="membro">Membro</option><option value="admin">Admin</option></select></div>
+                    <button onclick="convidarOrgConfig()" class="btn-primary w-full">Convidar</button>
+                </div>
+                <!-- Planos -->
+                <div id="config-conteudo-planos" class="hidden space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Planos</h3>
+                    <div id="config-planos-lista" class="space-y-2 text-xs"></div>
+                    <button onclick="abrirModalPlanos()" class="btn-ghost w-full">+ Novo Plano (modal)</button>
+                </div>
+                <!-- Etapas -->
+                <div id="config-conteudo-etapas" class="hidden space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Etapas Kanban</h3>
+                    <div id="config-etapas-lista" class="space-y-2 text-xs"></div>
+                    <button onclick="abrirModalEtapas()" class="btn-ghost w-full">+ Nova Etapa</button>
+                </div>
+                <!-- Tags -->
+                <div id="config-conteudo-tags" class="hidden space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Tags</h3>
+                    <div id="config-tags-lista" class="space-y-2 text-xs"></div>
+                    <button onclick="abrirModalTags()" class="btn-ghost w-full">+ Nova Tag</button>
+                </div>
+                <!-- Notificações -->
+                <div id="config-conteudo-notif" class="hidden space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Notificações</h3>
+                    <label class="flex items-center justify-between p-3 rounded-xl border"><span class="text-xs">Email quando atrasado</span><input type="checkbox" id="notif-email-atrasado" class="rounded"></label>
+                    <label class="flex items-center justify-between p-3 rounded-xl border"><span class="text-xs">Push vence em 3d</span><input type="checkbox" id="notif-push-vence" class="rounded"></label>
+                    <button onclick="salvarNotificacoes()" class="btn-primary">Salvar Notificações</button>
+                </div>
+                <!-- Conta -->
+                <div id="config-conteudo-conta" class="hidden space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Conta</h3>
+                    <div><label class="form-label">Nova senha</label><div class="flex gap-2"><input id="config-nova-senha" type="password" placeholder="mínimo 6 caracteres" class="form-input flex-1"><button onclick="alterarSenhaConfig()" class="btn-primary">Alterar senha</button></div></div>
+                    <button onclick="exportarDados()" class="btn-ghost w-full"><i data-lucide="download" class="w-4 h-4"></i> Exportar meus dados (JSON)</button>
+                    <div class="pt-4 border-t"><button onclick="deletarConta()" class="w-full py-2.5 rounded-xl bg-rose-600 text-white text-sm font-bold">Deletar conta permanentemente</button><p class="text-[11px] text-slate-400 mt-1 text-center">Irreversível. Remove auth.users e cascata.</p></div>
+                </div>
             </div>
-            <p class="text-[11px] text-slate-400 mt-4 text-center">Fase 4C trará página dedicada com abas <code> Geral | Organização | Planos | Etapas | Tags | Notificações | Conta</code></p>
         </section>
 
         <!-- FOOTER -->

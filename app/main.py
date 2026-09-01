@@ -44,6 +44,7 @@ from app.models import (
     Integracao, IntegracaoCreate, IntegracaoUpdate, WebhookZapierPayload,
     Anexo, AnexoCreate, ApiKey, ApiKeyCreate,
     Vertical, VerticalUpdate,
+    UsuarioMe, UsuarioUpdate, AlterarSenhaRequest,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -65,6 +66,7 @@ from app.storage import (
     listar_anexos, criar_anexo, deletar_anexo,
     listar_api_keys, criar_api_key, deletar_api_key, verificar_api_key,
     listar_verticais, get_org_vertical, set_org_vertical,
+    get_usuario_me, update_usuario_me, alterar_senha_usuario,
 )
 
 # --- Rate Limiter ---
@@ -1117,6 +1119,85 @@ async def patch_vertical(org_id: str, dados: VerticalUpdate, user_id: str = Depe
     except Exception as e:
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atualizar vertical: {str(e)[:300]}")
+
+
+# ============================================================
+# USUÁRIOS — Fase 4C (Configurações)
+# ============================================================
+@app.get("/api/usuarios/me", response_model=UsuarioMe, tags=["Usuários"])
+async def get_me(user_id: str = Depends(obter_user_id)):
+    """Retorna dados do usuário autenticado (email, nome, vertical, org)."""
+    try:
+        return get_usuario_me(user_id)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao buscar usuário: {str(e)[:300]}")
+
+@app.patch("/api/usuarios/me", response_model=UsuarioMe, tags=["Usuários"])
+async def patch_me(dados: UsuarioUpdate, user_id: str = Depends(obter_user_id)):
+    """Atualiza nome, empresa, vertical do usuário."""
+    try:
+        payload = dados.model_dump(exclude_unset=True, mode="json")
+        if not payload:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo enviado.")
+        return update_usuario_me(user_id, payload)
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atualizar usuário: {str(e)[:300]}")
+
+@app.post("/api/usuarios/alterar-senha", tags=["Usuários"])
+async def post_alterar_senha(dados: AlterarSenhaRequest, user_id: str = Depends(obter_user_id)):
+    """Altera senha do usuário autenticado (wrapper Supabase)."""
+    try:
+        alterar_senha_usuario(user_id, dados.nova_senha)
+        return {"mensagem": "Senha alterada com sucesso"}
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao alterar senha: {str(e)[:300]}")
+
+@app.delete("/api/usuarios/me", tags=["Usuários"])
+async def delete_me(user_id: str = Depends(obter_user_id)):
+    """Deleta conta do usuário (remove auth.users). Cuidado: irreversível."""
+    try:
+        supa_admin = get_supabase_client()
+        # tenta via admin
+        try:
+            from app.storage import get_supabase_admin_client
+            supa_admin2 = get_supabase_admin_client()
+            supa_admin2.auth.admin.delete_user(user_id)
+            return {"mensagem": "Conta deletada"}
+        except Exception:
+            supa_admin.auth.admin.delete_user(user_id)
+            return {"mensagem": "Conta deletada"}
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao deletar conta: {str(e)[:300]}")
+
+@app.get("/api/usuarios/me/export", tags=["Usuários"])
+async def export_me(user_id: str = Depends(obter_user_id)):
+    """Exporta dados do usuário (clientes + filtros + etc) como JSON."""
+    try:
+        clientes = carregar_clientes(user_id, None)
+        # tenta com org
+        try:
+            org_id = None
+            from app.storage import _get_default_org_id
+            org_id = _get_default_org_id(user_id)
+            if org_id:
+                clientes = carregar_clientes(user_id, org_id)
+        except Exception:
+            pass
+        return {"user_id": user_id, "clientes": [c.model_dump(mode="json") if hasattr(c, "model_dump") else c for c in clientes]}
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao exportar: {str(e)[:300]}")
+
 
 
 
