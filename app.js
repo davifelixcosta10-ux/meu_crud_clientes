@@ -336,6 +336,19 @@ async function inicializarApp() {
     await carregarFiltrosSalvos();
     await carregarClientes();
     await carregarIntegracoes();
+    // 4B: inicializa secao a partir de hash ou localStorage
+    const hashSecao = getSecaoFromHash();
+    const target = hashSecao || secaoAtiva || 'overview';
+    setSecao(target, false);
+    // escuta hash change
+    window.addEventListener('hashchange', ()=> {
+        const h = getSecaoFromHash();
+        if (h) setSecao(h, false);
+    });
+    window.addEventListener('popstate', ()=> {
+        const h = getSecaoFromHash();
+        if (h) setSecao(h, false);
+    });
     setViewMode(viewMode, true);
     restaurarEstadoRelatorios();
     await carregarRelatorios();
@@ -1306,6 +1319,141 @@ function fecharModalVertical() {
     setTimeout(()=> modal.classList.add('hidden'), 200);
 }
 
+// ============================================================
+// 4B — SIDEBAR & SECAO ROUTING (Vercel style)
+// ============================================================
+let secaoAtiva = localStorage.getItem('daviflow_secao') || 'overview';
+function setSecao(secao, pushState=true) {
+    secaoAtiva = secao;
+    localStorage.setItem('daviflow_secao', secao);
+    // Update hash without reload
+    if (pushState) {
+        const url = new URL(window.location.href);
+        url.hash = secao;
+        history.pushState(null, '', url.toString());
+    }
+    // Breadcrumb
+    const bc = document.getElementById('breadcrumb-text');
+    if (bc) bc.textContent = secao.charAt(0).toUpperCase() + secao.slice(1);
+    // Sidebar active states
+    document.querySelectorAll('.sidebar-link').forEach(el => {
+        const isActive = el.getAttribute('data-secao') === secao;
+        el.classList.toggle('bg-indigo-50', isActive);
+        el.classList.toggle('dark:bg-indigo-900/30', isActive);
+        el.classList.toggle('text-indigo-700', isActive);
+        el.classList.toggle('dark:text-indigo-300', isActive);
+        el.classList.toggle('border', isActive);
+        el.classList.toggle('border-indigo-200', isActive);
+        el.classList.toggle('dark:border-indigo-800/40', isActive);
+        el.classList.toggle('font-semibold', isActive);
+        if (!isActive) {
+            el.classList.remove('bg-indigo-50','dark:bg-indigo-900/30','text-indigo-700','dark:text-indigo-300','border','border-indigo-200','dark:border-indigo-800/40');
+            el.classList.add('text-slate-600','dark:text-slate-400');
+        } else {
+            el.classList.remove('text-slate-600','dark:text-slate-400');
+        }
+    });
+    // Mobile links same
+    document.querySelectorAll('.sidebar-link-mobile').forEach(el => {
+        const isActive = el.textContent.toLowerCase().includes(secao);
+        el.classList.toggle('bg-indigo-50', isActive);
+    });
+    // Secoes visibility
+    const secoes = {
+        overview: ['secao-overview'],
+        clientes: ['secao-clientes','secao-clientes-main'],
+        kanban: ['secao-kanban','kanban-board'],
+        relatorios: ['secao-relatorios','relatorios-section'],
+        agenda: ['secao-agenda'],
+        config: ['secao-config'],
+    };
+    // Hide all first
+    ['secao-overview','secao-clientes','secao-clientes-main','secao-kanban','kanban-board','secao-relatorios','relatorios-section','secao-agenda','secao-config'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+        // For flex sections, ensure they are hidden properly
+        if (el) el.style.display = 'none';
+    });
+    // Show requested
+    const toShow = secoes[secao] || secoes['overview'];
+    toShow.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('hidden');
+            // Restore display for flex/grid
+            if (id === 'secao-overview') el.style.display = 'grid';
+            else if (id === 'secao-kanban' || id === 'secao-agenda' || id === 'secao-config') el.style.display = 'flex';
+            else el.style.display = '';
+        }
+    });
+    // Special: for relatorios, ensure inner relatorios-section is visible and charts resize
+    if (secao === 'relatorios') {
+        const inner = document.getElementById('relatorios-section');
+        if (inner) { inner.classList.remove('hidden'); inner.style.display = ''; }
+        // trigger chart resize after visible
+        setTimeout(()=> { if (typeof carregarRelatorios === 'function') carregarRelatorios(); window.dispatchEvent(new Event('resize')); }, 100);
+    }
+    if (secao === 'kanban') {
+        setTimeout(()=> { if (typeof renderizarKanban === 'function') renderizarKanban(); }, 50);
+    }
+    if (secao === 'agenda') {
+        carregarAtividadesAgenda();
+    }
+    // Update sidebar org/vertical info
+    const org = orgsCache.find(o=>o.id===currentOrgId);
+    const sideOrg = document.getElementById('sidebar-org-nome');
+    if (sideOrg) sideOrg.textContent = org ? org.nome : 'Sem org';
+    const sideVert = document.getElementById('sidebar-vertical-nome');
+    if (sideVert) sideVert.textContent = currentVertical || 'geral';
+    if (window.lucide) lucide.createIcons();
+}
+function toggleSidebarMobile(show) {
+    const mob = document.getElementById('sidebar-mobile');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (!mob || !overlay) return;
+    if (show) {
+        mob.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        mob.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
+function getSecaoFromHash() {
+    const h = window.location.hash.replace('#','').trim().toLowerCase();
+    const valid = ['overview','clientes','kanban','relatorios','agenda','config'];
+    return valid.includes(h) ? h : null;
+}
+async function carregarAtividadesAgenda() {
+    const container = document.getElementById('agenda-lista');
+    if (!container) return;
+    container.innerHTML = '<p class="text-xs text-slate-400">Carregando agenda...</p>';
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/atividades${getOrgQuery()}`, { method: 'GET' });
+        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-xs text-rose-400">Erro ao carregar agenda</p>'; return; }
+        const atvs = await resp.json();
+        if (!Array.isArray(atvs) || atvs.length === 0) { container.innerHTML = '<p class="text-xs text-slate-400">Nenhuma atividade. Crie um follow-up em Clientes → Detalhes.</p>'; return; }
+        // Ordena por data
+        atvs.sort((a,b)=> (a.data||'').localeCompare(b.data||''));
+        container.innerHTML = atvs.map(a => {
+            const isAtrasada = !a.concluida && a.data < new Date().toISOString().split('T')[0];
+            const cliente = clientesCache.find(c=> String(c.id)===String(a.cliente_id));
+            const nomeCli = cliente ? cliente.nome : 'Cliente '+a.cliente_id;
+            return `<div class="flex items-start gap-3 p-3 rounded-xl border ${isAtrasada ? 'border-amber-200 bg-amber-50' : a.concluida ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}">
+                <div class="w-8 h-8 rounded-lg ${a.concluida ? 'bg-emerald-100 text-emerald-600' : isAtrasada ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'} flex items-center justify-center flex-shrink-0"><i data-lucide="calendar" class="w-4 h-4"></i></div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2"><span class="text-xs font-bold capitalize">${escaparHTML(a.tipo)}</span><span class="text-[11px] text-slate-400">${formatarData(a.data)}</span>${a.concluida ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Concluída</span>' : isAtrasada ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 rounded-full">Atrasada</span>' : ''}</div>
+                    <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 mt-0.5">${escaparHTML(nomeCli)}</p>
+                    ${a.nota ? `<p class="text-xs text-slate-600 mt-1">${escaparHTML(a.nota)}</p>` : ''}
+                </div>
+                <button onclick="abrirModalDetalhes(${a.cliente_id})" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 text-xs">Ver</button>
+            </div>`;
+        }).join('');
+        if (window.lucide) lucide.createIcons();
+    } catch(e) { container.innerHTML = '<p class="text-xs text-rose-400">Erro</p>'; }
+}
+
+
 
 
 
@@ -1489,24 +1637,26 @@ function renderizarEtapasSelects() {
 function setViewMode(mode, skipSave) {
     viewMode = mode;
     if (!skipSave) localStorage.setItem('daviflow_view', mode);
-    const tabelaMain = document.querySelector('main');
-    const kanbanBoard = document.getElementById('kanban-board');
+    // 4B: se estiver em secao clientes, toggle dentro dela; se em kanban secao, muda secao
+    if (secaoAtiva === 'kanban' && mode === 'tabela') { setSecao('clientes'); return; }
+    if (secaoAtiva === 'clientes' && mode === 'kanban') { setSecao('kanban'); return; }
+    const tabelaMain = document.getElementById('secao-clientes-main') || document.querySelector('main');
+    const kanbanBoard = document.getElementById('secao-kanban') || document.getElementById('kanban-board');
     const btnTabela = document.getElementById('btn-view-tabela');
     const btnKanban = document.getElementById('btn-view-kanban');
     if (!tabelaMain || !kanbanBoard) return;
     if (mode === 'kanban') {
-        tabelaMain.classList.add('hidden');
-        tabelaMain.classList.remove('flex');
+        // Se estiver em clientes, mostra kanban dentro de clientes também (compat)
+        if (secaoAtiva === 'clientes') tabelaMain.style.display = 'none';
         kanbanBoard.classList.remove('hidden');
-        kanbanBoard.classList.add('flex');
+        kanbanBoard.style.display = 'flex';
         btnTabela?.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border');
         btnKanban?.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border', 'border-slate-200', 'dark:border-slate-600');
         renderizarKanban();
     } else {
         kanbanBoard.classList.add('hidden');
-        kanbanBoard.classList.remove('flex');
-        tabelaMain.classList.remove('hidden');
-        tabelaMain.classList.add('flex');
+        kanbanBoard.style.display = 'none';
+        if (secaoAtiva === 'clientes') tabelaMain.style.display = '';
         btnKanban?.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border');
         btnTabela?.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border');
     }
