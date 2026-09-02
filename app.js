@@ -336,6 +336,7 @@ async function inicializarApp() {
     await carregarFiltrosSalvos();
     await carregarClientes();
     await carregarIntegracoes();
+    await carregarTemplates();
     // 4B: inicializa secao a partir de hash ou localStorage
     const hashSecao = getSecaoFromHash();
     const target = hashSecao || secaoAtiva || 'overview';
@@ -416,9 +417,10 @@ function atualizarPermissoesUI() {
     const btnPlanos = document.getElementById('btn-toolbar-planos');
     const btnEtapas = document.getElementById('btn-toolbar-etapas');
     const btnTags = document.getElementById('btn-toolbar-tags');
+    const btnTemplates = document.getElementById('btn-toolbar-templates');
     const btnIntegracoes = document.getElementById('btn-toolbar-integracoes');
     const btnApiKeys = document.getElementById('btn-toolbar-apikeys');
-    [btnPlanos, btnEtapas, btnTags, btnIntegracoes, btnApiKeys].forEach(btn => {
+    [btnPlanos, btnEtapas, btnTags, btnTemplates, btnIntegracoes, btnApiKeys].forEach(btn => {
         if (!btn) return;
         // 3B-fix: membro vê porém desabilitado (cinza) em vez de hidden
         btn.style.display = '';
@@ -470,7 +472,7 @@ function trocarOrg(orgId) {
     renderizarOrgsSelect();
     carregarVerticalOrg();
     // recarrega dados da org
-    Promise.all([carregarClientes(), carregarEtapas(), carregarTags(), carregarFiltrosSalvos(), carregarRelatorios(), carregarIntegracoes()]).then(() => {
+    Promise.all([carregarClientes(), carregarEtapas(), carregarTags(), carregarFiltrosSalvos(), carregarRelatorios(), carregarIntegracoes(), carregarTemplates()]).then(() => {
         if (window.lucide) lucide.createIcons();
     });
 }
@@ -1318,6 +1320,140 @@ function fecharModalVertical() {
     modal.querySelector('.modal-box')?.classList.add('scale-95','opacity-0');
     setTimeout(()=> modal.classList.add('hidden'), 200);
 }
+
+// ============================================================
+// 2B — TEMPLATES WHATSAPP
+// ============================================================
+let templatesCache = [];
+async function carregarTemplates() {
+    try {
+        let url = `${API_BASE_URL}/templates${getOrgQuery()}`;
+        // filtra por vertical atual se não for geral (opcional, mostra todos mas destaca)
+        // para MVP mostra todos da org
+        const resp = await fetchAuth(url, { method: 'GET' });
+        if (!resp || !resp.ok) { templatesCache = []; renderizarTemplates(); return; }
+        templatesCache = await resp.json();
+        renderizarTemplates();
+        // atualiza selects de plano/etapa no form
+        const selPlano = document.getElementById('template-plano');
+        if (selPlano && planosCache) {
+            selPlano.innerHTML = '<option value="">Todos planos</option>' + planosCache.map(p=> `<option value="${p.id}">${escaparHTML(p.nome)}</option>`).join('');
+        }
+        const selEtapa = document.getElementById('template-etapa');
+        if (selEtapa && etapasCache) {
+            selEtapa.innerHTML = '<option value="">Todas etapas</option>' + etapasCache.map(e=> `<option value="${e.id}">${escaparHTML(e.nome)}</option>`).join('');
+        }
+    } catch(e) { templatesCache = []; renderizarTemplates(); }
+}
+function renderizarTemplates() {
+    const cont = document.getElementById('lista-templates');
+    if (!cont) return;
+    if (templatesCache.length===0) { cont.innerHTML='<p class="text-xs text-slate-400">Nenhum template. Crie um com {{nome}} {{placa}} etc.</p>'; return; }
+    cont.innerHTML = templatesCache.map(tp=> {
+        const vert = tp.vertical ? `<span class="text-[10px] px-1 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border">${escaparHTML(tp.vertical)}</span>` : '';
+        return `<div class="p-3 rounded-xl border bg-white dark:bg-slate-800/40">
+            <div class="flex items-center justify-between gap-2"><span class="font-bold text-sm">${escaparHTML(tp.nome)}</span> ${vert} <div class="flex gap-1"><button onclick="editarTemplate('${tp.id}')" class="p-1 rounded hover:bg-slate-100"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button><button onclick="deletarTemplate('${tp.id}')" class="p-1 rounded hover:bg-rose-50 text-rose-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div></div>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 whitespace-pre-wrap">${escaparHTML(tp.mensagem)}</p>
+            <button onclick="usarTemplate('${tp.id}', null)" class="mt-2 px-2.5 py-1 text-[11px] font-bold rounded-full bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> Usar (escolha cliente)</button>
+        </div>`;
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+}
+function abrirModalTemplates() {
+    const m = document.getElementById('modal-templates');
+    if (!m) return;
+    m.classList.remove('hidden');
+    requestAnimationFrame(()=>{ m.querySelector('.modal-box')?.classList.remove('scale-95','opacity-0'); m.querySelector('.modal-box')?.classList.add('scale-100','opacity-100'); });
+    carregarTemplates();
+    if (window.lucide) lucide.createIcons();
+}
+function fecharModalTemplates() { const m=document.getElementById('modal-templates'); if(!m) return; m.querySelector('.modal-box')?.classList.add('scale-95','opacity-0'); setTimeout(()=> m.classList.add('hidden'), 200); }
+function resetarFormTemplate() { document.getElementById('template-id').value=''; document.getElementById('template-nome').value=''; document.getElementById('template-mensagem').value=''; document.getElementById('template-vertical').value=''; document.getElementById('template-plano').value=''; document.getElementById('template-etapa').value=''; }
+function editarTemplate(id) {
+    const tp = templatesCache.find(x=> String(x.id)===String(id));
+    if (!tp) return;
+    document.getElementById('template-id').value = tp.id;
+    document.getElementById('template-nome').value = tp.nome;
+    document.getElementById('template-mensagem').value = tp.mensagem;
+    document.getElementById('template-vertical').value = tp.vertical || '';
+    document.getElementById('template-plano').value = tp.plano_id || '';
+    document.getElementById('template-etapa').value = tp.etapa_id || '';
+}
+async function salvarTemplate(e) {
+    e.preventDefault();
+    const id = document.getElementById('template-id').value;
+    const payload = {
+        nome: document.getElementById('template-nome').value.trim(),
+        mensagem: document.getElementById('template-mensagem').value.trim(),
+        vertical: document.getElementById('template-vertical').value || null,
+        plano_id: document.getElementById('template-plano').value || null,
+        etapa_id: document.getElementById('template-etapa').value || null,
+    };
+    if (!payload.nome || !payload.mensagem) return;
+    try {
+        const url = id ? `${API_BASE_URL}/templates/${id}` : `${API_BASE_URL}/templates${getOrgQuery()}`;
+        const method = id ? 'PATCH' : 'POST';
+        const resp = await fetchAuth(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); if(resp && resp.status===403) exibirToast(err.detail||'Apenas admin pode criar templates','erro'); else exibirToast(err.detail||'Erro ao salvar','erro'); return; }
+        exibirToast('Template salvo!', 'sucesso');
+        resetarFormTemplate();
+        await carregarTemplates();
+    } catch(err) { exibirToast('Erro ao salvar','erro'); }
+}
+async function deletarTemplate(id) {
+    confirmarAcao('Excluir template?', 'Deseja realmente remover este template?', async ()=> {
+        try {
+            const resp = await fetchAuth(`${API_BASE_URL}/templates/${id}`, { method: 'DELETE' });
+            if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro','erro'); return; }
+            exibirToast('Template removido','sucesso');
+            await carregarTemplates();
+        } catch(e) { exibirToast('Erro','erro'); }
+    });
+}
+function usarTemplate(templateId, clienteId) {
+    const tp = templatesCache.find(x=> String(x.id)===String(templateId));
+    if (!tp) return;
+    // se clienteId não fornecido, tenta usar cliente em detalhes ou primeiro da lista
+    let cliente = null;
+    if (clienteId) cliente = clientesCache.find(c=> String(c.id)===String(clienteId));
+    else if (typeof detalhesClienteIdAtual !== 'undefined' && detalhesClienteIdAtual) cliente = clientesCache.find(c=> String(c.id)===String(detalhesClienteIdAtual));
+    if (!cliente) {
+        exibirToast('Selecione um cliente em Detalhes primeiro','info');
+        // abre lista para escolher? por enquanto só avisa
+        return;
+    }
+    enviarWhatsApp(cliente, tp);
+}
+function enviarWhatsApp(cliente, template) {
+    if (!cliente.telefone) { exibirToast('Cliente sem telefone','erro'); return; }
+    let msg = template.mensagem || '';
+    const cc = cliente.campos_custom || {};
+    const replaceMap = {
+        '{{nome}}': cliente.nome || '',
+        '{{telefone}}': cliente.telefone || '',
+        '{{email}}': cliente.email || '',
+        '{{empresa}}': cliente.empresa || '',
+        '{{plano}}': cliente.plano || '',
+        '{{placa}}': (cc.carros && cc.carros[0]?.placa) || cc.placa || '',
+        '{{modelo}}': (cc.carros && cc.carros[0]?.modelo) || cc.modelo || '',
+        '{{km}}': (cc.carros && cc.carros[0]?.km) || cc.km || '',
+        '{{dente}}': cc.dente || '',
+        '{{procedimento}}': cc.procedimento || '',
+        '{{convenio}}': cc.convenio || cc.convenio_odonto || '',
+        '{{prontuario}}': cc.prontuario || '',
+        '{{leito}}': cc.leito || '',
+        '{{treino}}': cc.treino || '',
+        '{{data}}': new Date().toLocaleDateString(),
+    };
+    for (const [k,v] of Object.entries(replaceMap)) {
+        msg = msg.split(k).join(v);
+    }
+    const tel = cliente.telefone.replace(/\D/g,'');
+    const url = `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+    exibirToast('Abrindo WhatsApp...','sucesso');
+}
+
 
 // ============================================================
 // 4C — CONFIGURAÇÕES (7 abas)
@@ -4009,10 +4145,32 @@ function abrirModalDetalhes(id) {
                 <p class="text-xs text-slate-400">Carregando atividades...</p>
             </div>
         </div>
+        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp Templates</h4>
+            <div class="flex gap-2">
+                <select id="detalhes-template-select" class="form-input flex-1 text-xs"><option value="">Selecione um template</option></select>
+                <button onclick="const sel=document.getElementById('detalhes-template-select'); if(sel && sel.value) enviarWhatsApp(clientesCache.find(c=>String(c.id)==='${cliente.id}'), templatesCache.find(tp=>String(tp.id)===sel.value)); else exibirToast('Selecione um template','info')" class="px-3 py-2 text-xs font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-1"><i data-lucide="send" class="w-3.5 h-3.5"></i> Zap</button>
+            </div>
+            <button onclick="abrirModalTemplates()" class="text-[11px] text-emerald-600 hover:underline">Gerenciar templates</button>
+        </div>
     `;
 
     // Carrega anexos (Fase 3C)
     carregarAnexos(cliente.id);
+    // Popula templates no detalhes
+    setTimeout(()=> {
+        const sel = document.getElementById('detalhes-template-select');
+        if (sel && templatesCache.length) {
+            sel.innerHTML = '<option value="">Selecione um template</option>' + templatesCache.map(tp=> `<option value="${tp.id}">${escaparHTML(tp.nome)}${tp.vertical ? ' ('+tp.vertical+')' : ''}</option>`).join('');
+        } else if (sel && templatesCache.length===0) {
+            // tenta carregar
+            carregarTemplates().then(()=> {
+                const sel2 = document.getElementById('detalhes-template-select');
+                if (sel2) sel2.innerHTML = '<option value="">Selecione um template</option>' + templatesCache.map(tp=> `<option value="${tp.id}">${escaparHTML(tp.nome)}</option>`).join('');
+            });
+        }
+        if (window.lucide) lucide.createIcons();
+    }, 100);
     // Carrega timeline de atividades para este cliente
     carregarAtividades(cliente.id).then(atividades => {
         const atvContainer = document.getElementById('detalhes-atividades');

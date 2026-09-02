@@ -2281,6 +2281,90 @@ def get_vertical_config(slug: str) -> dict | None:
         return res.data[0].get("config_json")
     return None
 
+# ============================================================
+# FASE 2B — WHATSAPP TEMPLATES
+# ============================================================
+
+def listar_templates(user_id: str, org_id: str | None = None, vertical: str | None = None) -> list[dict]:
+    supabase = get_supabase_client()
+    q = supabase.table("templates_whatsapp").select("*")
+    if org_id:
+        q = q.eq("org_id", org_id)
+    else:
+        try:
+            orgs = listar_organizacoes(user_id)
+            org_ids = [o["id"] for o in orgs]
+            if org_ids:
+                res = supabase.table("templates_whatsapp").select("*").in_("org_id", org_ids).execute()
+                if res.data is not None:
+                    # filtra por vertical se necessário
+                    if vertical:
+                        return [r for r in res.data if not r.get("vertical") or r.get("vertical") == vertical]
+                    return res.data
+        except Exception:
+            pass
+        q = q.eq("user_id", user_id)
+    if vertical:
+        q = q.eq("vertical", vertical)
+    res = q.order("created_at", desc=True).execute()
+    return res.data or []
+
+def criar_template(dados: dict, user_id: str, org_id: str | None = None) -> dict:
+    supabase = get_supabase_client()
+    oid = org_id or dados.get("org_id")
+    if not oid:
+        try:
+            oid = _get_default_org_id(user_id)
+        except Exception:
+            oid = None
+    if oid:
+        _verificar_admin(user_id, oid)
+    payload = {
+        "user_id": user_id,
+        "nome": dados.get("nome"),
+        "mensagem": dados.get("mensagem"),
+        "plano_id": dados.get("plano_id"),
+        "etapa_id": dados.get("etapa_id"),
+        "vertical": dados.get("vertical"),
+    }
+    if not payload["nome"] or not payload["mensagem"]:
+        raise ValueError("nome e mensagem são obrigatórios")
+    if oid:
+        payload["org_id"] = oid
+    res = supabase.table("templates_whatsapp").insert(payload).execute()
+    if not res.data:
+        raise ValueError("Falha ao criar template")
+    return res.data[0]
+
+def atualizar_template(template_id: str, dados: dict, user_id: str) -> dict | None:
+    supabase = get_supabase_client()
+    try:
+        cur = supabase.table("templates_whatsapp").select("org_id").eq("id", template_id).execute()
+        if cur.data and cur.data[0].get("org_id"):
+            _verificar_admin(user_id, cur.data[0].get("org_id"))
+    except ValueError:
+        raise
+    except Exception:
+        pass
+    dados_f = {k: v for k, v in dados.items() if v is not None}
+    if not dados_f:
+        return None
+    res = supabase.table("templates_whatsapp").update(dados_f).eq("id", template_id).execute()
+    return res.data[0] if res.data else None
+
+def deletar_template(template_id: str, user_id: str) -> bool:
+    supabase = get_supabase_client()
+    try:
+        cur = supabase.table("templates_whatsapp").select("org_id").eq("id", template_id).execute()
+        if cur.data and cur.data[0].get("org_id"):
+            _verificar_admin(user_id, cur.data[0].get("org_id"))
+    except ValueError:
+        raise
+    except Exception:
+        pass
+    res = supabase.table("templates_whatsapp").delete().eq("id", template_id).execute()
+    return len(res.data) > 0
+
 def get_usuario_me(user_id: str) -> dict:
     supabase = get_supabase_client()
     supa_admin = get_supabase_admin_client()
