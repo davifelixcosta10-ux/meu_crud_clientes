@@ -733,12 +733,14 @@
                     <div id="config-tags-lista" class="space-y-2 text-xs"></div>
                     <button onclick="abrirModalTags()" class="btn-ghost w-full">+ Nova Tag</button>
                 </div>
-                <!-- Notificações -->
+                <!-- Notificações / Automações 2C -->
                 <div id="config-conteudo-notif" class="hidden space-y-3">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Notificações</h3>
-                    <label class="flex items-center justify-between p-3 rounded-xl border"><span class="text-xs">Email quando atrasado</span><input type="checkbox" id="notif-email-atrasado" class="rounded"></label>
-                    <label class="flex items-center justify-between p-3 rounded-xl border"><span class="text-xs">Push vence em 3d</span><input type="checkbox" id="notif-push-vence" class="rounded"></label>
-                    <button onclick="salvarNotificacoes()" class="btn-primary">Salvar Notificações</button>
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Automações & Notificações</h3>
+                    <p class="text-[11px] text-slate-400">1 tipo por org (vertical fixa). Roda todo dia 06:00 America/Sao_Paulo via pg_cron.</p>
+                    <label class="flex items-center justify-between p-3 rounded-xl border"><div><span class="text-xs font-semibold">Inativo 30d → tarefa 🤖</span><br><span class="text-[11px] text-slate-400">Academia usa 14d. Cria tarefa na Agenda se sem follow-up</span></div><input type="checkbox" id="notif-email-atrasado" class="rounded"></label>
+                    <label class="flex items-center justify-between p-3 rounded-xl border"><div><span class="text-xs font-semibold">Vence em 3d → alerta 🤖</span><br><span class="text-[11px] text-slate-400">Cria tarefa para cobrar antes do vencimento</span></div><input type="checkbox" id="notif-push-vence" class="rounded"></label>
+                    <div class="flex gap-2"><button onclick="salvarNotificacoes()" class="btn-primary flex-1">Salvar</button><button onclick="rodarAutomacoesManual()" class="btn-ghost flex-1">▶️ Rodar agora (teste)</button></div>
+                    <p class="text-[11px] text-slate-400">Supabase: habilitar <code>pg_cron</code> em Database → Extensions, depois rodar <code>supabase_fase2c.sql</code> como service_role. Cron 09:00 UTC.</p>
                 </div>
                 <!-- Conta -->
                 <div id="config-conteudo-conta" class="hidden space-y-4">

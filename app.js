@@ -1477,8 +1477,7 @@ function trocarAbaConfig(aba) {
     if (aba === 'etapas') renderizarConfigEtapas();
     if (aba === 'tags') renderizarConfigTags();
     if (aba === 'notif') {
-        document.getElementById('notif-email-atrasado').checked = localStorage.getItem('daviflow_notif_email_atrasado') === '1';
-        document.getElementById('notif-push-vence').checked = localStorage.getItem('daviflow_notif_push_vence') === '1';
+        carregarAutomacoes();
     }
     if (window.lucide) lucide.createIcons();
 }
@@ -1572,13 +1571,58 @@ function renderizarConfigTags() {
     if (tagsCache.length===0) { cont.innerHTML='<p class="text-slate-400">Nenhuma tag</p>'; return; }
     cont.innerHTML = tagsCache.map(t=> `<div class="flex items-center justify-between p-2 rounded border"><span class="text-xs">${escaparHTML(t.nome)}</span><span class="w-3 h-3 rounded-full" style="background:${t.cor}"></span></div>`).join('');
 }
-function salvarNotificacoes() {
+async function salvarNotificacoes() {
+    // Mantém localStorage para compat mas também persiste em automacoes
     const email = document.getElementById('notif-email-atrasado')?.checked;
     const push = document.getElementById('notif-push-vence')?.checked;
     localStorage.setItem('daviflow_notif_email_atrasado', email ? '1':'0');
     localStorage.setItem('daviflow_notif_push_vence', push ? '1':'0');
-    exibirToast('Notificações salvas (local)', 'sucesso');
+    // Persiste nas automacoes da org (se existirem)
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/automacoes${getOrgQuery()}`, { method: 'GET' });
+        if (resp && resp.ok) {
+            const autos = await resp.json();
+            const inativo = autos.find(a=> a.tipo==='inativo_30d');
+            const vence = autos.find(a=> a.tipo==='vence_3d');
+            if (inativo) await fetchAuth(`${API_BASE_URL}/automacoes/${inativo.id}`, { method: 'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ativo: !!email }) });
+            if (vence) await fetchAuth(`${API_BASE_URL}/automacoes/${vence.id}`, { method: 'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ativo: !!push }) });
+        }
+    } catch(e) {}
+    exibirToast('Notificações salvas!', 'sucesso');
 }
+async function carregarAutomacoes() {
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/automacoes${getOrgQuery()}`, { method: 'GET' });
+        if (!resp || !resp.ok) return;
+        const autos = await resp.json();
+        const inativo = autos.find(a=> a.tipo==='inativo_30d');
+        const vence = autos.find(a=> a.tipo==='vence_3d');
+        const el1 = document.getElementById('notif-email-atrasado');
+        const el2 = document.getElementById('notif-push-vence');
+        if (el1 && inativo) el1.checked = !!inativo.ativo;
+        if (el2 && vence) el2.checked = !!vence.ativo;
+        // Se não houver no backend, fallback localStorage
+        if (el1 && !inativo) el1.checked = localStorage.getItem('daviflow_notif_email_atrasado') === '1';
+        if (el2 && !vence) el2.checked = localStorage.getItem('daviflow_notif_push_vence') === '1';
+    } catch(e) {
+        // fallback localStorage
+        const el1 = document.getElementById('notif-email-atrasado');
+        const el2 = document.getElementById('notif-push-vence');
+        if (el1) el1.checked = localStorage.getItem('daviflow_notif_email_atrasado') === '1';
+        if (el2) el2.checked = localStorage.getItem('daviflow_notif_push_vence') === '1';
+    }
+}
+async function rodarAutomacoesManual() {
+    if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode rodar automações','erro'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/automacoes/run`, { method: 'POST' });
+        if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro ao rodar','erro'); return; }
+        exibirToast('🤖 Automações rodaram! Verifique Agenda.','sucesso');
+        carregarAtividadesAgenda();
+        carregarAtividades();
+    } catch(e) { exibirToast('Erro','erro'); }
+}
+
 async function alterarSenhaConfig() {
     const nova = document.getElementById('config-nova-senha')?.value;
     if (!nova || nova.length<6) { exibirToast('Senha mínimo 6', 'erro'); return; }

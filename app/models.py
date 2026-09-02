@@ -977,3 +977,20 @@ class Template(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class Automacao(BaseModel):
+    id: Union[int, str]
+    org_id: str
+    tipo: str
+    ativo: bool = True
+    config: Optional[dict] = None
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AutomacaoUpdate(BaseModel):
+    ativo: Optional[bool] = None
+    config: Optional[dict] = None
