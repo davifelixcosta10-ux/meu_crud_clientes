@@ -6,13 +6,16 @@
 
 create extension if not exists "uuid-ossp";
 
+-- se a tabela foi criada com plano_id uuid (erro anterior), apaga para recriar com bigint correto
+drop table if exists templates_whatsapp cascade;
+
 create table if not exists templates_whatsapp (
   id uuid primary key default uuid_generate_v4(),
   org_id uuid references organizacoes(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   nome text not null,
   mensagem text not null,
-  plano_id uuid references planos(id) on delete set null,
+  plano_id bigint references planos(id) on delete set null,
   etapa_id uuid references etapas(id) on delete set null,
   vertical text check (vertical in ('geral','hospital','lava_rapido_oficina','dentista','academia')),
   created_at timestamptz not null default now()
