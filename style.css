@@ -46,20 +46,35 @@ html {
    DESIGN TOKENS — Dashboard Profissional
    ============================================================ */
 :root {
-    --dash-bg:            #eef2ff; /* indigo-50 com leve azul — menos branco */
-    --dash-surface:       #ffffff;
-    --dash-surface-2:     #e2e8f0; /* slate-200 mais contraste */
-    --dash-border:        #cbd5e1; /* slate-300 mais marcado */
+    --dash-bg:            #e0e7ff; /* indigo-100 — menos branco, mais profissional */
+    --dash-surface:       #f8fafc; /* slate-50 levemente acinzentado, não branco puro */
+    --dash-surface-2:     #e2e8f0;
+    --dash-border:        #cbd5e1;
     --dash-border-subtle: rgba(203,213,225,0.6);
     --dash-text-1:        #0f172a;
     --dash-text-2:        #475569;
-    --dash-text-3:        #64748b; /* um pouco mais escuro */
-    --dash-accent:        #4f46e5;   /* indigo-600 — mais sóbrio/profissional */
-    --dash-accent-hover:  #4338ca;   /* indigo-700 */
-    --dash-accent-light:  #e0e7ff;   /* indigo-100 */
+    --dash-text-3:        #64748b;
+    --dash-accent:        #4f46e5;
+    --dash-accent-hover:  #4338ca;
+    --dash-accent-light:  #e0e7ff;
     --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
     --dash-shadow-md:     0 8px 24px rgba(79,70,229,0.12), 0 2px 8px rgba(0,0,0,0.08);
     --dash-radius:        0.75rem;
+}
+.dark {
+    --dash-bg:            #020617; /* slate-950 mais escuro, menos brancão */
+    --dash-surface:       #1e293b; /* slate-800 */
+    --dash-surface-2:     #0f172a; /* slate-900 */
+    --dash-border:        rgba(51,65,85,0.6);
+    --dash-border-subtle: rgba(51,65,85,0.35);
+    --dash-text-1:        #f1f5f9;
+    --dash-text-2:        #cbd5e1;
+    --dash-text-3:        #94a3b8;
+    --dash-accent:        #6366f1;
+    --dash-accent-hover:  #818cf8;
+    --dash-accent-light:  rgba(99,102,241,0.12);
+    --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.4);
+    --dash-shadow-md:     0 4px 12px rgba(0,0,0,0.5);
 }
 .dark {
     --dash-bg:            #0f172a;
@@ -203,6 +218,25 @@ html {
 .btn-danger:active { transform: scale(0.98); }
 .btn-danger:disabled { opacity: 0.55; cursor: not-allowed; }
 
+body {
+    background-color: var(--dash-bg) !important;
+}
+.dark body {
+    background-color: var(--dash-bg) !important;
+}
+/* Força cards a não serem branco puro em dark */
+.dark .metric-card,
+.dark .kanban-card,
+.dark .client-card,
+.dark .bg-white {
+    background-color: var(--dash-surface) !important;
+    color: var(--dash-text-1);
+}
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+    background-color: var(--dash-surface-2) !important;
+}
+
 /* ============================================================
    DASHBOARD: Metric Cards
    ============================================================ */
@@ -212,7 +246,7 @@ html {
     border-radius: var(--dash-radius);
     border: 1px solid var(--dash-border);
     box-shadow: var(--dash-shadow-sm);
-    transition: box-shadow 200ms ease, border-color 200ms ease;
+    transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
