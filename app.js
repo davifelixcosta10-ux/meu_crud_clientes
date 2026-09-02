@@ -1224,7 +1224,6 @@ function adicionarCarro(prefix) {
 }
 function coletarCamposCustom(prefix) {
     const slug = currentVertical;
-    console.log('[4A] coletar start', prefix, 'slug', slug, 'org', currentOrgId);
     if (slug === 'geral') return {};
     const out = {};
     const g = id => document.getElementById(prefix+'-cc-'+id)?.value?.trim();
@@ -1257,7 +1256,6 @@ function coletarCamposCustom(prefix) {
             });
         }
         if (carros.length) out.carros = carros;
-        console.log('[4A] coletar oficina', prefix, 'carros', carros, 'out', out);
         // Também suporta campos antigos single
         if (g('servico')) out.servico = g('servico');
         if (g('km')) out.km = g('km');
@@ -1475,7 +1473,6 @@ async function deletarConta() {
     });
 }
 
-
 // ============================================================
 // 4B — SIDEBAR & SECAO ROUTING (Vercel style)
 // ============================================================
@@ -1642,8 +1639,6 @@ async function carregarAtividadesAgenda() {
         if (window.lucide) lucide.createIcons();
     } catch(e) { container.innerHTML = '<p class="text-xs text-rose-400">Erro</p>'; }
 }
-
-
 
 
 
@@ -3645,8 +3640,6 @@ async function salvarNovoCliente(event) {
         campos_custom:   coletarCamposCustom('criar')
     };
 
-    console.log('[4A] salvarNovoCliente payload', JSON.stringify(novoCliente).slice(0,500));
-    console.log('[4A] campos_custom', novoCliente.campos_custom);
     setButtonLoading(btnSubmit, true, 'Cadastrando...');
 
     try {
