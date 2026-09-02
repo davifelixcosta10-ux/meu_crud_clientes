@@ -536,7 +536,7 @@ async function carregarMembros() {
         container.innerHTML = membros.map(m => {
             const isOwner = ownerId && m.user_id === ownerId;
             const canRemove = isAdmin && !isOwner;
-            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' 👑 dono' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button onclick="removerMembro('${m.user_id}')" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover membro (apenas admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
+            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' 👑 dono' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover membro (apenas admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
         }).join('');
         if (window.lucide) lucide.createIcons();
     } catch(e) {
@@ -735,7 +735,7 @@ async function carregarMembrosGerenciar() {
         container.innerHTML = membros.map(m => {
             const isOwner = ownerId && m.user_id === ownerId;
             const canRemove = isAdmin && !isOwner;
-            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' 👑 dono' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button onclick="removerMembro('${m.user_id}')" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover (admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
+            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' 👑 dono' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover (admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
         }).join('');
         if (window.lucide) lucide.createIcons();
     } catch(e) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro</p>'; }
@@ -985,7 +985,7 @@ function renderizarAnexos() {
     if (anexosCache.length === 0) { container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhum anexo</p>'; return; }
     container.innerHTML = anexosCache.map(a => {
         const kb = (a.tamanho/1024).toFixed(1);
-        return `<div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><i data-lucide="file" class="w-3.5 h-3.5 text-slate-400"></i><span class="text-xs font-semibold truncate">${escaparHTML(a.nome)}</span><span class="text-[10px] text-slate-400">${escaparHTML(a.mime)} • ${kb}KB</span></div><button onclick="deletarAnexo('${a.id}')" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50" title="Remover"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`;
+        return `<div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><i data-lucide="file" class="w-3.5 h-3.5 text-slate-400"></i><span class="text-xs font-semibold truncate">${escaparHTML(a.nome)}</span><span class="text-[10px] text-slate-400">${escaparHTML(a.mime)} • ${kb}KB</span></div><button data-anexo-id="${escaparHTML(String(a.id))}" onclick="deletarAnexo(this.dataset.anexoId)" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50" title="Remover"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`;
     }).join('');
     if (window.lucide) lucide.createIcons();
 }
@@ -4182,7 +4182,7 @@ function abrirModalDetalhes(id) {
         <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
             <div class="flex items-center justify-between">
                 <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Atividades</h4>
-                <button onclick="abrirModalAtividade(${cliente.id}, '${escaparHTML(cliente.nome).replace(/'/g,"\\'")}')" class="px-2.5 py-1 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Nova</button>
+                <button data-cliente-id="${escaparHTML(String(cliente.id))}" data-cliente-nome="${escaparHTML(cliente.nome)}" onclick="abrirModalAtividade(this.dataset.clienteId, this.dataset.clienteNome)" class="px-2.5 py-1 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Nova</button>
             </div>
             <div id="detalhes-atividades" class="space-y-2">
                 <p class="text-xs text-slate-400">Carregando atividades...</p>
@@ -4455,8 +4455,17 @@ function exportarCSV() {
         'Número', 'Complemento', 'Bairro', 'Cidade', 'Estado', 'Observações', 'Data Cadastro'
     ];
 
+    // F20 fix: sanitiza CSV injection (=+-@)
+    const csvSanitize = (val) => {
+        if (val == null) return '""';
+        let s = String(val);
+        // escapa aspas
+        s = s.replace(/"/g, '""');
+        // prefixa com ' se começa com =+-@
+        if (/^[=+\-@]/.test(s)) s = "'" + s;
+        return `"${s}"`;
+    };
     const rows = clientesCache.map(c => {
-        // Exporta nome do plano em vez de ID "1" para import preservar nome/cor (ex: "Vip" em vez de "1")
         let planoNome = c.plano || '';
         if (planoNome) {
             const p = planosCache.find(x => String(x.id) === String(planoNome));
@@ -4464,25 +4473,25 @@ function exportarCSV() {
         }
         return [
         c.id,
-        `"${(c.nome || '').replace(/"/g, '""')}"`,
-        `"${(c.email || '').replace(/"/g, '""')}"`,
+        csvSanitize(c.nome),
+        csvSanitize(c.email),
         c.ativo ? 'Ativo' : 'Inativo',
-        `"${String(planoNome).replace(/"/g, '""')}"`,
-        `"${(c.telefone || '').replace(/"/g, '""')}"`,
-        `"${(c.cpf || '').replace(/"/g, '""')}"`,
-        `"${(c.rg || '').replace(/"/g, '""')}"`,
-        `"${(c.empresa || '').replace(/"/g, '""')}"`,
-        `"${(c.cargo || '').replace(/"/g, '""')}"`,
+        csvSanitize(planoNome),
+        csvSanitize(c.telefone),
+        csvSanitize(c.cpf),
+        csvSanitize(c.rg),
+        csvSanitize(c.empresa),
+        csvSanitize(c.cargo),
         c.data_nascimento || '',
         c.genero || '',
-        `"${(c.cep || '').replace(/"/g, '""')}"`,
-        `"${(c.logradouro || '').replace(/"/g, '""')}"`,
-        `"${(c.numero || '').replace(/"/g, '""')}"`,
-        `"${(c.complemento || '').replace(/"/g, '""')}"`,
-        `"${(c.bairro || '').replace(/"/g, '""')}"`,
-        `"${(c.cidade || '').replace(/"/g, '""')}"`,
-        `"${(c.estado || '').replace(/"/g, '""')}"`,
-        `"${(c.observacoes || '').replace(/"/g, '""')}"`,
+        csvSanitize(c.cep),
+        csvSanitize(c.logradouro),
+        csvSanitize(c.numero),
+        csvSanitize(c.complemento),
+        csvSanitize(c.bairro),
+        csvSanitize(c.cidade),
+        csvSanitize(c.estado),
+        csvSanitize(c.observacoes),
         c.data_cadastro || ''
         ];
     });

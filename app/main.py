@@ -73,10 +73,21 @@ from app.storage import (
     listar_automacoes, atualizar_automacao, run_automacoes_manual,
 )
 
-# --- Rate Limiter ---
-# Limita requisições por IP para prevenir brute force e DoS
-# Aplicado nas rotas de autenticação (signup: 5/min, login: 10/min)
-limiter = Limiter(key_func=get_remote_address)
+# --- Rate Limiter (F12 fix: não confia em X-Forwarded-For spoofável) ---
+# Em Vercel, o IP real vem de X-Vercel-Forwarded-For ou X-Real-IP, não X-Forwarded-For genérico
+def _rate_limit_key(request: Request):
+    # Tenta X-Vercel-Forwarded-For primeiro (confiável na Vercel), depois client.host
+    vercel_ip = request.headers.get("x-vercel-forwarded-for") or request.headers.get("x-real-ip")
+    if vercel_ip:
+        # Pega primeiro IP da lista
+        return vercel_ip.split(",")[0].strip()
+    # Fallback para get_remote_address mas sem confiar em X-Forwarded-For spoofado
+    try:
+        return request.client.host if request.client else get_remote_address(request)
+    except Exception:
+        return get_remote_address(request)
+
+limiter = Limiter(key_func=_rate_limit_key)
 
 app = FastAPI(
     title="DaviFlow API",
@@ -107,22 +118,25 @@ ALLOWED_ORIGINS = _default_origins + _extra_origins + [
     "https://127.0.0.1",
 ]
 
+# F12 fix: CORS sem allow_credentials para Bearer (não precisa de cookie), e sem regex localhost em prod
+_is_prod = os.environ.get("VERCEL_ENV") == "production" or "vercel.app" in os.environ.get("VERCEL_URL","")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",  # Apenas localhost com porta opcional
-    allow_credentials=True,
+    allow_origins=ALLOWED_ORIGINS if _is_prod else ALLOWED_ORIGINS,
+    allow_origin_regex=None if _is_prod else r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_credentials=False,  # Bearer não precisa de credenciais, evita CSRF via cookie
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
+    expose_headers=["Content-Disposition"],
 )
 
 
 # ============================================================
 # DEPENDÊNCIA DE AUTENTICAÇÃO — Valida JWT com Supabase (assinatura verificada)
 # ============================================================
-async def obter_user_id(authorization: str = Header(None)) -> str:
+async def obter_user_id(authorization: str = Header(None), df_token: str = Header(None, alias="Cookie")) -> str:
     """
-    Extrai e valida o user_id (UUID) a partir do header Authorization: Bearer <token>.
+    Extrai e valida o user_id. Tenta Authorization Bearer primeiro, depois cookie httpOnly df_token (F9).
     
     Fluxo de validação:
     1. Verifica presença do header Authorization
@@ -137,21 +151,23 @@ async def obter_user_id(authorization: str = Header(None)) -> str:
     IMPORTANTE: Não aceita UUID direto — isso previnia spoofing de identidade
     onde um atacante poderia enviar UUID de outro usuário.
     """
-    if not authorization:
+    raw_token = None
+    if authorization:
+        parts = authorization.split(" ", 1)
+        if len(parts) == 2 and parts[0].lower() == "bearer" and parts[1].strip():
+            raw_token = parts[1].strip()
+    # Fallback para cookie httpOnly (F9)
+    if not raw_token and df_token:
+        import re
+        m = re.search(r"df_token=([^;\s]+)", df_token)
+        if m:
+            raw_token = m.group(1).strip()
+    if not raw_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Header 'Authorization' ausente.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    parts = authorization.split(" ", 1)
-    if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1].strip():
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido. Use o formato: 'Bearer <token>'.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    raw_token = parts[1].strip()
 
     # Valida token com Supabase (verifica assinatura, expiração, revogação)
     try:
@@ -300,12 +316,26 @@ async def login(request: Request, dados: UserLogin):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return {
+    from fastapi.responses import JSONResponse
+    resp = JSONResponse(content={
         "access_token": res.session.access_token,
         "token_type":   "bearer",
         "user_id":      res.session.user.id,
         "email":        res.session.user.email,
-    }
+    })
+    try:
+        resp.set_cookie(
+            key="df_token",
+            value=res.session.access_token,
+            httponly=True,
+            secure=True,
+            samesite="strict",
+            max_age=3600,
+            path="/",
+        )
+    except Exception:
+        pass
+    return resp
 
 
 @app.post("/api/auth/forgot-password", tags=["Auth"])
@@ -330,66 +360,45 @@ async def forgot_password(request: Request, dados: ForgotPasswordRequest):
 
 
 @app.post("/api/auth/update-password", tags=["Auth"])
+@limiter.limit("5/minute")
 async def update_password(request: Request):
-    """Define nova senha via access_token do recovery/invite (hash). Usa service_role para atualizar."""
+    """Define nova senha via access_token do recovery/invite (hash). Apenas token VERIFICADO via Supabase JWKS."""
     try:
         body = await request.json()
         token = (body.get("access_token") or body.get("token") or "").strip()
         new_password = (body.get("password") or body.get("new_password") or "").strip()
         if not new_password or len(new_password) < 6:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Senha deve ter pelo menos 6 caracteres")
+        if len(new_password) > 128:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Senha muito longa")
         if not token:
-            # tenta pegar do header Authorization também
             auth = request.headers.get("authorization") or request.headers.get("Authorization") or ""
             if auth.lower().startswith("bearer "):
                 token = auth.split(" ",1)[1].strip()
         if not token:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token ausente. Abra o link do email novamente.")
-        # valida token e pega user
         from app.storage import get_supabase_admin_client, get_supabase_client
         supabase_admin = get_supabase_admin_client()
         supabase = get_supabase_client()
-        # tenta getUser com o token (anon) para validar
         user_id = None
-        try:
-            # tenta via supabase.auth.get_user com token
-            resp = supabase_admin.auth.get_user(token)
-            if resp and getattr(resp, "user", None):
-                user_id = resp.user.id
-        except Exception:
+        last_err = None
+        for client in (supabase_admin, supabase):
             try:
-                resp2 = supabase.auth.get_user(token)
-                if resp2 and getattr(resp2, "user", None):
-                    user_id = resp2.user.id
-            except Exception:
-                pass
-        if not user_id:
-            # fallback: tenta decodificar JWT sem verificar (apenas para pegar sub)
-            try:
-                import base64, json
-                parts = token.split(".")
-                if len(parts) >= 2:
-                    payload = parts[1] + "=" * (-len(parts[1]) % 4)
-                    data = json.loads(base64.urlsafe_b64decode(payload).decode())
-                    user_id = data.get("sub")
-            except Exception:
-                pass
+                resp = client.auth.get_user(token)
+                if resp and getattr(resp, "user", None) and getattr(resp.user, "id", None):
+                    # Verifica se token é de recovery/invite (opcional: checa aud/exp já feito pelo get_user)
+                    user_id = resp.user.id
+                    break
+            except Exception as e:
+                last_err = e
+                continue
         if not user_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token inválido ou expirado. Solicite novo link em Esqueci a senha.")
-        # atualiza senha via admin (service_role)
         try:
             supabase_admin.auth.admin.update_user_by_id(user_id, {"password": new_password, "email_confirm": True})
         except Exception as e:
-            # fallback tenta via supabase.auth.update_user com token (se for recovery session)
-            try:
-                # cria client temporário com o token como header
-                import httpx
-                # usa supabase-py com token no header via auth
-                # tenta direto via admin com outra assinatura
-                supabase_admin.auth.admin.update_user_by_id(user_id, {"password": new_password})
-            except Exception as e2:
-                print(f"[ERRO update-password admin] {e} / {e2}")
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Falha ao atualizar senha. Solicite novo link.")
+            print(f"[ERRO update-password admin] {e}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Falha ao atualizar senha. Solicite novo link.")
         return {"mensagem": "Senha atualizada com sucesso. Faça login."}
     except HTTPException:
         raise
@@ -604,7 +613,7 @@ async def get_tags(org_id: str | None = None, user_id: str = Depends(obter_user_
         return listar_tags(user_id, org_id)
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao buscar tags: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar tags")
 
 
 @app.post("/api/tags", response_model=Tag, status_code=status.HTTP_201_CREATED, tags=["Tags"])
@@ -669,7 +678,7 @@ async def get_tags_cliente(cliente_id: str | int, user_id: str = Depends(obter_u
         return listar_tags_cliente(cliente_id, user_id)
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao buscar tags do cliente: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar tags do cliente")
 
 
 @app.post("/api/clientes/{cliente_id}/tags", tags=["Tags"])
@@ -753,7 +762,7 @@ async def get_relatorio_conversao(periodo: int | None = None, org_id: str | None
     try:
         return relatorio_conversao(user_id, periodo, org_id)
     except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório de conversão: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório")
 
 
 @app.get("/api/relatorios/receita", response_model=RelatorioReceitaResponse, tags=["Relatórios"])
@@ -763,7 +772,7 @@ async def get_relatorio_receita(periodo: int | None = None, org_id: str | None =
         return relatorio_receita(user_id, periodo, org_id)
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório de receita: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório")
 
 
 @app.get("/api/relatorios/churn", response_model=RelatorioChurnResponse, tags=["Relatórios"])
@@ -773,7 +782,7 @@ async def get_relatorio_churn(periodo: int | None = None, org_id: str | None = N
         return relatorio_churn(user_id, periodo, org_id)
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório de churn: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório")
 
 
 @app.get("/api/relatorios/ltv", response_model=RelatorioLtvResponse, tags=["Relatórios"])
@@ -782,7 +791,7 @@ async def get_relatorio_ltv(periodo: int | None = None, org_id: str | None = Non
     try:
         return relatorio_ltv(user_id, periodo, org_id)
     except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório de LTV: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao gerar relatório")
 
 
 # ============================================================
@@ -893,7 +902,7 @@ async def get_integracoes(org_id: str | None = None, user_id: str = Depends(obte
         return listar_integracoes(user_id, org_id)
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar integrações: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar integrações")
 
 @app.post("/api/integracoes", tags=["Integrações"])
 async def post_integracao(dados: IntegracaoCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
@@ -910,7 +919,7 @@ async def post_integracao(dados: IntegracaoCreate, org_id: str | None = None, us
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao criar integração: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao criar integração")
 
 @app.patch("/api/integracoes/{integracao_id}", tags=["Integrações"])
 async def patch_integracao(integracao_id: str, dados: IntegracaoUpdate, user_id: str = Depends(obter_user_id)):
@@ -952,10 +961,16 @@ async def delete_integracao(integracao_id: str, user_id: str = Depends(obter_use
 
 # Webhook público (sem JWT) para Zapier/Make - usa integracao_id como secret
 @app.post("/api/webhooks/zapier", tags=["Webhooks"])
-async def webhook_zapier(payload: dict, integracao_id: str | None = None):
-    """Recebe payload do Zapier/Make e cria cliente. Se integracao_id fornecido valida integração. Público (sem JWT) para permitir chamada externa."""
+@limiter.limit("10/minute")
+async def webhook_zapier(request: Request, payload: dict, integracao_id: str | None = None):
+    """Recebe payload do Zapier/Make. Exige integracao_id (UUID) na query para evitar abuso. Não confia em org_id do payload."""
+    if not integracao_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="integracao_id é obrigatório na query (?integracao_id=UUID) ou na URL /webhooks/zapier/{id}")
+    # Valida UUID
+    import re
+    if not re.match(r"^[0-9a-fA-F-]{36}$", integracao_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="integracao_id inválido")
     try:
-        # payload já é dict (FastAPI parseia JSON)
         res = processar_webhook_zapier(payload, integracao_id)
         return {"status": "ok", "cliente": res}
     except ValueError as e:
@@ -964,8 +979,12 @@ async def webhook_zapier(payload: dict, integracao_id: str | None = None):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao processar webhook.")
 
 @app.post("/api/webhooks/zapier/{integracao_id}", tags=["Webhooks"])
-async def webhook_zapier_com_id(integracao_id: str, payload: dict):
-    """Alias com integracao_id na URL (mais amigável para Zapier)."""
+@limiter.limit("10/minute")
+async def webhook_zapier_com_id(request: Request, integracao_id: str, payload: dict):
+    """Alias com integracao_id na URL (público mas com secret UUID). Rate limited."""
+    import re
+    if not re.match(r"^[0-9a-fA-F-]{36}$", integracao_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="integracao_id inválido")
     try:
         res = processar_webhook_zapier(payload, integracao_id)
         return {"status": "ok", "cliente": res}
@@ -998,7 +1017,7 @@ async def get_anexos(cliente_id: str, org_id: str | None = None, user_id: str = 
         return listar_anexos(cliente_id, user_id, org_id)
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar anexos: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar anexos")
 
 @app.post("/api/clientes/{cliente_id}/anexos", tags=["Anexos"])
 async def post_anexo(cliente_id: str, dados: AnexoCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
@@ -1014,7 +1033,7 @@ async def post_anexo(cliente_id: str, dados: AnexoCreate, org_id: str | None = N
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao criar anexo: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao criar anexo")
 
 @app.delete("/api/anexos/{anexo_id}", tags=["Anexos"])
 async def delete_anexo(anexo_id: str, user_id: str = Depends(obter_user_id)):
@@ -1032,7 +1051,7 @@ async def delete_anexo(anexo_id: str, user_id: str = Depends(obter_user_id)):
         raise
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao remover anexo: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao remover anexo")
 
 @app.get("/api/api-keys", tags=["API Keys"])
 async def get_api_keys(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
@@ -1041,7 +1060,7 @@ async def get_api_keys(org_id: str | None = None, user_id: str = Depends(obter_u
         return listar_api_keys(user_id, org_id)
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar chaves: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar chaves")
 
 @app.post("/api/api-keys", tags=["API Keys"])
 async def post_api_key(dados: ApiKeyCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
@@ -1056,7 +1075,7 @@ async def post_api_key(dados: ApiKeyCreate, org_id: str | None = None, user_id: 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao criar chave: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao criar chave")
 
 @app.delete("/api/api-keys/{key_id}", tags=["API Keys"])
 async def delete_api_key(key_id: str, user_id: str = Depends(obter_user_id)):
@@ -1074,7 +1093,7 @@ async def delete_api_key(key_id: str, user_id: str = Depends(obter_user_id)):
         raise
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao revogar chave: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao revogar chave")
 
 # Exemplo de endpoint que aceita X-API-Key além de JWT
 @app.get("/api/clientes-public", tags=["API Keys"])
@@ -1107,7 +1126,7 @@ async def get_vertical(org_id: str, user_id: str = Depends(obter_user_id)):
         return {"org_id": org_id, "vertical": slug}
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao buscar vertical: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar vertical")
 
 @app.patch("/api/orgs/{org_id}/vertical", tags=["Verticais"])
 async def patch_vertical(org_id: str, dados: VerticalUpdate, user_id: str = Depends(obter_user_id)):
@@ -1122,7 +1141,7 @@ async def patch_vertical(org_id: str, dados: VerticalUpdate, user_id: str = Depe
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atualizar vertical: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao atualizar vertical")
 
 
 # ============================================================
@@ -1135,7 +1154,7 @@ async def get_me(user_id: str = Depends(obter_user_id)):
         return get_usuario_me(user_id)
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao buscar usuário: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao buscar usuário")
 
 @app.patch("/api/usuarios/me", response_model=UsuarioMe, tags=["Usuários"])
 async def patch_me(dados: UsuarioUpdate, user_id: str = Depends(obter_user_id)):
@@ -1151,7 +1170,7 @@ async def patch_me(dados: UsuarioUpdate, user_id: str = Depends(obter_user_id)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atualizar usuário: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao atualizar usuário")
 
 @app.post("/api/usuarios/alterar-senha", tags=["Usuários"])
 async def post_alterar_senha(dados: AlterarSenhaRequest, user_id: str = Depends(obter_user_id)):
@@ -1163,7 +1182,7 @@ async def post_alterar_senha(dados: AlterarSenhaRequest, user_id: str = Depends(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao alterar senha: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao alterar senha")
 
 @app.delete("/api/usuarios/me", tags=["Usuários"])
 async def delete_me(user_id: str = Depends(obter_user_id)):
@@ -1181,7 +1200,7 @@ async def delete_me(user_id: str = Depends(obter_user_id)):
             return {"mensagem": "Conta deletada"}
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao deletar conta: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao deletar conta")
 
 @app.get("/api/usuarios/me/export", tags=["Usuários"])
 async def export_me(user_id: str = Depends(obter_user_id)):
@@ -1200,7 +1219,7 @@ async def export_me(user_id: str = Depends(obter_user_id)):
         return {"user_id": user_id, "clientes": [c.model_dump(mode="json") if hasattr(c, "model_dump") else c for c in clientes]}
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao exportar: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao exportar")
 
 
 # ============================================================
@@ -1213,7 +1232,7 @@ async def get_templates(org_id: str | None = None, vertical: str | None = None, 
         return listar_templates(user_id, org_id, vertical)
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar templates: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar templates")
 
 @app.post("/api/templates", tags=["Templates"])
 async def post_template(dados: TemplateCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
@@ -1230,7 +1249,7 @@ async def post_template(dados: TemplateCreate, org_id: str | None = None, user_i
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao criar template: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao criar template")
 
 @app.patch("/api/templates/{template_id}", tags=["Templates"])
 async def patch_template(template_id: str, dados: TemplateUpdate, user_id: str = Depends(obter_user_id)):
@@ -1252,7 +1271,7 @@ async def patch_template(template_id: str, dados: TemplateUpdate, user_id: str =
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atualizar template: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao atualizar template")
 
 @app.delete("/api/templates/{template_id}", tags=["Templates"])
 async def delete_template(template_id: str, user_id: str = Depends(obter_user_id)):
@@ -1270,7 +1289,7 @@ async def delete_template(template_id: str, user_id: str = Depends(obter_user_id
         raise
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao remover template: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao remover template")
 
 
 # ============================================================
@@ -1283,7 +1302,7 @@ async def get_automacoes(org_id: str | None = None, user_id: str = Depends(obter
         return listar_automacoes(user_id, org_id)
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar automações: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar automações")
 
 @app.patch("/api/automacoes/{automacao_id}", tags=["Automações"])
 async def patch_automacao(automacao_id: str, dados: AutomacaoUpdate, user_id: str = Depends(obter_user_id)):
@@ -1305,7 +1324,7 @@ async def patch_automacao(automacao_id: str, dados: AutomacaoUpdate, user_id: st
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atualizar automação: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao atualizar automação")
 
 @app.post("/api/automacoes/run", tags=["Automações"])
 async def post_run_automacoes(user_id: str = Depends(obter_user_id)):
@@ -1324,7 +1343,7 @@ async def post_run_automacoes(user_id: str = Depends(obter_user_id)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         import traceback; traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao executar automações: {str(e)[:300]}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao executar automações")
 
 
 

@@ -32,11 +32,8 @@ from supabase import create_client, Client
 from app.models import Cliente, ClienteCreate, Plano, UserLogin, UserSignUp, Etapa, Atividade, Tag, FiltroSalvo
 
 
-# Carrega variáveis de ambiente de .env ou data/arquivos.env
-# Ordem: .env (raiz) -> data/arquivos.env (fallback para deploy)
+# Carrega variáveis de ambiente apenas de .env / Vercel Env Vars (F18 fix: não expor data/arquivos.env)
 load_dotenv()
-if not os.environ.get("SUPABASE_URL"):
-    load_dotenv(os.path.join(os.path.dirname(__file__), "..", "data", "arquivos.env"))
 
 
 # --- SINGLETON: cliente Supabase reutilizado por processo ---
@@ -160,6 +157,8 @@ def listar_planos(user_id: str, org_id: str | None = None) -> list[Plano]:
     Fallback: sem org_id, lista por user_id (compatibilidade) + todos os planos das orgs onde é membro.
     """
     supabase = get_supabase_client()
+    if org_id:
+        _verificar_membro(user_id, org_id)
     # se tiver org_id, filtra por org (RLS org-based)
     if org_id:
         try:
@@ -281,7 +280,10 @@ def atualizar_plano(plano_id: int | str, dados: dict, user_id: str) -> Plano | N
             if org_id_plano:
                 orgs = listar_organizacoes(user_id)
                 if any(o["id"] == org_id_plano for o in orgs) or plano_atual.data[0].get("user_id") == user_id:
-                    resp = supabase.table("planos").update(dados_filtrados).eq("id", plano_id).execute()
+                    if org_id_plano:
+                        resp = supabase.table("planos").update(dados_filtrados).eq("id", plano_id).eq("org_id", org_id_plano).execute()
+                    else:
+                        resp = supabase.table("planos").update(dados_filtrados).eq("id", plano_id).eq("user_id", user_id).execute()
                     if resp.data:
                         return Plano.model_validate(resp.data[0])
         # fallback user_id
@@ -328,7 +330,11 @@ def deletar_plano(plano_id: int | str, user_id: str) -> bool:
             if org_id_plano:
                 orgs = listar_organizacoes(user_id)
                 if any(o["id"] == org_id_plano for o in orgs) or plano_atual.data[0].get("user_id") == user_id:
-                    resp = supabase.table("planos").delete().eq("id", plano_id).execute()
+                    # Delete com filtro org_id para evitar IDOR (service_role bypassa RLS)
+                    if org_id_plano:
+                        resp = supabase.table("planos").delete().eq("id", plano_id).eq("org_id", org_id_plano).execute()
+                    else:
+                        resp = supabase.table("planos").delete().eq("id", plano_id).eq("user_id", user_id).execute()
                     return len(resp.data) > 0
         response = supabase.table("planos").delete().eq("id", plano_id).eq("user_id", user_id).execute()
         return len(response.data) > 0
@@ -373,13 +379,15 @@ def carregar_clientes(user_id: str, org_id: str | None = None) -> list[Cliente]:
     Usado em: GET /api/clientes?org_id=...
     """
     supabase = get_supabase_client()
+    if org_id:
+        _verificar_membro(user_id, org_id)
     q = supabase.table("clientes").select("*")
     if org_id:
         q = q.eq("org_id", org_id)
     else:
         q = q.eq("user_id", user_id)              # fallback compat
     response = q.order("data_cadastro", desc=True).execute()
-    print(f"[DEBUG] carregar_clientes user_id={user_id} => {len(response.data)} linhas brutas")
+    # [DEBUG] removido em prod para não vazar PII (F18)
     clientes = []
     for item in response.data:
         try:
@@ -394,7 +402,7 @@ def carregar_clientes(user_id: str, org_id: str | None = None) -> list[Cliente]:
             except Exception as e2:
                 print(f"WARN2: fallback também falhou id={item.get('id')}: {e2}")
                 pass
-    print(f"[DEBUG] carregar_clientes user_id={user_id} => {len(clientes)} após validação")
+    # [DEBUG] removido
     return clientes
 
 
@@ -555,6 +563,8 @@ def deletar_cliente_db(cliente_id: int | str, user_id: str) -> bool:
 def listar_etapas(user_id: str, org_id: str | None = None) -> list[Etapa]:
     """Lista etapas do usuário ordenadas por ordem. Filtra por org_id se fornecido."""
     supabase = get_supabase_client()
+    if org_id:
+        _verificar_membro(user_id, org_id)
     q = supabase.table("etapas").select("*")
     if org_id:
         q = q.eq("org_id", org_id)
@@ -645,6 +655,8 @@ def deletar_etapa(etapa_id: int | str, user_id: str) -> bool:
 def listar_atividades(user_id: str, cliente_id: int | str | None = None, org_id: str | None = None) -> list[Atividade]:
     """Lista atividades do usuário; filtra por cliente_id se fornecido. Filtra por org_id se fornecido."""
     supabase = get_supabase_client()
+    if org_id:
+        _verificar_membro(user_id, org_id)
     query = supabase.table("atividades").select("*")
     if org_id:
         query = query.eq("org_id", org_id)
@@ -713,6 +725,8 @@ def deletar_atividade(atividade_id: int | str, user_id: str) -> bool:
 
 def listar_tags(user_id: str, org_id: str | None = None) -> list[Tag]:
     supabase = get_supabase_client()
+    if org_id:
+        _verificar_membro(user_id, org_id)
     q = supabase.table("tags").select("*")
     if org_id:
         q = q.eq("org_id", org_id)
@@ -827,6 +841,15 @@ def vincular_tag_cliente(cliente_id: int | str, tag_id: int | str, user_id: str)
 
 def desvincular_tag_cliente(cliente_id: int | str, tag_id: int | str, user_id: str) -> bool:
     supabase = get_supabase_client()
+    # Verifica que cliente pertence à org do user
+    cli = supabase.table("clientes").select("org_id").eq("id", cliente_id).execute()
+    if cli.data and cli.data[0].get("org_id"):
+        _verificar_membro(user_id, cli.data[0].get("org_id"))
+    else:
+        # fallback por user_id
+        chk = supabase.table("clientes").select("id").eq("id", cliente_id).eq("user_id", user_id).execute()
+        if not chk.data:
+            raise ValueError("Acesso negado")
     response = (
         supabase.table("cliente_tags")
         .delete()
@@ -843,6 +866,8 @@ def desvincular_tag_cliente(cliente_id: int | str, tag_id: int | str, user_id: s
 
 def listar_filtros_salvos(user_id: str, org_id: str | None = None) -> list[FiltroSalvo]:
     supabase = get_supabase_client()
+    if org_id:
+        _verificar_membro(user_id, org_id)
     q = supabase.table("filtros_salvos").select("*")
     if org_id:
         q = q.eq("org_id", org_id)
@@ -1871,6 +1896,8 @@ def remover_membro_org(org_id: str, target_user_id: str, requester_id: str) -> b
 def listar_integracoes(user_id: str, org_id: str | None = None) -> list[dict]:
     """Lista integrações da org (filtra por org_id se fornecido)."""
     supabase = get_supabase_client()
+    if org_id:
+        _verificar_membro(user_id, org_id)
     q = supabase.table("integracoes").select("*")
     if org_id:
         q = q.eq("org_id", org_id)
@@ -1968,24 +1995,29 @@ def processar_webhook_zapier(payload: dict, integracao_id: str | None = None) ->
     Se integracao_id fornecido, usa org_id da integração para isolamento.
     Caso contrário usa user_id do dono da integração ou primeiro org encontrada.
     """
+    if not integracao_id:
+        raise ValueError("integracao_id é obrigatório")
+    import re
+    if not re.match(r"^[0-9a-fA-F-]{36}$", str(integracao_id)):
+        raise ValueError("integracao_id inválido")
     supabase = get_supabase_client()
     org_id = None
     user_id = None
-    if integracao_id:
-        try:
-            res = supabase.table("integracoes").select("org_id,user_id,tipo,ativo").eq("id", integracao_id).execute()
-            if res.data:
-                org_id = res.data[0].get("org_id")
-                user_id = res.data[0].get("user_id")
-                if not res.data[0].get("ativo"):
-                    raise ValueError("Integração desativada")
-        except Exception as e:
-            raise ValueError(f"Integração não encontrada: {e}")
-    # fallback: tenta achar integracao ativa do tipo zapier/webhook
-    if not org_id and not user_id:
-        # sem integração, tenta usar payload org_id se vier
-        org_id = payload.get("org_id")
-        user_id = payload.get("user_id")
+    try:
+        res = supabase.table("integracoes").select("org_id,user_id,tipo,ativo").eq("id", integracao_id).execute()
+        if not res.data:
+            raise ValueError("Integração não encontrada")
+        org_id = res.data[0].get("org_id")
+        user_id = res.data[0].get("user_id")
+        if not res.data[0].get("ativo"):
+            raise ValueError("Integração desativada")
+        # Valida tipo
+        if res.data[0].get("tipo") not in ("zapier","webhook","contaazul"):
+            raise ValueError("Integração não é de webhook")
+    except ValueError:
+        raise
+    except Exception as e:
+        raise ValueError(f"Integração não encontrada: {e}")
     # payload cliente mínimo
     nome = (payload.get("nome") or payload.get("name") or "Lead Zapier").strip()
     email = (payload.get("email") or "").strip()
@@ -2040,6 +2072,8 @@ import hashlib, secrets, base64
 
 def listar_anexos(cliente_id: str | int, user_id: str, org_id: str | None = None) -> list[dict]:
     supabase = get_supabase_client()
+    if org_id:
+        _verificar_membro(user_id, org_id)
     # verifica acesso ao cliente (org)
     try:
         # tenta por org se fornecido, senão por user
@@ -2166,6 +2200,8 @@ def deletar_anexo(anexo_id: str, user_id: str) -> bool:
 
 def listar_api_keys(user_id: str, org_id: str | None = None) -> list[dict]:
     supabase = get_supabase_client()
+    if org_id:
+        _verificar_membro(user_id, org_id)
     q = supabase.table("api_keys").select("id,org_id,user_id,nome,prefix,ultimo_uso,created_at")
     if org_id:
         q = q.eq("org_id", org_id)
@@ -2196,9 +2232,11 @@ def criar_api_key(nome: str, user_id: str, org_id: str | None = None) -> dict:
             oid = None
     if oid:
         _verificar_admin(user_id, oid)
-    # gera chave plain: davi_<32 random>
+    # gera chave plain: davi_<32 random> com HMAC pepper (F10 fix)
+    import hmac, os
+    pepper = os.environ.get("API_KEY_PEPPER") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY") or "davi-default-pepper-change-me"
     plain = "davi_" + secrets.token_urlsafe(32)
-    key_hash = hashlib.sha256(plain.encode()).hexdigest()
+    key_hash = hmac.new(pepper.encode(), plain.encode(), hashlib.sha256).hexdigest()
     prefix = plain[:8]
     payload = {
         "user_id": user_id,
@@ -2232,20 +2270,28 @@ def deletar_api_key(key_id: str, user_id: str) -> bool:
     return len(res.data) > 0
 
 def verificar_api_key(plain_key: str) -> dict | None:
-    """Verifica X-API-Key (plain) contra hash. Retorna row com org_id/user_id se válida."""
+    """Verifica X-API-Key (plain) contra HMAC. Usa compare_digest para timing-safe."""
     if not plain_key or not plain_key.startswith("davi_"):
         return None
-    h = hashlib.sha256(plain_key.encode()).hexdigest()
+    import hmac, os
+    pepper = os.environ.get("API_KEY_PEPPER") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY") or "davi-default-pepper-change-me"
+    h = hmac.new(pepper.encode(), plain_key.encode(), hashlib.sha256).hexdigest()
     supabase = get_supabase_client()
-    res = supabase.table("api_keys").select("org_id,user_id,id").eq("key_hash", h).execute()
+    # Busca por prefix para limitar, depois compara com compare_digest
+    prefix = plain_key[:8]
+    res = supabase.table("api_keys").select("org_id,user_id,id,key_hash").eq("prefix", prefix).execute()
     if not res.data:
         return None
-    # atualiza ultimo_uso async (não bloqueia)
-    try:
-        supabase.table("api_keys").update({"ultimo_uso": __import__("datetime").datetime.utcnow().isoformat()}).eq("key_hash", h).execute()
-    except Exception:
-        pass
-    return res.data[0]
+    for row in res.data:
+        if hmac.compare_digest(row.get("key_hash",""), h):
+            # atualiza ultimo_uso
+            try:
+                supabase.table("api_keys").update({"ultimo_uso": __import__("datetime").datetime.utcnow().isoformat()}).eq("id", row["id"]).execute()
+            except Exception:
+                pass
+            return row
+    return None
+
 
 # ============================================================
 # FASE 4A — VERTICAIS
@@ -2287,6 +2333,8 @@ def get_vertical_config(slug: str) -> dict | None:
 
 def listar_templates(user_id: str, org_id: str | None = None, vertical: str | None = None) -> list[dict]:
     supabase = get_supabase_client()
+    if org_id:
+        _verificar_membro(user_id, org_id)
     q = supabase.table("templates_whatsapp").select("*")
     if org_id:
         q = q.eq("org_id", org_id)
@@ -2367,6 +2415,8 @@ def deletar_template(template_id: str, user_id: str) -> bool:
 
 def listar_automacoes(user_id: str, org_id: str | None = None) -> list[dict]:
     supabase = get_supabase_client()
+    if org_id:
+        _verificar_membro(user_id, org_id)
     q = supabase.table("automacoes").select("*")
     if org_id:
         q = q.eq("org_id", org_id)
@@ -2482,6 +2532,17 @@ def alterar_senha_usuario(user_id: str, nova_senha: str) -> bool:
 
 
 # --- Helpers para garantir org_id em criações (migração limpa) ---
+
+def _validar_uuid(uuid_str: str) -> bool:
+    import re
+    return bool(re.match(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", str(uuid_str)))
+
+def _verificar_membro(user_id: str, org_id: str):
+    if not org_id or not _validar_uuid(org_id):
+        raise ValueError("org_id inválido")
+    orgs = listar_organizacoes(user_id)
+    if not any(o["id"] == org_id for o in orgs):
+        raise ValueError("Acesso negado à organização")
 
 def _ensure_org_id(payload: dict, user_id: str):
     """Garante org_id no payload (para tabelas com org_id not null). Auto-cria org se não existir."""

@@ -119,9 +119,15 @@ class UserSignUp(BaseModel):
 
     @validator("password")
     def password_must_be_at_least_6_chars(cls, v):
-        """Garante senha com pelo menos 6 caracteres (política mínima)."""
-        if len(v) < 6:
-            raise ValueError("Senha deve ter no mínimo 6 caracteres.")
+        """Política mínima 8 chars (F16 fix)."""
+        if len(v) < 8:
+            raise ValueError("Senha deve ter no mínimo 8 caracteres.")
+        if len(v) > 128:
+            raise ValueError("Senha muito longa")
+        # Bloqueia senhas comuns
+        common = {"123456","12345678","password","qwerty","abc123","123456789","111111","123123"}
+        if v.lower() in common:
+            raise ValueError("Senha muito comum, escolha outra")
         return v
 
 
@@ -166,19 +172,25 @@ class TokenResponse(BaseModel):
 class PlanoCreate(BaseModel):
     """
     Dados para criar um plano personalizado do usuário.
-    
-    Campos:
-    - nome: obrigatório, ex: "Mensal", "VIP", "Ouro"
-    - cor: slug da cor para badge UI (indigo, cyan, emerald, amber, rose, purple, slate, orange)
-    - descricao: texto livre opcional
-    - valor: texto livre opcional, ex: "R$ 150/mês"
-    
-    Usado em: POST /api/planos
     """
     nome: str
     cor: Optional[str] = "indigo"
     descricao: Optional[str] = None
     valor: Optional[str] = None
+
+    @validator("nome")
+    def nome_max_length(cls, v):
+        if len(v) > 80:
+            raise ValueError("Nome deve ter no máximo 80 caracteres")
+        if len(v.strip()) == 0:
+            raise ValueError("Nome não pode ser vazio")
+        return v.strip()
+
+    @validator("descricao")
+    def descricao_max_length(cls, v):
+        if v and len(v) > 500:
+            raise ValueError("Descrição muito longa")
+        return v
 
 
 class PlanoUpdate(BaseModel):
@@ -434,22 +446,41 @@ class ClienteUpdate(BaseModel):
 
     @validator("cpf")
     def cpf_must_have_valid_format(cls, v):
-        return v
+        if v is None:
+            return v
+        return cpf_validator(v)
 
     @validator("rg")
     def rg_must_have_valid_format(cls, v):
+        if v is None:
+            return v
+        digits = __import__('re').sub(r'\D', '', v)
+        if len(digits) < 7 or len(digits) > 12:
+            raise ValueError("RG com formato inválido.")
         return v
 
     @validator("telefone")
     def telefone_must_have_valid_format(cls, v):
+        if v is None:
+            return v
+        digits = __import__('re').sub(r'\D', '', v)
+        if len(digits) < 10 or len(digits) > 15:
+            raise ValueError("Telefone com formato inválido.")
         return v
 
     @validator("data_nascimento")
     def data_nascimento_must_be_iso_format(cls, v):
+        if v is None:
+            return v
+        if not __import__('re').match(r'^\d{4}-\d{2}-\d{2}$', v):
+            raise ValueError("Data de nascimento deve estar no formato ISO (YYYY-MM-DD).")
         return v
     @validator("vencimento_dia")
     def vencimento_dia_must_be_valid(cls, v):
-        return v
+        if v is None:
+            return v
+        if not 1 <= v <= 31:
+            raise ValueError("Vencimento deve ser entre 1 e 31.")
 
     @validator("status_pagamento")
     def status_pagamento_must_be_valid(cls, v):
