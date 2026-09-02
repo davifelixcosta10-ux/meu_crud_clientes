@@ -33,7 +33,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com" integrity="sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K" crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -52,7 +52,7 @@
     <link rel="stylesheet" href="style.css">
 
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest" integrity="sha384-ueMZWsJB99p1SCMICHGDK/IL9ZKGuI1twYOPLoFlYI0sDz25ILSwq6W82/LsYvlt" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Fase 1 — Libs (Kanban + Import) -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" integrity="sha384-BSxuMLxX+FCbTdYec3TbXlnMGEEM2QXTFdtDaveen71o+jswm2J36+xFqp8k4VHM" crossorigin="anonymous"></script>
@@ -70,8 +70,9 @@
     </script>
     <script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
-<body class="h-full bg-slate-100 dark:bg-[#0f172a] text-slate-900 dark:text-slate-100 antialiased font-sans flex min-h-screen transition-colors duration-200">
+<body class="h-full bg-slate-100 dark:bg-[#0f172a] text-slate-900 dark:text-slate-100 antialiased font-sans flex flex-col min-h-screen transition-colors duration-200">
 
+    <div class="flex flex-1 min-h-0">
     <!-- SIDEBAR 4B — Vercel style -->
     <aside id="sidebar" class="hidden lg:flex w-[240px] flex-shrink-0 flex-col bg-white dark:bg-[#0f172a] border-r border-slate-200 dark:border-slate-800 sticky top-0 h-screen overflow-y-auto">
         <div class="px-4 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3">
@@ -767,6 +768,7 @@
                 <a href="/termos.html" class="text-slate-500 hover:text-slate-300 transition-colors">Termos de Serviço</a>
             </div>
         </footer>
+    </div>
     </div>
 
     <!-- ====================================================
