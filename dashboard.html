@@ -2076,6 +2076,20 @@
                     <p class="text-xs text-slate-500">Plano mensal, treino A/B/C, frequência, check-in</p>
                 </button>
             </div>
+            <!-- Custom vertical -->
+            <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/20">
+                <h4 class="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">Custom vertical</h4>
+                <p class="text-[11px] text-slate-400 mb-2">Crie seu próprio tipo (ex: Petshop, Oficina Pesada). Campos extras viram JSON em <code>campos_custom</code>.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input id="custom-vertical-nome" type="text" placeholder="Nome (ex: Petshop)" class="form-input text-sm">
+                    <input id="custom-vertical-desc" type="text" placeholder="Descrição (opcional)" class="form-input text-sm">
+                </div>
+                <div class="mt-2">
+                    <label class="form-label">Campos extras (separe por vírgula, ex: especie, raca, tutor)</label>
+                    <input id="custom-vertical-campos" type="text" placeholder="especie, raca, tutor" class="form-input text-sm">
+                </div>
+                <button onclick="criarVerticalCustom()" class="mt-3 w-full py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Criar custom vertical</button>
+            </div>
             <div class="px-6 py-3 border-t flex justify-end">
                 <button onclick="fecharModalVertical()" class="btn-ghost">Depois</button>
             </div>

@@ -984,15 +984,41 @@ class Vertical(BaseModel):
         from_attributes = True
 
 
+class VerticalCreate(BaseModel):
+    slug: Optional[str] = None
+    nome: str
+    descricao: Optional[str] = None
+    config_json: Optional[dict] = None
+
+    @validator("slug")
+    def slug_must_be_valid(cls, v):
+        if v is None:
+            return v
+        # permite custom_xxx ou um dos fixos
+        if v in {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}:
+            return v
+        if re.match(r"^custom_[a-z0-9_]{2,30}$", v):
+            return v
+        raise ValueError("slug deve ser um dos fixos ou custom_xxx")
+
+    @validator("nome")
+    def nome_must_be_valid(cls, v):
+        if len(v.strip()) < 2 or len(v) > 60:
+            raise ValueError("nome deve ter 2-60 caracteres")
+        return v.strip()
+
+
 class VerticalUpdate(BaseModel):
     vertical: str
 
     @validator("vertical")
     def vertical_must_be_valid(cls, v):
-        allowed = {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}
-        if v not in allowed:
-            raise ValueError(f"vertical deve ser um de: {', '.join(allowed)}")
-        return v
+        # permite custom_xxx também
+        if v in {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}:
+            return v
+        if re.match(r"^custom_[a-z0-9_]{2,30}$", v):
+            return v
+        raise ValueError(f"vertical deve ser um de: geral,hospital,lava_rapido_oficina,dentista,academia,custom ou custom_xxx")
 
 
 class UsuarioMe(BaseModel):
@@ -1016,10 +1042,11 @@ class UsuarioUpdate(BaseModel):
     def vertical_must_be_valid(cls, v):
         if v is None:
             return v
-        allowed = {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}
-        if v not in allowed:
-            raise ValueError(f"vertical deve ser um de: {', '.join(allowed)}")
-        return v
+        if v in {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}:
+            return v
+        if re.match(r"^custom_[a-z0-9_]{2,30}$", v):
+            return v
+        raise ValueError(f"vertical deve ser um de: geral,hospital,lava_rapido_oficina,dentista,academia,custom ou custom_xxx")
 
 
 class AlterarSenhaRequest(BaseModel):

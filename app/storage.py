@@ -2310,8 +2310,17 @@ def get_org_vertical(org_id: str) -> str:
     return "geral"
 
 def set_org_vertical(org_id: str, vertical: str, user_id: str) -> dict:
-    if vertical not in ("geral","hospital","lava_rapido_oficina","dentista","academia","custom"):
+    import re as _re2
+    if vertical not in ("geral","hospital","lava_rapido_oficina","dentista","academia","custom") and not _re2.match(r"^custom_[a-z0-9_]{2,30}$", vertical):
         raise ValueError("vertical inválida")
+    # valida que vertical existe em verticais (para custom_ precisa existir)
+    if vertical.startswith("custom"):
+        supabase = get_supabase_client()
+        chk = supabase.table("verticais").select("slug").eq("slug", vertical).execute()
+        if not chk.data:
+            # se for custom puro, permite; se for custom_xxx, deve existir
+            if vertical != "custom":
+                raise ValueError("vertical custom não encontrada")
     supabase = get_supabase_client()
     # apenas admin pode trocar vertical
     _verificar_admin(user_id, org_id)
@@ -2326,6 +2335,36 @@ def get_vertical_config(slug: str) -> dict | None:
     if res.data:
         return res.data[0].get("config_json")
     return None
+
+def criar_vertical(dados: dict, user_id: str) -> dict:
+    import re as _re
+    supabase = get_supabase_client()
+    nome = (dados.get("nome") or "").strip()
+    if not nome or len(nome) < 2 or len(nome) > 60:
+        raise ValueError("nome deve ter 2-60 caracteres")
+    slug = (dados.get("slug") or "").strip().lower()
+    if not slug:
+        # gera slug a partir do nome: custom_<slug>
+        base = _re.sub(r"[^a-z0-9]+", "_", nome.lower()).strip("_")[:20]
+        slug = f"custom_{base or 'meu_vertical'}"
+    if not _re.match(r"^custom_[a-z0-9_]{2,30}$", slug):
+        # permite também slug fixo custom
+        if slug not in ("geral","hospital","lava_rapido_oficina","dentista","academia","custom"):
+            raise ValueError("slug deve ser custom_xxx")
+    # verifica duplicata
+    chk = supabase.table("verticais").select("id").eq("slug", slug).execute()
+    if chk.data:
+        raise ValueError("vertical já existe")
+    config = dados.get("config_json") or {}
+    # config deve ser dict com campos extras
+    if not isinstance(config, dict):
+        raise ValueError("config_json deve ser objeto")
+    payload = {"slug": slug, "nome": nome, "descricao": dados.get("descricao") or "", "config_json": config}
+    res = supabase.table("verticais").insert(payload).execute()
+    if not res.data:
+        raise ValueError("Falha ao criar vertical")
+    return res.data[0]
+
 
 # ============================================================
 # FASE 2B — WHATSAPP TEMPLATES
