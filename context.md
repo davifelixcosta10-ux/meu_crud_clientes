@@ -1,273 +1,156 @@
 # DaviFlow — Project Summary
 
 ## Overview
-Full-stack CRM application for client and plan management, designed for freelancers, solo entrepreneurs, and small businesses. Features a modern landing page with a corporate/somber visual design, and a complete dashboard administrative interface. Em produção em daviflowgestoes.vercel.app e daviflow.vercel.app (main@7999cbb). Fase 1 e 2A completas.
+Full-stack CRM multi-tenant para freelancers, clínicas, oficinas, dentistas e academias. Em produção `daviflow.vercel.app` + `daviflowgestoes.vercel.app` (main@6e35f40) com Fase 1 ✅, 2A ✅, 2B ✅, 2C ✅, 3A-3C ✅, 4A-4C ✅. 8 fases incrementais (15 branches Preview) sem monolito.
 
-**Tagline**: Gestão de clientes sem planilhas — organize seus cadastros, métricas e planos em um painel intuitivo.
+**Tagline:** Gestão de clientes sem planilhas — organize cadastros, métricas, planos e vertical em um painel Vercel-style.
 
 ## Architecture
-- **Backend**: FastAPI (Python) — RESTful API with authentication, client management, plan management, Kanban, atividades, tags, filtros, importação e relatórios (conversão, receita, churn, LTV)
-- **Frontend**: Static HTML + Tailwind CSS + Vanilla JS + Lucide Icons + SortableJS + PapaParse + SheetJS + Chart.js 4.4.1
-- **Database**: Supabase (PostgreSQL + Auth + RLS) — 7 tabelas + colunas financeiro
-- **Deployment**: Vercel (frontend + rewrites para /api, região gru1, cache headers, sem crons) — FastAPI serverless
-- **Communication**: JWT-based authentication via Bearer tokens (Supabase Auth, validado via `supabase.auth.get_user`)
+- **Backend:** FastAPI 0.141, Python 3.12, 55+ rotas, rate limiter `slowapi` (5/min signup, 10/min login, 10/min webhook), JWT `supabase.auth.get_user` + `X-API-Key` HMAC, `is_org_member` SECURITY DEFINER, `pg_cron` 06:00 SP
+- **Frontend:** `dashboard.html` (SPA 6 seções sidebar) + Vanilla JS + Tailwind CDN + Lucide + SortableJS + SheetJS + Chart.js 4.4.1 + SRI `sha384` + CSP/HSTS
+- **Database:** Supabase Postgres + Auth + Storage (`anexos` bucket) + RLS `org_id` (15 tabelas + `clientes.campos_custom jsonb`, `clientes.valor_plano numeric`)
+- **Deployment:** Vercel `gru1`, `api/index.py` 1024MB, `vercel.json` headers `CSP/HSTS/X-Frame/nosniff`, `supabase/migrations 001-007` + `supabase_all.sql`
 
 ## Backend (app/)
 
 ### Structure
 ```
 app/
-  main.py       # FastAPI app, 39 rotas (35 + 4 relatórios), rate limiter, CORS restrito, JWT async, Fase 1+2A endpoints
-  models.py     # Pydantic models + validadores (CPF módulo 11 leniente em leitura, estrito em escrita) + Relatorio* (Conversao, Receita, Churn, Ltv)
-  storage.py    # Supabase singleton & CRUD RLS (inclui etapas, atividades, tags, filtros, import bulk, relatorio_conversao/receita/churn/ltv)
-supabase_fase1.sql # Migração Fase 1 (etapas, atividades, tags, cliente_tags, filtros_salvos + colunas clientes)
+  main.py       # 55+ rotas, limiter, CORS (Bearer sem credentials), JWT+Cookie httpOnly, F1-4C + 2B/2C
+  models.py     # Plano, Cliente (campos_custom), Etapa, Atividade, Tag, Filtro, Relatorio*, Organizacao, Integracao, Anexo, ApiKey, Vertical, Template, Automacao, UsuarioMe
+  storage.py    # singleton supabase + CRUD org-based (_validar_uuid/_verificar_membro/_verificar_admin) + is_org_member
+supabase/migrations/  # 001_fase1.sql → 007_fase4a.sql (ordem) + supabase_all.sql
+supabase/archive/     # fix_*.sql já aplicados (recursion, planos_org, security_anon)
 ```
 
-### Key Models (Fase 1 estendido)
-- **UserSignUp** / **UserLogin** / **TokenResponse** — Auth flows
-- **Plano** / **PlanoCreate** / **PlanoUpdate** — Dynamic per-user plans com 8 cores
-- **Cliente** (leitura leniente) / **ClienteCreate** (estrito) / **ClienteUpdate** (estrito) — Full CRUD com 30+ campos + Fase 1: `etapa_id`, `valor_plano`, `vencimento_dia` (1-31), `status_pagamento` (em_dia/atrasado/isento)
-- **Etapa** / **EtapaCreate** / **EtapaUpdate** — Kanban (nome, ordem, cor) — Fase 1A
-- **Atividade** / **AtividadeCreate** / **AtividadeUpdate** — Follow-up (cliente_id bigint FK, tipo enum, data ISO, concluida, nota) — Fase 1B
-- **Tag** / **TagCreate** / **TagUpdate** — Segmentação (nome único por user, cor) — Fase 1C
-- **ClienteTagCreate** — vínculo N:N
-- **FiltroSalvo** / **FiltroSalvoCreate** — filtros salvos (nome, query JSON) — Fase 1C
- - **ImportPreviewRequest** — bulk import (lista de dicts) — Fase 1E
- - **RelatorioConversaoItem/Response, RelatorioReceita*, RelatorioChurn*, RelatorioLtv*** — Fase 2A (agregações por etapa/plano/mês, período ?periodo) — `main@7999cbb`
- - **Validação**: `validar_cpf()` módulo 11 completo, `cpf_validator()` estrito em Create/Update e leniente em Cliente (leitura) para compatibilidade com dados antigos; RG/telefone/data lenientes em leitura
+### Key Models
+- **Auth:** `UserSignUp` (8 chars, block common), `UserLogin`, `TokenResponse` (httpOnly cookie `df_token`), `AlterarSenhaRequest`, `UsuarioMe/Update`
+- **Plano:** `PlanoCreate` (nome max 80), `Plano` (8 cores, `org_id`)
+- **Cliente:** `Cliente` leniente leitura, `ClienteCreate` estrito (CPF módulo 11, RG 7-12, telefone 10-15), `ClienteUpdate` estrito (F14 fix), `campos_custom jsonb` (4A: carros[], convenio/leito, dente, treino), `etapa_id`, `valor_plano numeric`, `vencimento_dia`, `status_pagamento`
+- **Etapa/Atividade/Tag/Filtro:** Fase 1A-C + `org_id`
+- **Relatórios:** `RelatorioConversao/Receita/Churn/Ltv` (Fase 2A, por `org_id` + `periodo`)
+- **Org:** `Organizacao` (nome, `vertical`, `owner_id`), `ConviteCreate`, `Membros papel admin/membro`
+- **Integração:** `Integracao` (calendar/zapier/contaazul/webhook, `org_id`)
+- **Anexo/ApiKey:** `Anexo` (cliente_id bigint, `path org/cliente/uuid`, `mime allowlist`), `ApiKeyCreate` (nome, `key_hash` HMAC pepper)
+- **Vertical:** `Vertical` (geral/hospital/oficina/dentista/academia, `config_json`), `VerticalUpdate`
+- **Template:** `TemplateCreate` (nome, mensagem `{{nome}}{{placa}}`, `plano_id bigint`, `etapa_id uuid`, `vertical`)
+- **Automação:** `Automacao` (tipo inativo_30d/vence_3d/sem_atividade_7d, `ativo`)
 
-### API Endpoints (main.py — 35 rotas)
-| Method | Endpoint | Description |
+### API Endpoints (55+)
+| Method | Endpoint | Notes |
 |---|---|---|
-| GET /api/health, /api | Health check (com cache s-maxage 10) |
-| POST /api/auth/signup | Register user (rate limit 5/min) |
-| POST /api/auth/login | Login & get JWT (rate limit 10/min) |
-| GET /api/planos | List user's plans |
-| POST /api/planos | Create plan |
-| PATCH /api/planos/{id} | Update plan |
-| DELETE /api/planos/{id} | Delete plan |
-| GET /api/etapas | List Kanban etapas — Fase 1A |
-| POST /api/etapas | Create etapa |
-| PATCH /api/etapas/{id} | Update etapa |
-| DELETE /api/etapas/{id} | Delete etapa |
-| GET /api/atividades | List atividades (query `cliente_id`) — Fase 1B |
-| POST /api/atividades | Create atividade |
-| PATCH /api/atividades/{id} | Update atividade |
-| DELETE /api/atividades/{id} | Delete atividade |
-| GET /api/tags | List tags — Fase 1C |
-| POST /api/tags | Create tag |
-| PATCH /api/tags/{id} | Update tag |
-| DELETE /api/tags/{id} | Delete tag |
-| GET /api/clientes/{id}/tags | List tags de um cliente |
-| POST /api/clientes/{id}/tags | Vincular tag a cliente |
-| DELETE /api/clientes/{id}/tags/{tag_id} | Desvincular tag |
-| GET /api/filtros | List filtros salvos |
-| POST /api/filtros | Create filtro |
-| DELETE /api/filtros/{id} | Delete filtro |
-| POST /api/clientes/import | Bulk import CSV/Excel — Fase 1E |
-| GET /api/relatorios/conversao | Conversão por etapa (?periodo) — Fase 2A-1 |
-| GET /api/relatorios/receita | Receita por plano/mês (?periodo) — Fase 2A-2 |
-| GET /api/relatorios/churn | Churn por mês + por plano (?periodo) — Fase 2A-3 |
-| GET /api/relatorios/ltv | LTV estimado por plano (?periodo) — Fase 2A-4 |
-| GET /api/clientes | List clients (com _tags e atividades para métricas) |
-| POST /api/clientes | Create client |
-| PATCH /api/clientes/{id} | Update client |
-| DELETE /api/clientes/{id} | Delete client |
+| GET /api/health, /api | Health |
+| POST /api/auth/signup | 5/min, cria org `Minha organização` |
+| POST /api/auth/login | 10/min, seta `httpOnly Secure SameSite Strict` cookie `df_token` + Bearer |
+| POST /api/auth/forgot-password | 5/min, Supabase SMTP |
+| POST /api/auth/update-password | 5/min, só `get_user` verificado (F1 fix, sem base64 decode) |
+| GET/POST/PATCH/DELETE /api/planos?org_id | `403` membro (F3) |
+| GET/POST/PATCH/DELETE /api/etapas?org_id | `403` membro |
+| GET/POST/PATCH/DELETE /api/tags?org_id | `403` membro |
+| GET /api/clientes | `?org_id` org-based + `X-API-Key` fallback + `?org_id` validação UUID + `_verificar_membro` |
+| POST /api/clientes | `campos_custom` jsonb |
+| PATCH/DELETE /api/clientes/{id} | org check |
+| GET/POST/PATCH/DELETE /api/atividades |  |
+| GET /api/relatorios/conversao|receita|churn|ltv | `?periodo&org_id`, `detail` genérico (F15) |
+| GET /api/orgs, POST /api/orgs, GET /api/orgs/{id}/membros, POST /api/orgs/{id}/convites, DELETE /api/orgs/{id}, DELETE /api/orgs/{id}/membros/{uid}, PATCH /api/orgs/{id} | F3A + `403` |
+| GET/POST/PATCH/DELETE /api/integracoes?org_id | F3B |
+| POST /api/webhooks/zapier?integracao_id=UUID | 10/min, exige UUID, não confia em payload org_id (F2) |
+| GET /api/clientes/{id}/anexos?org_id, POST, DELETE /api/anexos/{id} | F3C 10MB, `mime` allowlist |
+| GET/POST/DELETE /api/api-keys?org_id | HMAC pepper, `prefix` |
+| GET /api/clientes-public?org_id | `X-API-Key` ou Bearer (F10 fix) |
+| GET /api/verticais, GET/PATCH /api/orgs/{id}/vertical | F4A `403` membro |
+| GET /api/usuarios/me, PATCH, POST /api/usuarios/alterar-senha, DELETE, GET /export | F4C |
+| GET/POST/PATCH/DELETE /api/templates?org_id&vertical | F2B `403` membro |
+| GET /api/automacoes?org_id, PATCH, POST /api/automacoes/run | F2C `pg_cron` |
 
 ### Authentication
-- JWT via `supabase.auth.get_user(token)` (valida assinatura JWKS, expiração, revogação) — async `obter_user_id`
-- `Authorization: Bearer <token>` obrigatório; sem fallback para UUID (previne spoofing)
-- Frontend: `localStorage df_token` + `fetchAuth()` wrapper que em produção 401 → limpa e redirect `/?login=true`, em `IS_LOCAL` (Live Server) lança erro para fallback demo sem redirect
-- Rate limiting: `slowapi` 5/min signup, 10/min login
+- JWT `supabase.auth.get_user(token)` VERIFICADO (sem base64 fallback) + `df_token` httpOnly cookie fallback `re.search(r"df_token=...")`
+- Rate limit via `_rate_limit_key` (X-Vercel-Forwarded-For, não X-Forwarded-For spoofável)
+- CORS `allow_credentials=False` (Bearer, sem cookie), `allow_origin_regex` só em dev
+- Password 8 chars + block `common` (F16)
 
 ### Storage (storage.py)
-- Singleton `_supabase_client`
-- `_COLUNAS_CLIENTE` com 25 colunas (inclui `etapa_id`, `valor_plano`, `vencimento_dia`, `status_pagamento`)
-- `carregar_clientes` leniente: `try/except` por linha + fallback, log `[DEBUG] carregar_clientes user_id=... => X linhas`
-- CRUD para planos, clientes, etapas, atividades, tags, cliente_tags, filtros_salvos, import bulk — todos `eq("user_id", user_id)` (RLS)
+- Singleton `_supabase_client` (service_role `sb_secret_...` mas RLS via `is_org_member` SECURITY DEFINER)
+- `_COLUNAS_CLIENTE` 27 cols (+ `campos_custom`), `carregar_clientes` valida `_verificar_membro` se `org_id`, sem `print` PII
+- Helpers: `_validar_uuid`, `_verificar_membro`, `_verificar_admin`, `_ensure_org_id`, `_get_default_org_id`, `listar_organizacoes` (owner + membros)
+- `verificar_api_key` → HMAC `pepper` + `hmac.compare_digest` via `prefix` lookup (F10)
 
 ## Frontend (/)
 
 ### Pages
-- **index.html** — Landing page (hero com mockup + browser chrome, features 3 cards, how-it-works 3 passos, about 3 pilares, CTA, navbar, modais, footer legal, preconnect/preload perf)
-- **dashboard.html** — Painel completo (métricas 8 cards 2x4, toolbar com busca + 4 filtros + 6 botões, toggle Tabela|Kanban, tabela desktop + cards mobile, Kanban board, relatórios 4 dobras Chart.js fechadas por default, empty state, FAB, modais: criar/editar/deletar/planos/detalhes/logout + 5 modais Fase 1: etapas, atividade, tags, filtros, import, confirm genérico)
-- **privacidade.html** — Política LGPD 11 seções (CSS puro, sem @apply, sem reveal — fix 2026-08-27)
-- **termos.html** — Termos 15 seções (mesmo fix)
-- **404.html** — Error page
+- **index.html** — Landing + modais recovery (sem `console.log` prod)
+- **dashboard.html** — SPA `flex` + `aside#sidebar w-[240px]` desktop + `drawer 280px` mobile + `header` compacto (`hamburger`, `org-select`, `vertical-select`, `api-status-badge hidden sm`), 6 seções `secao-overview|clientes|kanban|relatorios|agenda|config`, `secao-view-toggle` só em `clientes/kanban`, `footer-api-url` `hidden sm` com `hostname`
+- **privacidade.html / termos.html / 404.html**
 
-### Key Features (Fase 1 + 2A completo)
-- **Client Management**: Full CRUD 30+ campos + Fase 1: etapa Kanban, financeiro (valor/vencimento/status), tags
-- **Kanban**: Toggle Tabela|Kanban (persiste `localStorage daviflow_view`), colunas por etapa + Sem etapa, drag SortableJS (ghost/chosen), PATCH `etapa_id` ao soltar, modal Etapas CRUD, contador
-- **Atividades**: Timeline no Detalhes (badge Atrasada amarelo/Concluída verde), modal Nova Atividade (tipo/data/nota/concluída), fallback local via `atividadesCache` quando `IS_LOCAL` sem backend, métrica Atrasados
-- **Tags**: CRUD em modal Tags, checkboxes em Criar/Editar, `filter-tag` na toolbar, `GET /clientes/{id}/tags` paralelo em `carregarClientes` (com `_tags` no cache), kanban card mostra 2 tags, filtro por tag em `filtrarTabela()` e Kanban
-- **Filtros Salvos**: salvar combinação atual (termo/plano/status/etapa/tag) como JSON, aplicar/restaurar, deletar — tudo via `/api/filtros`
-- **Financeiro**: Valor (texto), Vencimento (1-31), Status (em_dia/atrasado/isento) — exibido em Detalhes e Kanban card, métrica Receita prevista (soma valor em_dia)
-- **Import**: Modal drag&drop, PapaParse para CSV e SheetJS para XLSX/XLS (máx 1000 linhas), preview 5 linhas, `POST /api/clientes/import` com `ImportPreviewRequest`, fallback local
-- **Relatórios Fase 2A**: 4 dobras Chart.js (Conversão bar y, Receita doughnut+bar, Churn line+ doughnut intuitivo `X de Y cancelaram`, LTV bar y + detalhe receita estimada), período Todos/30/90/365 compartilhado, fechadas por default (`hidden` + `localStorage !==0`), `carregarRelatorios()` com debounce 300ms, resize ao expandir
-- **Plan System**: 8 cores, badges, MAPA_CORES_PLANO
-- **Authentication**: fetchAuth centralizado (10+ usos), 401 handling diferenciado prod vs IS_LOCAL
-- **Responsive**: Mobile-first, toolbar `flex-col` com `flex-wrap` (fix vazamento), métricas `grid-cols-2 lg:grid-cols-4` 2x4 com `metric-card min-h 108px flex column`, Kanban `min-w-280` com scroll-x, dark mode, bottom-sheet
-- **Modals**: Todos com `.modal-box` scale/opacity, `confirmarAcao()` genérico substitui `confirm()` do navegador
-- **Metrics**: 8 cards: Total, Ativos (emerald), Inativos (rose), Por Plano (flex wrap), Atrasados (amber, Fase 1B), Receita (emerald, Fase 1D), Churn rose (2A-3), LTV violet (2A-4)
-- **Demo Mode**: `IS_LOCAL` controla `CLIENTES_DEMO` (`IS_LOCAL ? [...] : []`) e `atividadesCache`; produção nunca expõe mock PII; `fetchAuth` não redireciona em IS_LOCAL
+### Key Features (Todas Fases)
+- **Multi-tenant 3A:** `org-select`, `modal-gerenciar-org` 3 abas, `membros` com `data-user-id` + `dataset` (F6 XSS), `isCurrentOrgAdmin()` → `opacity-50 disabled` para `Planos/Etapas/Tags/Integrações/Templates/Verticais/ApiKeys`
+- **Planos Org 4a57b3b:** `planos.org_id` + backfill/duplica por org + `listar_planos(org_id)`
+- **Permissões 3A-2 654ab67:** `planos/etapas/tags` `403` membro + frontend hide→disabled
+- **Integrações 3B f586f84:** `Calendar` mock OAuth, `Zapier` webhook `.../api/webhooks/zapier/{uuid}` `10/min`, `Conta Azul` toggle — `is_org_member` fix `42P17`
+- **Anexos 3C 9257c23:** `bucket anexos` private, `listar_anexos` por `cliente_id`, `criar_anexo` `base64` 10MB `mime` allowlist, `api_keys` HMAC, `modal-apikeys` (`davi_...` só uma vez), `detalhes-anexos` drag&drop
+- **Verticals 4A e0c2960:** 5 presets `geral/hospital/oficina/dentista/academia` → `organizacoes.vertical` + `clientes.campos_custom` (`carros[]` multi-veículo, `convenio/leito`, `dente`, `plano_mensal`), `aplicarVertical()` renomeia labels + `adicionarCarro()` + `coletar/preencherCamposCustom`, `vertical-select` header + `modal-vertical`
+- **Sidebar 4B 6888f8f:** `setSecao(secao)` com `localStorage daviflow_secao` + `#hash` + `history.pushState`, `toggleSidebarMobile`, `agenda-lista` timeline `carregarAtividadesAgenda()`, `breadcrumb`, `footer-api-url` hostname
+- **Settings 4C dcf9f77:** `secao-config` 7 abas (`Geral` nome/empresa/vertical/tema, `Org` rename/membros/convite, `Planos/Etapas/Tags` inline com `dot` cor real, `Notificações` toggles, `Conta` senha/export/deletar), `PATCH /api/usuarios/me`, `POST /alterar-senha`, `GET /export`
+- **WhatsApp 2B 6f87c34-a769326:** `templates_whatsapp` `plano_id bigint`, `modal-templates` CRUD, `wa.me/55{{telefone}}?text=` com `{{nome}}{{placa}}{{modelo}}{{dente}}` + `vertical` filter
+- **Automações 2C 3cb9f71-546cbfe:** `automacoes` (`inativo_30d` 30d/14d academia, `vence_3d`, `sem_atividade_7d`) + `run_automacoes()` `SECURITY DEFINER` + `pg_cron 09:00 UTC` (06:00 SP), `Config → Notificações` com `carregarAutomacoes()` + `▶️ Rodar agora`
+- **Paleta b8f3589/38ed255:** `slate-50→e0e7ff indigo-100`, `indigo-600` sóbrio, `dark .bg-white→var(--dash-surface)`, `body var(--dash-bg)`
 
 ### Styling (style.css)
-- **Design Tokens**: CSS vars `--dash-*` (light/dark), accent indigo-600
-- **Dashboard**: Form, buttons, metric cards, toggles, color dots, modais, client cards, **Kanban** (`.kanban-column`, `.kanban-column-header`, `.kanban-column-body`, `.kanban-card`, `.sortable-ghost`, `.kanban-empty`)
-- **Landing**: `fadeInUp` + stagger, `.reveal` (removido de legais), `feature-card` hover, `navbar-scrolled`
-- **Fixes**: privacy/termos `@apply` → CSS puro, `glass-card` definido inline, toolbar `flex-wrap`, kanban styles, metrics grid fix (removido `col-span-2`)
-- **Documentado**: Header com estrutura, tokens, animações
+- Tokens `slate-50→e0e7ff`, `indigo-500→indigo-600`, `dark slate-950 #020617`, `body var(--dash-bg) !important`, `metric-card:hover border-accent`, `.kanban-*`, `dark .bg-white` fix brancão, `skeleton`, `modal-box` 0.22s
 
-### JavaScript (app.js — 19 seções + Fase 1)
-- **Header documentado**: Arquitetura SPA, IS_LOCAL, fetchAuth, 19+ seções
-- **Globals**: `clientesCache`, `planosCache`, `etapasCache`, `tagsCache`, `atividadesCache`, `filtrosCache`, `importPreviewData`, `viewMode`, `MAPA_CORES_PLANO`
-- **Auth**: `obterAuthHeaders()` exige token, `fetchAuth()` com `IS_LOCAL` check
-- **Init**: `inicializarApp()` carrega planos→etapas→tags→filtros→clientes, `setViewMode()`, `verificarStatusAPI()` com checagem dupla `/health` + `/planos` (DB) para badge Conectado/Modo Local/Desconectado
-- **Features Fase 1**: `carregarEtapas`, `renderizarKanban`, `carregarTags`, `carregarFiltrosSalvos`, `carregarAtividades`, `handleImportFile`, `renderImportPreview`, `confirmarAcao`, `etapas/tags` CRUD, `filtrarTabela()` com etapa/tag, `atualizarMetricas()` com receita/atrasados, `salvarNovoCliente`/`salvarEdicaoCliente` com etapa/financeiro/tags + fallback local + `renderizarKanban()`
-- **Segurança**: `escaparHTML` em toda interpolação, ViaCEP sanitizado, token só em header
+### JavaScript (app.js 5000+ linhas)
+- Globals: `clientesCache`, `planosCache`, `etapasCache`, `tagsCache`, `atividadesCache`, `filtrosCache`, `orgsCache/currentOrgId`, `verticaisCache/currentVertical`, `templatesCache`, `integracoesCache/anexosCache/apiKeysCache`, `viewMode`, `secaoAtiva`
+- Init: `carregarOrgs→Verticais→VerticalOrg→Planos→Etapas→Tags→Filtros→Clientes→Integracoes→Templates` + `setSecao(hash||secaoAtiva)` + `hashchange` + `verificarStatusAPI` dupla `/health` + `/planos`
+- Segurança: `escaparHTML` + `data-*` dataset (F6), `csvSanitize` `'=+-@` prefix `'` (F20), `fetchAuth` Bearer ou `Cookie df_token`
 
-## Database (Supabase)
-- **Tables**: `clientes`, `planos`, `etapas`, `atividades`, `tags`, `cliente_tags`, `filtros_salvos`
-- **Policies**: RLS `auth.uid() = user_id` em todas; `cliente_tags` via `exists (select 1 from clientes ...)`
-- **Columns - clientes**: user_id, nome, email, plano, ativo, data_cadastro, telefone, cpf, rg, data_nascimento, genero, empresa, cargo, observacoes, cep, logradouro, numero, complemento, bairro, cidade, estado, etapa_id (uuid FK etapas, nullable, on delete set null), valor_plano (text), vencimento_dia (int 1-31), status_pagamento (text em_dia/atrasado/isento)
-- **Columns - etapas**: id uuid PK, user_id uuid FK auth.users, nome text, ordem int, cor text, created_at timestamptz
-- **Columns - atividades**: id uuid PK, user_id uuid, cliente_id bigint FK clientes(id) (corrigido de uuid), tipo check, data date, concluida bool, nota text, created_at
-- **Columns - tags**: id uuid PK, user_id uuid, nome text unique per user, cor text, created_at
-- **Columns - cliente_tags**: cliente_id bigint FK, tag_id uuid FK, PK composite, RLS via clientes
-- **Columns - filtros_salvos**: id uuid PK, user_id uuid, nome text, query jsonb, created_at
-- **Columns - planos**: user_id, nome, cor, descricao, valor
+## Database (Supabase `supabase/migrations/`)
+- `001_fase1.sql` — etapas, atividades (cliente_id bigint), tags, cliente_tags, filtros_salvos
+- `002_fase2b_templates.sql` — templates_whatsapp (`plano_id bigint`)
+- `003_fase2c_automacoes.sql` — automacoes + `run_automacoes()` + `pg_cron 09:00 UTC`
+- `004_fase3a_org.sql` — organizacoes, membros, org_id em 5 tabelas + RLS `is_org_member`
+- `005_fase3b_integracoes.sql` — integracoes
+- `006_fase3c_anexos.sql` — bucket `anexos` private + anexos + api_keys (HMAC)
+- `007_fase4a_verticals.sql` — verticais (5 presets) + organizacoes.vertical + clientes.campos_custom jsonb
+- `supabase_all.sql` — cat 001-007 para fresh install
+- `archive/` — 8 fixes já aplicados (`fix_recursion`, `fix_2c_data_cast`, `fix_security_anon` revoke `anon` em `is_org_member`)
 
-## Histórico de Sessões
+## Histórico de Sessões (2026-08-30 → 2026-09-02)
 
-### Sessão 1 — Redesign Profissional (2026-08-26)
-- Removida seção `#pricing` e links Preços, hero com browser chrome, features 3 cards, how-it-works sem step-line, about 3 pilares, CTA indigo, modais indigo, favicon SVG, Tailwind limpo, animação `forced visible` removida, headers HTML documentados
-- Dashboard: logo indigo sólido, métricas indigo, toolbar indigo, FAB indigo, modais padronizados, footer legal, Kanban placeholder
+### Fase 2B WhatsApp 6f87c34-a769326 (2026-09-02)
+- Fix `plano_id uuid→bigint` `42804`, `DROP TABLE IF EXISTS` + `supabase/migrations/002`, `wa.me` com `carros[0].placa`
 
-### Sessão 2 — Páginas Legais + Commit Inicial Fase 1
-- `privacidade.html` 11 seções LGPD e `termos.html` 15 seções com CSS puro, links footer e modal register atualizados, 404 footer
+### Fase 2C Automações 3cb9f71-8d0a1dc-546cbfe (2026-09-02)
+- `inativo_30d` (30d/14d academia) + `vence_3d` (dia 2-5) + `sem_atividade_7d`, `run_automacoes()` `::date` fix `42883` + `data::date` fix `42804`, `pg_cron` 09:00 UTC, `fix_automacoes.sql`, `Config → Notificações` `Rodar agora`
 
-### Sessão 3 — Auditoria de Segurança (`seguranca-test`)
-- **CRÍTICO**: `extrair_user_id` base64 → `supabase.auth.get_user(token)` async, `fetchAuth()` wrapper (10 usos), endpoints viraram async
-- **ALTA**: CORS `*.vercel.app` → `allow_origins` explícitos + regex só localhost, `str(e)` → genérico
-- **MÉDIA**: CPF módulo 11 (`validar_cpf` + `cpf_validator`), `slowapi` 5/min signup 10/min login, `CLIENTES_DEMO` condicional `IS_LOCAL`, ViaCEP sanitizado
-- **Testes**: 12 testes passando
+### Fase 3B Integrações f586f84 (2026-09-01)
+- `integracoes` + `is_org_member` fix `42P17 infinite recursion` + `fix_security_anon` revoke `anon`
 
-### Sessão 4 — Documentação Completa + Performance
-- Documentado `app/main.py`, `app/models.py` (com header leniente vs estrito), `app/storage.py`, `app.js` (19 seções + Fase 1), `style.css`, HTML headers
-- **Performance Vercel**: Real Experience 57, FCP 6.23s, LCP 6.35s, TTFB 4.34s → fix: `vercel.json` com `regions: ["gru1"]`, `functions` memory 1024, `headers` Cache-Control, `preconnect`/`dns-prefetch`/`preload` para CDN e style.css, `crons` removido (requer Pro) — Score deve subir para 85+
+### Fase 3C Anexos 9257c23-e5e9c67
+- `anexos` Storage `davi_...` HMAC, `api_keys` hide `plain_key`
 
-### Sessão 5 — Design removido de instruções (a pedido)
-- Removida seção `Processo de Criação de Design` de `~/.opencode/instructionsglobal.md` e `instructions.md` (mantido em `context.md` como histórico)
+### Fase 4A Verticals e0c2960-b3b36ba-e071845 (2026-09-02)
+- 5 verticais, `campos_custom`, `multi-carro` `adicionarCarro`, `aplicarVertical` renomeia, `coletar/preencher`, `main@a964d10-d23f735` debug→limpo
 
-### Sessão 6 — Fase 1 Aprovada (Questionário 8/8 completo)
-- Questionário com 8 perguntas (Kanban completo, atividades com lembretes, tags + filtros, cobrança leve informativa, CSV+Excel, relatórios completos, WhatsApp templates, automações) — todas aprovadas como "completo"
-- Criado `plan.md` detalhado e `context.md` Roadmap (Fase 1 A-E, Fase 2 A-C, Fase 3 backlog)
-- Branch `teste/fase1` criada para Live Server antes de produção
+### Fase 4B Sidebar 3a12de1-23a0c7e-4defad6-6888f8f-a341ca8 (2026-09-02)
+- `aside 240px` + `drawer 280px`, `setSecao` `#hash` + `localStorage`, `view-toggle` só `clientes/kanban`, `mobile header compact` `hidden sm`
 
-### Sessão 7 — Implementação Fase 1 Completa em `teste/fase1` (2026-08-27)
-- **Backend Models**: `EtapaCreate/Update/Etapa`, `AtividadeCreate/Update/Atividade`, `TagCreate/Update/Tag`, `FiltroSalvo`, `ImportPreviewRequest` + extensão Cliente com `etapa_id`, `valor_plano`, `vencimento_dia`, `status_pagamento` (validadores estritos em Create/Update, lenientes em leitura para compatibilidade com dados antigos)
-- **Storage**: `_COLUNAS_CLIENTE` 25 colunas, CRUD para etapas/atividades/tags/cliente_tags/filtros + `importar_clientes_bulk` com validação por linha, `carregar_clientes` leniente com log `[DEBUG]`
-- **API**: 18 novos endpoints Fase 1 (etapas, atividades, tags, filtros, import) + `supabase_fase1.sql` com FK corrigido `cliente_id bigint` (era uuid, erro 42804)
-- **Frontend Fase 1**: 
-  - CDN SortableJS, PapaParse, SheetJS no `<head>` (com preconnect)
-  - Métricas +2 cards (Atrasados amber, Receita emerald) — grid `xl:grid-cols-6` fix vazamento `col-span-2`
-  - Toolbar expandida (4 filtros + 5 botões) com `flex-wrap`, toggle Tabela|Kanban, Kanban board com `Sortable` e `PATCH etapa_id`
-  - 5 modais novos: Etapas, Atividade, Tags, Filtros, Import (+ modal Confirm genérico substituindo `confirm()`)
-  - Criar/Editar cliente com selects Etapa, inputs Financeiro, checkboxes Tags (com `renderizarTagsSelects`)
-  - Detalhes com Etapa/Financeiro/Tags + timeline Atividades (badge Atrasada, toggle, delete)
-  - `carregarClientes` com `Promise.all` para tags e atividades, `filtrarTabela` com etapa/tag, `atualizarMetricas` com receita/atrasados
-  - `fetchAuth` com `IS_LOCAL` check para Live Server sem redirect, fallback local para todas as operações
-  - `style.css` Kanban styles (`.kanban-column`, `.kanban-card`, `.sortable-ghost`)
-- **Testes**: 12 testes backend + 11 frontend passando (`node --check`, `grep` modais/filtros)
-- **Deploy**: Merge `teste/fase1` → `main` (197beb9, 2.467 linhas), push e Vercel redeploy
+### Fase 4C Settings bc25de3-346180a-dcf9f77
+- 7 abas `Geral/Org/Planos/Etapas/Tags/Notificações/Conta`, `GET/PATCH /api/usuarios/me`, cor `dot` fix
 
-### Sessão 8 — Correções Pós-Deploy em Produção (2026-08-27)
-- **Layout quebrado**: métricas `col-span-2` removido, toolbar `sm:flex-nowrap` → `flex-wrap` com `w-full` busca — fix `5f15f47`
-- **Modal de confirmação**: `confirm()` do navegador → modal in-page `confirmarAcao()` com `modal-confirm` (usado em deletarEtapa/Tag/Filtro/Atividade/Plano) — fix `f2302ca` e `44a21a3`
-- **Salvar Alterações não funcionava em Live Server**: `salvarAtividade`/`salvarEdicaoCliente` sem fallback local, `toggleAtividade` sem fallback — corrigido com `IS_LOCAL` fallback e `renderizarKanban()` — fix `5610e9c` e `9aa6cd6`
-- **Páginas legais em branco**: `reveal` sem JS + `@apply` com CDN → CSS puro + remover `reveal` — fix `7aabb2b`
-- **Toolbar vazando**: `flex-col` + `flex-wrap` — fix `7aabb2b`
-- **Status API falso Conectado com erro**: `verificarStatusAPI` só checava `/health` — agora checa `/health` + `/planos` (DB) e distingue 401 vs 500 — fix `7aabb2b` e `71a4805`
-- **Erro 500 ao carregar clientes**: `Cliente` estrito com dados antigos inválidos (CPF `123.456.789-00`) — tornado leniente em leitura (`return v`) + `carregar_clientes` robusto com `try` por linha — fix `b885d28`
-- **Vercel travado em `chore: sync debug toast`**: `vercel.json` com `crons` (requer Pro) — removido — fix `4577736`
-- **Debug**: `7314d70` adicionou log `[DEBUG] carregar_clientes user_id=...` para diagnosticar lista vazia (user_id `dcfaf27f-fa5c-4a35-8c54-82263e5225f9` tinha 3 registros mas API retornava `[]` — causado pela validação estrita acima, resolvido com leniência)
+### Segurança Mega Brain 56a5180 (2026-09-02)
+- F1 `update-password` sem `base64 decode`, F2 webhook `integracao_id` obrigatório + `10/min`, F3 IDOR `_verificar_membro` UUID, F4 deletes com `org_id`, F6 XSS `data-*`, F8 SRI `sha384`, F9 `httpOnly` cookie, F10 HMAC pepper, F11 CSP/HSTS, F12 rate `X-Vercel-Forwarded-For`, F14 validators strict, F15 `detail` generico, F16 senha 8 chars, F20 CSV `'`, F21 `revoke anon`
 
-## Roadmap — Próximas Funcionalidades (Detalhado, Aprovado 2026-08-26)
-> Questionário 8/8 aprovado como "completo". Fase 1 (A-E) ✅ implementado em `teste/fase1` e `main`; Fase 2 (A-C) e Fase 3 são próximos passos. Detalhe completo também em `plan.md`.
+### Organização f267a98 (2026-09-02)
+- `supabase/*.sql` → `migrations/001-007` + `archive/`, `__pycache__` limpo, `style.css` dark duplicado removido, `app.js` `salvarSessao`/`recarrregar`/`console.log` removidos, `index.html` recovery `console.log` comentado, `README.md` + `.env.example` + `tests/test_health.py` + `supabase/README.md` + `supabase_all.sql`
 
-| Fase | Feature | Tabelas / Colunas Novas | Valor para freela |
-|---|---|---|---|
-| 1A | **Kanban completo** (etapas configuráveis, drag & drop) | `etapas`, `clientes.etapa_id` | Ver fluxo sem planilha |
-| 1B | **Atividades + lembretes** (timeline, badge atrasado) | `atividades` | Nunca perder follow-up |
-| 1C | **Tags + filtros salvos** | `tags`, `cliente_tags`, `filtros_salvos` | Segmentar VIP/região |
-| 1D | **Cobrança leve** (vencimento, status, receita prevista) | `clientes.valor_plano, vencimento_dia, status_pagamento` | Controlar atrasados |
-| 1E | **Import CSV + Excel** (preview, mapeamento) | `POST /api/clientes/import` | Trazer planilha em 1 clique |
-| 2A | **Relatórios completos** (conversão, churn, LTV, receita + gráficos) | endpoints agregação | Decidir com dados |
-| 2B | **Templates WhatsApp** (wa.me + mensagens por plano/etapa) | `templates_whatsapp` | Atender em 1 toque |
-| 2C | **Automações** (inativo 30d → tarefa, vence 3d → alerta) | `automacoes` + cron | Rotina no piloto automático |
-| 3 | Escala (multi-usuário, Calendar, Zapier, anexos, API, PWA, Stripe) | backlog | Crescer sem trocar de sistema |
-
-**Detalhe Fase 1A — Kanban**: Backend `etapas` + `clientes.etapa_id uuid FK`, CRUD `GET/POST/PATCH/DELETE /api/etapas`; Frontend `etapasCache`, `carregarEtapas()`, `renderizarKanban()` com `SortableJS`, `select#filter-etapa`, `style.css` `.kanban-*`.
-
-**Detalhe Fase 1B — Atividades**: Backend `atividades` (`cliente_id bigint` corrigido), CRUD `/api/atividades`; Frontend `atividadesCache`, modal Nova Atividade, timeline em Detalhes com badge Atrasada, métrica Atrasados, fallback `IS_LOCAL`.
-
-**Detalhe Fase 1C — Tags/Filtros**: Backend `tags` + `cliente_tags` + `filtros_salvos`, CRUD `/api/tags`, `/api/clientes/{id}/tags`, `/api/filtros`; Frontend `tagsCache`/`filtrosCache`, checkboxes em Criar/Editar, `filter-tag`, `filtrarTabela` com `matchTag`, Kanban mostra 2 tags.
-
-**Detalhe Fase 1D — Financeiro**: Backend colunas `valor_plano text, vencimento_dia int 1-31, status_pagamento text`; Frontend inputs `criar-valor-plano`/`vencimento`/`status`, `Detalhes` mostra Financeiro, `atualizarMetricas` soma Receita.
-
-**Detalhe Fase 1E — Import**: Backend `ImportPreviewRequest` + `POST /api/clientes/import` com `importar_clientes_bulk`; Frontend modal drag&drop com `PapaParse` (CSV) e `SheetJS` (Excel), preview 5 linhas, fallback local.
-
-**Detalhe Fase 2A — Relatórios**: `GET /api/relatorios/*` com `group by` + `Chart.js`/`Recharts`.
-
-**Detalhe Fase 2B — WhatsApp**: `templates_whatsapp` + `wa.me` com `encodeURIComponent`.
-
-**Detalhe Fase 2C — Automações**: `automacoes` + cron diário (Vercel Cron ou `pg_cron`).
-
-**Detalhe Fase 3 — Escala**: `org_id`, Calendar, Zapier, Storage, API keys, PWA, Stripe.
-
-**Critérios de Aceite Fase 1**: Kanban persiste após reload, atividade atrasada <1s, tag filtra e salva, vencimento calcula correto, import 100 linhas <2s, `node --check` + 12 testes backend passando.
-
-## Tech Stack (Final)
-- **Language**: Python 3.12, HTML/CSS/JS
-- **Framework**: FastAPI 0.141, Tailwind CSS v3 CDN (com preconnect/preload)
-- **Auth**: Supabase Auth (JWT, bcrypt cost 12, `get_user` validado)
-- **Database**: PostgreSQL + RLS (7 tabelas)
-- **Hosting**: Vercel `gru1`, `api/index.py` 1024MB, `Cache-Control` headers, `supabase_fase1.sql` aplicado
-- **Icons**: Lucide
-- **Fonts**: Inter 300-900
-- **Rate Limit**: slowapi
-- **Kanban**: SortableJS 1.15.2
-- **Import**: PapaParse 5.4.1 + SheetJS (xlsx 0.18.5)
-- **Charts (futuro Fase 2)**: Chart.js/Recharts previsto
+## Tech Stack (2026-09-02)
+- FastAPI 0.141, Tailwind CDN + SRI, Supabase `sb_secret_...` service_role, `pg_cron`, `hmac`, `slowapi`, `httpx`, `pytest`
 
 ## Development
-- **Local API**: `http://127.0.0.1:8000/api` (quando `IS_LOCAL`, via `uvicorn app.main:app --reload`)
-- **Prod API**: `https://daviflowgestoes.vercel.app/api` (via `window.location.origin`)
-- **Environment**: `.env` ou `data/arquivos.env` (`SUPABASE_URL`, `SUPABASE_KEY`, `ALLOWED_ORIGINS`)
-- **Dependencies**: `fastapi`, `uvicorn`, `supabase`, `python-dotenv`, `pydantic`, `email-validator`, `slowapi`, `httpx`, `httpcore`, `limits`, `xlsx`, `papaparse` (CDN)
-- **Health**: `GET /api/health` e `GET /api` (com cache 10s)
-- **Branching**: `main` (produção, Vercel auto-deploy) e `teste/fase1` (desenvolvimento, Live Server, `IS_LOCAL` demo)
+- `git checkout -b feat/xyz` → `push -u origin` → Preview `feat-xyz-xxx.vercel.app` → `merge --no-ff` em `main` (Vercel `gru1`)
+- Env em Vercel: `SUPABASE_URL`, `SUPABASE_KEY` (`sb_secret_...`), `SITE_URL`, `ALLOWED_ORIGINS`, `API_KEY_PEPPER`
 
-## Quick Start
-1. `git clone https://github.com/davifelixcosta10-ux/meu_crud_clientes.git`
-2. `git checkout main` (produção) ou `teste/fase1` (desenvolvimento)
-3. `pip install -r requirements.txt`
-4. `cp .env.example .env` → preencher `SUPABASE_URL`, `SUPABASE_KEY`
-5. `psql` ou Supabase SQL Editor → rodar `supabase_fase1.sql` (uma vez, idempotente com `if not exists`)
-6. `uvicorn app.main:app --reload` → http://127.0.0.1:8000/docs
-7. `Live Server` em `dashboard.html` → `IS_LOCAL` demo com 3 clientes se sem backend; com backend, login em `/?login=true`
-8. Vercel: push em `main` dispara deploy para `daviflowgestoes.vercel.app` (região `gru1`)
+## Estado Atual (2026-09-02 17:00 UTC — main@2670d3a 2B + f267a98 org + 56a5180 security)
+- **Produção:** `daviflow.vercel.app` + `davi-flow-*.vercel.app` Preview, `main@d23f735` 4A + `main@6e35f40` 2C + `main@2670d3a` 2B + `main@38ed255` paleta + `main@56a5180` security (22 fixes) — 55+ rotas, 6 seções sidebar, 1 tipo por org, `campos_custom` carros, `wa.me` templates, `pg_cron` 06:00, `httpOnly` cookie, `CSP`
+- **Branches:** `feat/fase2c-automacoes` `feat/fase2b-whatsapp` merged, `main` estável, próximo `consolidação QA` ou `3D` quando Stripe liberar.
 
-## Sessão 9 — Fase 2A Relatórios Quebrada em 4 Pedaços (2026-08-30)
-- **Estrutura incremental**: 1 branch + 1 Preview por pedaço (lição Fase 1). Todos `feat/fase2a-*` → `main` via `--no-ff`.
-- **2A-1 Conversão** `feat/fase2a-1-conversao` → `main@eee7177` — `RelatorioConversaoItem/Response`, `relatorio_conversao` group by etapa, bar y, `GET /api/relatorios/conversao?periodo`, `localStorage` collapsed.
-- **2A-2 Receita** `feat/fase2a-2-receita` → `main@e5992ae` — `RelatorioReceita*`, `relatorio_receita` por plano (doughnut) + por mês (bar), `GET /api/relatorios/receita`, abas recolhíveis dinâmicas, período Todos/30/90/365 compartilhado, `resize()` ao expandir.
-- **2A-3 Churn** `feat/fase2a-3-churn` → `main@f619d52` — `RelatorioChurn*`, `relatorio_churn` coorte `data_cadastro[:7]` + por plano `por_plano` ordenado churn desc, line rose + doughnut rose, tooltip `X de Y cancelaram — Z%`, header 7º card Churn médio, `grid lg:grid-cols-3 xl:grid-cols-7` → depois `2x4`.
-- **2A-4 LTV** `feat/fase2a-4-ltv` → `main@7999cbb` — `RelatorioLtv*`, `relatorio_ltv` `valor*meses dias/30` (parse BRL), `GET /api/relatorios/ltv`, bar y violet por plano + detalhe receita estimada, header 8º card LTV, grid `2 / 4 / 4` com `metric-card flex column min-h 108px`, relatórios **fechados por default** (`hidden` + `localStorage !==0`), `carregarRelatorios()` com 4 relatórios + debounce 300ms.
-- **Correções no caminho**: `metric-planos-container` flex wrap, `Receita/LTV` `text-xl truncate`, churn intuitivo `2 de 3 cancelaram`, `restaurarEstadoRelatorios` default collapsed.
-- **Testes**: `TestClient` `httpx` com `carregar_clientes` mock + `get_supabase_client` mock — churn 50% (6 cli 3 inativos, Jul 66.7%), LTV 180 médio (Vip 225 vs Basico 90), `py_compile` + `node --check` ok por branch.
-
-## Estado Atual (2026-08-30 23:XX UTC — Funcionando)
-- **Produção**: `daviflowgestoes.vercel.app` em `main@7999cbb` (LTV + churn por plano + cards 2x4 + relatórios fechados) — 8 cards 2 linhas de 4, 4 dobras Chart.js fechadas por default, `GET /api/relatorios/*` com `periodo` compartilhado, RLS por `user_id`.
-- **Branches**: `feat/fase2a-1..4` merged, `feat/fase2a-4-ltv` com fix `79b88cc` cards/relatórios; `main` estável.
-- **Próximos passos**: Fase 3 quebrada em `3A Multi-usuário/org → 3B Integrações → 3C Anexos/API → 3D Monetização/PWA` (cada 1 branch + 1 Preview), começar `feat/fase3a-org`.
