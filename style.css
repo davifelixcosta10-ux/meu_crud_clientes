@@ -46,20 +46,20 @@ html {
    DESIGN TOKENS — Dashboard Profissional
    ============================================================ */
 :root {
-    --dash-bg:            #f8fafc; /* slate-50 mais clean */
+    --dash-bg:            #eef2ff; /* indigo-50 com leve azul — menos branco */
     --dash-surface:       #ffffff;
-    --dash-surface-2:     #f1f5f9; /* slate-100 */
-    --dash-border:        #e2e8f0;
-    --dash-border-subtle: rgba(226,232,240,0.55);
+    --dash-surface-2:     #e2e8f0; /* slate-200 mais contraste */
+    --dash-border:        #cbd5e1; /* slate-300 mais marcado */
+    --dash-border-subtle: rgba(203,213,225,0.6);
     --dash-text-1:        #0f172a;
     --dash-text-2:        #475569;
-    --dash-text-3:        #94a3b8;
-    --dash-accent:        #6366f1;   /* indigo-500 — mais vibrante/profissional */
-    --dash-accent-hover:  #4f46e5;   /* indigo-600 */
-    --dash-accent-light:  #eef2ff;   /* indigo-50  */
-    --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
-    --dash-shadow-md:     0 6px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
-    --dash-radius:        0.875rem; /* 14px mais moderno */
+    --dash-text-3:        #64748b; /* um pouco mais escuro */
+    --dash-accent:        #4f46e5;   /* indigo-600 — mais sóbrio/profissional */
+    --dash-accent-hover:  #4338ca;   /* indigo-700 */
+    --dash-accent-light:  #e0e7ff;   /* indigo-100 */
+    --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --dash-shadow-md:     0 8px 24px rgba(79,70,229,0.12), 0 2px 8px rgba(0,0,0,0.08);
+    --dash-radius:        0.75rem;
 }
 .dark {
     --dash-bg:            #0f172a;
