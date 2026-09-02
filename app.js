@@ -4663,6 +4663,54 @@ function validarFormulario(ctx) {
         }
     }
 
+    // 4A validacao vertical
+    if (currentVertical === 'lava_rapido_oficina') {
+        const placas = document.querySelectorAll('#'+ctx+'-carros-container [data-cc="placa"]');
+        for (const inp of placas) {
+            const placa = inp.value.trim().toUpperCase();
+            if (placa && !/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(placa)) {
+                inp.classList.add('input-error-shake', 'border-rose-500');
+                exibirToast('Placa inválida: use ABC1234 ou ABC1D23', 'erro');
+                valido = false;
+            } else {
+                inp.classList.remove('input-error-shake', 'border-rose-500');
+            }
+            // modelo obrigatório se placa preenchida
+            const row = inp.closest('div').parentElement;
+            const modelo = row?.querySelector('[data-cc="modelo"]')?.value.trim();
+            if (placa && !modelo) {
+                exibirToast('Informe o modelo do veículo com placa '+placa, 'erro');
+                valido = false;
+            }
+            const km = row?.querySelector('[data-cc="km_carro"]')?.value.trim();
+            if (km && (isNaN(km) || parseInt(km) < 0 || parseInt(km) > 1000000)) {
+                exibirToast('KM inválido (0-1000000)', 'erro');
+                valido = false;
+            }
+        }
+    }
+    if (currentVertical === 'dentista') {
+        const dente = document.getElementById(ctx+'-cc-dente')?.value.trim();
+        if (dente && (isNaN(dente) || parseInt(dente) < 1 || parseInt(dente) > 32)) {
+            exibirToast('Dente deve ser 1-32 (FDI)', 'erro');
+            valido = false;
+        }
+    }
+    if (currentVertical === 'hospital') {
+        const crm = document.getElementById(ctx+'-cc-crm')?.value.trim();
+        if (crm && !/^[0-9]{4,6}-[A-Z]{2}$/.test(crm.toUpperCase())) {
+            exibirToast('CRM inválido: ex 123456-SP', 'erro');
+            valido = false;
+        }
+    }
+    if (currentVertical === 'academia') {
+        const checkin = document.getElementById(ctx+'-cc-checkin')?.value;
+        if (checkin && new Date(checkin) > new Date()) {
+            exibirToast('Check-in não pode ser no futuro', 'erro');
+            valido = false;
+        }
+    }
+
     if (!valido) {
         const firstError = document.querySelector(`#form-${ctx} .field-error.visible`);
         firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
