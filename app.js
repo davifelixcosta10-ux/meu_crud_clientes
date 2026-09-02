@@ -1226,6 +1226,7 @@ function adicionarCarro(prefix) {
 }
 function coletarCamposCustom(prefix) {
     const slug = currentVertical;
+    console.log('[4A] coletar start', prefix, 'slug', slug);
     if (slug === 'geral') return {};
     const out = {};
     const g = id => document.getElementById(prefix+'-cc-'+id)?.value?.trim();
@@ -1258,6 +1259,7 @@ function coletarCamposCustom(prefix) {
             });
         }
         if (carros.length) out.carros = carros;
+        console.log('[4A] coletar', prefix, 'out', out);
         // Também suporta campos antigos single
         if (g('servico')) out.servico = g('servico');
         if (g('km')) out.km = g('km');
