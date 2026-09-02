@@ -67,7 +67,7 @@ begin
           )
         loop
           insert into atividades (user_id, cliente_id, org_id, tipo, data, concluida, nota)
-          values (cli.user_id, cli.id, cli.org_id, 'tarefa', (current_date)::text, false, '🤖 automação inativo '||dias_inativo||'d: ligar para '||cli.nome);
+          values (cli.user_id, cli.id, cli.org_id, 'tarefa', current_date, false, '🤖 automação inativo '||dias_inativo||'d: ligar para '||cli.nome);
         end loop;
       -- Também pega clientes sem atividade há dias_inativo (sem follow-up)
       for cli in
@@ -84,7 +84,7 @@ begin
           )
         loop
           insert into atividades (user_id, cliente_id, org_id, tipo, data, concluida, nota)
-          values (cli.user_id, cli.id, cli.org_id, 'tarefa', (current_date)::text, false, '🤖 automação inativo '||dias_inativo||'d: follow-up '||cli.nome);
+          values (cli.user_id, cli.id, cli.org_id, 'tarefa', current_date, false, '🤖 automação inativo '||dias_inativo||'d: follow-up '||cli.nome);
         end loop;
     end if;
 
@@ -106,7 +106,7 @@ begin
           )
         loop
           insert into atividades (user_id, cliente_id, org_id, tipo, data, concluida, nota)
-          values (cli.user_id, cli.id, cli.org_id, 'tarefa', (current_date + 1)::text, false, '🤖 automação vence em '||dias_vence||'d: cobrar '||cli.nome||' (dia '||cli.vencimento_dia||')');
+          values (cli.user_id, cli.id, cli.org_id, 'tarefa', current_date + 1, false, '🤖 automação vence em '||dias_vence||'d: cobrar '||cli.nome||' (dia '||cli.vencimento_dia||')');
         end loop;
     end if;
 
@@ -120,7 +120,7 @@ begin
           and not exists (select 1 from atividades a where a.cliente_id = c.id and a.nota ilike '%🤖 automação sem_atividade%' and a.created_at > now() - interval '24 hours')
         loop
           insert into atividades (user_id, cliente_id, org_id, tipo, data, concluida, nota)
-          values (cli.user_id, cli.id, cli.org_id, 'nota', (current_date)::text, false, '🤖 automação sem atividade 7d: verificar '||cli.nome);
+          values (cli.user_id, cli.id, cli.org_id, 'nota', current_date, false, '🤖 automação sem atividade 7d: verificar '||cli.nome);
         end loop;
     end if;
 
