@@ -76,22 +76,6 @@ html {
     --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.4);
     --dash-shadow-md:     0 4px 12px rgba(0,0,0,0.5);
 }
-.dark {
-    --dash-bg:            #0f172a;
-    --dash-surface:       #1e293b;
-    --dash-surface-2:     #162032;
-    --dash-border:        rgba(51,65,85,0.7);
-    --dash-border-subtle: rgba(51,65,85,0.4);
-    --dash-text-1:        #f1f5f9;
-    --dash-text-2:        #94a3b8;
-    --dash-text-3:        #64748b;
-    --dash-accent:        #6366f1;   /* indigo-400 */
-    --dash-accent-hover:  #818cf8;
-    --dash-accent-light:  rgba(99,102,241,0.12);
-    --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.3);
-    --dash-shadow-md:     0 4px 12px rgba(0,0,0,0.4);
-}
-
 /* ============================================================
    SHARED: Custom Scrollbars
    ============================================================ */
@@ -340,16 +324,7 @@ body {
 /* ============================================================
    DASHBOARD: Client Cards (mobile) & Table
    ============================================================ */
-.client-card {
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    background-color: var(--dash-surface);
-    border: 1px solid var(--dash-border);
-    border-radius: var(--dash-radius);
-}
-.client-card:hover {
-    border-color: var(--dash-accent);
-    box-shadow: var(--dash-shadow-sm);
-}
+/* .client-card removido — não usado (mobile usa kanban-card) */
 
 /* Plan cards no modal */
 .plan-card {

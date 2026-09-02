@@ -906,14 +906,14 @@
             const href = window.location.href || "";
             const qs = window.location.search || "";
             const hash = window.location.hash || "";
-            if (qs || hash) console.log("[recovery] href:", href, "qs:", qs, "hash:", hash);
+            // [recovery] href logged only in dev
             // Supabase pode redirecionar com ?code= (PKCE) ou #access_token= ou ?token=
             const hasToken = hash.includes("access_token") || hash.includes("refresh_token") || qs.includes("access_token") || qs.includes("code=") || qs.includes("token=") || hash.includes("type=recovery") || hash.includes("type=invite") || qs.includes("type=recovery") || qs.includes("type=invite");
             const isRecoveryQS = qs.includes("recovery") || hash.includes("recovery");
             const isLoginQS = qs.includes("login=true");
             // se tem token/code em qualquer lugar, abre recovery
             if (hasToken || isRecoveryQS) {
-                console.log("[recovery] token/code detectado, abrindo modal-recovery");
+                // token detectado
                 openModal("modal-recovery");
                 try {
                     // tenta extrair access_token de hash ou query
@@ -932,7 +932,7 @@
                         window.supabaseRecovery.auth.exchangeCodeForSession(code).then(({data, error}) => {
                             if (data && data.session && data.session.access_token) {
                                 localStorage.setItem("df_recovery_token", data.session.access_token);
-                                console.log("[recovery] PKCE code trocado por session");
+                                // PKCE code trocado
                             }
                             if (error) console.warn("[recovery] exchangeCodeForSession erro", error);
                         });

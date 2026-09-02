@@ -278,19 +278,10 @@ async function fetchAuth(url, options = {}) {
     }
 }
 
-function salvarSessao(userId, token) {
-    localStorage.setItem('df_user_id', userId);
-    localStorage.setItem('df_token', token);
-}
-
 function encerrarSessao() {
     localStorage.removeItem('df_user_id');
     localStorage.removeItem('df_token');
     abrirModal('modal-logout');
-}
-
-function recarrregarParaLogin() {
-    window.location.href = '/?login=true';
 }
 
 // ============================================================
@@ -1204,7 +1195,6 @@ function aplicarVertical(slug) {
             if (cont && cont.children.length === 0) adicionarCarro(prefix);
         }
     });
-    console.log('[vertical] aplicando', slug);
 }
 function adicionarCarro(prefix) {
     const cont = document.getElementById(prefix+'-carros-container');
