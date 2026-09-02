@@ -274,6 +274,39 @@ class Cliente(BaseModel):
     # Fase 4A — Verticais
     campos_custom: Optional[dict] = None
 
+    @validator("campos_custom")
+    def campos_custom_must_be_valid(cls, v):
+        if v is None:
+            return v
+        if not isinstance(v, dict):
+            raise ValueError("campos_custom deve ser objeto")
+        if "carros" in v:
+            if not isinstance(v["carros"], list):
+                raise ValueError("carros deve ser lista")
+            for c in v["carros"]:
+                placa = (c.get("placa") or "").strip().upper()
+                if placa and not __import__('re').match(r"^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$", placa):
+                    raise ValueError(f"Placa inválida: {placa}")
+                km = c.get("km")
+                if km not in (None, ""):
+                    try:
+                        km_int = int(str(km))
+                        if not 0 <= km_int <= 1000000:
+                            raise ValueError("KM deve ser 0-1000000")
+                    except:
+                        raise ValueError("KM inválido")
+        if "dente" in v and v["dente"] not in (None, ""):
+            try:
+                d = int(str(v["dente"]))
+                if not 1 <= d <= 32:
+                    raise ValueError("Dente deve ser 1-32")
+            except:
+                raise ValueError("Dente deve ser 1-32")
+        if "crm_medico_responsavel" in v and v["crm_medico_responsavel"]:
+            if not __import__('re').match(r"^[0-9]{4,6}-[A-Z]{2}$", str(v["crm_medico_responsavel"]).strip().upper()):
+                raise ValueError("CRM inválido")
+        return v
+
     @validator("valor_plano", pre=True)
     def valor_plano_para_string(cls, v):
         if isinstance(v, (int, float)):
@@ -397,6 +430,44 @@ class ClienteCreate(BaseModel):
             return v
         if v not in ("em_dia", "atrasado", "isento"):
             raise ValueError("status_pagamento deve ser em_dia, atrasado ou isento.")
+        return v
+
+    @validator("campos_custom")
+    def campos_custom_must_be_valid(cls, v):
+        if v is None:
+            return v
+        if not isinstance(v, dict):
+            raise ValueError("campos_custom deve ser objeto")
+        # Oficina: carros
+        if "carros" in v:
+            if not isinstance(v["carros"], list):
+                raise ValueError("carros deve ser lista")
+            for c in v["carros"]:
+                if not isinstance(c, dict):
+                    raise ValueError("carro inválido")
+                placa = (c.get("placa") or "").strip().upper()
+                if placa and not __import__('re').match(r"^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$", placa):
+                    raise ValueError(f"Placa inválida: {placa} (use ABC1234 ou ABC1D23)")
+                km = c.get("km")
+                if km not in (None, ""):
+                    try:
+                        km_int = int(str(km))
+                        if not 0 <= km_int <= 1000000:
+                            raise ValueError("KM deve ser 0-1000000")
+                    except ValueError as e:
+                        if "KM deve" in str(e):
+                            raise
+                        raise ValueError("KM inválido")
+        if "dente" in v and v["dente"] not in (None, ""):
+            try:
+                d = int(str(v["dente"]))
+                if not 1 <= d <= 32:
+                    raise ValueError("Dente deve ser 1-32")
+            except:
+                raise ValueError("Dente deve ser 1-32")
+        if "crm_medico_responsavel" in v and v["crm_medico_responsavel"]:
+            if not __import__('re').match(r"^[0-9]{4,6}-[A-Z]{2}$", str(v["crm_medico_responsavel"]).strip().upper()):
+                raise ValueError("CRM inválido: ex 123456-SP")
         return v
 
 
@@ -913,15 +984,41 @@ class Vertical(BaseModel):
         from_attributes = True
 
 
+class VerticalCreate(BaseModel):
+    slug: Optional[str] = None
+    nome: str
+    descricao: Optional[str] = None
+    config_json: Optional[dict] = None
+
+    @validator("slug")
+    def slug_must_be_valid(cls, v):
+        if v is None:
+            return v
+        # permite custom_xxx ou um dos fixos
+        if v in {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}:
+            return v
+        if re.match(r"^custom_[a-z0-9_]{2,30}$", v):
+            return v
+        raise ValueError("slug deve ser um dos fixos ou custom_xxx")
+
+    @validator("nome")
+    def nome_must_be_valid(cls, v):
+        if len(v.strip()) < 2 or len(v) > 60:
+            raise ValueError("nome deve ter 2-60 caracteres")
+        return v.strip()
+
+
 class VerticalUpdate(BaseModel):
     vertical: str
 
     @validator("vertical")
     def vertical_must_be_valid(cls, v):
-        allowed = {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}
-        if v not in allowed:
-            raise ValueError(f"vertical deve ser um de: {', '.join(allowed)}")
-        return v
+        # permite custom_xxx também
+        if v in {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}:
+            return v
+        if re.match(r"^custom_[a-z0-9_]{2,30}$", v):
+            return v
+        raise ValueError(f"vertical deve ser um de: geral,hospital,lava_rapido_oficina,dentista,academia,custom ou custom_xxx")
 
 
 class UsuarioMe(BaseModel):
@@ -945,10 +1042,11 @@ class UsuarioUpdate(BaseModel):
     def vertical_must_be_valid(cls, v):
         if v is None:
             return v
-        allowed = {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}
-        if v not in allowed:
-            raise ValueError(f"vertical deve ser um de: {', '.join(allowed)}")
-        return v
+        if v in {"geral","hospital","lava_rapido_oficina","dentista","academia","custom"}:
+            return v
+        if re.match(r"^custom_[a-z0-9_]{2,30}$", v):
+            return v
+        raise ValueError(f"vertical deve ser um de: geral,hospital,lava_rapido_oficina,dentista,academia,custom ou custom_xxx")
 
 
 class AlterarSenhaRequest(BaseModel):

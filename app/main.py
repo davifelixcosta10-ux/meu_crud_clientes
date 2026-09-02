@@ -43,7 +43,7 @@ from app.models import (
     Organizacao, OrganizacaoCreate, ConviteCreate,
     Integracao, IntegracaoCreate, IntegracaoUpdate, WebhookZapierPayload,
     Anexo, AnexoCreate, ApiKey, ApiKeyCreate,
-    Vertical, VerticalUpdate,
+    Vertical, VerticalCreate, VerticalUpdate,
     UsuarioMe, UsuarioUpdate, AlterarSenhaRequest,
     Template, TemplateCreate, TemplateUpdate,
     Automacao, AutomacaoUpdate,
@@ -67,7 +67,7 @@ from app.storage import (
     listar_integracoes, criar_integracao, atualizar_integracao, deletar_integracao, processar_webhook_zapier,
     listar_anexos, criar_anexo, deletar_anexo,
     listar_api_keys, criar_api_key, deletar_api_key, verificar_api_key,
-    listar_verticais, get_org_vertical, set_org_vertical,
+    listar_verticais, get_org_vertical, set_org_vertical, criar_vertical,
     get_usuario_me, update_usuario_me, alterar_senha_usuario,
     listar_templates, criar_template, atualizar_template, deletar_template,
     listar_automacoes, atualizar_automacao, run_automacoes_manual,
@@ -1111,12 +1111,23 @@ async def listar_clientes_via_api_key(org_id: str | None = None, user_id: str = 
 # ============================================================
 @app.get("/api/verticais", tags=["Verticais"])
 async def get_verticais(user_id: str = Depends(obter_user_id)):
-    """Lista verticais disponíveis (geral, hospital, lava_rapido_oficina, dentista, academia)."""
+    """Lista verticais disponíveis (geral, hospital, lava_rapido_oficina, dentista, academia + customs)."""
     try:
         return listar_verticais()
     except Exception as e:
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar verticais: {str(e)[:300]}")
+
+@app.post("/api/verticais", tags=["Verticais"])
+async def post_vertical(dados: VerticalCreate, user_id: str = Depends(obter_user_id)):
+    """Cria vertical custom (ex: custom_meu_negocio). Qualquer autenticado pode criar; org admin escolhe depois."""
+    try:
+        return criar_vertical(dados.model_dump(mode="json"), user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao criar vertical: {str(e)[:300]}")
 
 @app.get("/api/orgs/{org_id}/vertical", tags=["Verticais"])
 async def get_vertical(org_id: str, user_id: str = Depends(obter_user_id)):

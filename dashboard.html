@@ -160,6 +160,7 @@
                     <option value="dentista">Dentista</option>
                     <option value="academia">Academia</option>
                 </select>
+                <button onclick="abrirModalVertical()" class="hidden sm:inline-flex p-1.5 sm:p-2 rounded-xl border border-indigo-200 dark:border-indigo-700/60 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-800/40" title="Criar custom vertical"><i data-lucide="plus" class="w-4 h-4"></i></button>
                 <button onclick="abrirModalGerenciarOrg()" type="button" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-700/40 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all" title="Gerenciar organização">
                     <i data-lucide="settings-2" class="w-4 h-4"></i>
                     <span class="hidden lg:inline">Gerenciar</span>
@@ -2075,6 +2076,20 @@
                     <div class="flex items-center gap-2 mb-1"><i data-lucide="dumbbell" class="w-4 h-4 text-violet-600"></i><span class="font-bold text-sm">Academia</span></div>
                     <p class="text-xs text-slate-500">Plano mensal, treino A/B/C, frequência, check-in</p>
                 </button>
+            </div>
+            <!-- Custom vertical -->
+            <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/20">
+                <h4 class="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">Custom vertical</h4>
+                <p class="text-[11px] text-slate-400 mb-2">Crie seu próprio tipo (ex: Petshop, Oficina Pesada). Campos extras viram JSON em <code>campos_custom</code>.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input id="custom-vertical-nome" type="text" placeholder="Nome (ex: Petshop)" class="form-input text-sm">
+                    <input id="custom-vertical-desc" type="text" placeholder="Descrição (opcional)" class="form-input text-sm">
+                </div>
+                <div class="mt-2">
+                    <label class="form-label">Campos extras (separe por vírgula, ex: especie, raca, tutor)</label>
+                    <input id="custom-vertical-campos" type="text" placeholder="especie, raca, tutor" class="form-input text-sm">
+                </div>
+                <button onclick="criarVerticalCustom()" class="mt-3 w-full py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Criar custom vertical</button>
             </div>
             <div class="px-6 py-3 border-t flex justify-end">
                 <button onclick="fecharModalVertical()" class="btn-ghost">Depois</button>

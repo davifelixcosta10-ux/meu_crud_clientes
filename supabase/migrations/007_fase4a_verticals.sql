@@ -7,10 +7,10 @@
 
 create extension if not exists "uuid-ossp";
 
--- 1. Tabela verticais (presets)
+-- 1. Tabela verticais (presets + custom_xxx)
 create table if not exists verticais (
   id uuid primary key default uuid_generate_v4(),
-  slug text not null unique check (slug in ('geral','hospital','lava_rapido_oficina','dentista','academia','custom')),
+  slug text not null unique check (slug ~ '^custom_[a-z0-9_]{2,30}$' or slug in ('geral','hospital','lava_rapido_oficina','dentista','academia','custom')),
   nome text not null,
   descricao text not null default '',
   config_json jsonb not null default '{}'::jsonb,
@@ -32,18 +32,21 @@ insert into verticais (slug, nome, descricao, config_json) values
 on conflict (slug) do nothing;
 
 -- 2. Coluna vertical em organizacoes (ou usuarios) — usamos organizacoes.vertical para multi-org
-alter table organizacoes add column if not exists vertical text not null default 'geral' check (vertical in ('geral','hospital','lava_rapido_oficina','dentista','academia','custom'));
+alter table organizacoes add column if not exists vertical text not null default 'geral' check (vertical ~ '^custom_[a-z0-9_]{2,30}$' or vertical in ('geral','hospital','lava_rapido_oficina','dentista','academia','custom'));
 create index if not exists idx_orgs_vertical on organizacoes(vertical);
 
 -- 3. Coluna campos_custom jsonb em clientes (extras flexíveis por vertical sem criar 20 colunas)
 alter table clientes add column if not exists campos_custom jsonb not null default '{}'::jsonb;
 create index if not exists idx_clientes_campos_custom on clientes using gin (campos_custom);
 
--- 4. RLS para verticais (leitura pública para autenticados, escrita só service_role)
+-- 4. RLS para verticais
 alter table verticais enable row level security;
 drop policy if exists "verticais_read_all" on verticais;
 create policy "verticais_read_all" on verticais
   for select using ( auth.role() in ('authenticated','service_role','anon') );
--- sem policy de insert/update/delete para anon/authenticated → só service_role (seed)
+drop policy if exists "verticais_insert_custom" on verticais;
+create policy "verticais_insert_custom" on verticais
+  for insert with check ( slug ~ '^custom_[a-z0-9_]{2,30}$' and auth.role() = 'authenticated' );
+-- sem policy de update/delete para anon/authenticated → só service_role
 
 select 'fase4a ok' as status;

@@ -1093,8 +1093,49 @@ async function carregarVerticais() {
         const resp = await fetchAuth(`${API_BASE_URL}/verticais`, { method: 'GET' });
         if (!resp || !resp.ok) return;
         verticaisCache = await resp.json();
+        // atualiza header select com customs
+        const sel = document.getElementById('vertical-select');
+        if (sel) {
+            const current = sel.value || currentVertical;
+            // mantém opções fixas + adiciona customs
+            const fixed = ['geral','hospital','lava_rapido_oficina','dentista','academia'];
+            const customs = verticaisCache.filter(v=> !fixed.includes(v.slug));
+            // limpa e recria
+            sel.innerHTML = '<option value="geral">Geral</option><option value="hospital">Hospital</option><option value="lava_rapido_oficina">Oficina</option><option value="dentista">Dentista</option><option value="academia">Academia</option>' + customs.map(v=> `<option value="${escaparHTML(v.slug)}">${escaparHTML(v.nome)} (custom)</option>`).join('');
+            sel.value = current;
+            const sel2 = document.getElementById('config-vertical');
+            if (sel2) {
+                sel2.innerHTML = sel.innerHTML;
+                sel2.value = current;
+            }
+        }
     } catch(e) {}
 }
+async function criarVerticalCustom() {
+    const nome = document.getElementById('custom-vertical-nome')?.value.trim();
+    const desc = document.getElementById('custom-vertical-desc')?.value.trim() || '';
+    const camposStr = document.getElementById('custom-vertical-campos')?.value.trim() || '';
+    if (!nome || nome.length < 2) { exibirToast('Informe nome do vertical (2+ chars)', 'erro'); return; }
+    const campos = camposStr ? camposStr.split(',').map(s=> s.trim()).filter(Boolean) : [];
+    const config = { campos_extras: campos, metricas: ['total','ativos'], esconde: [] };
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/verticais`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome, descricao: desc, config_json: config }) });
+        if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro ao criar custom','erro'); return; }
+        const data = await resp.json();
+        exibirToast(`Vertical custom "${data.nome}" criado!`, 'sucesso');
+        document.getElementById('custom-vertical-nome').value='';
+        document.getElementById('custom-vertical-desc').value='';
+        document.getElementById('custom-vertical-campos').value='';
+        await carregarVerticais();
+        // seleciona o novo
+        if (data.slug) {
+            const sel = document.getElementById('vertical-select');
+            if (sel) sel.value = data.slug;
+            trocarVertical(data.slug);
+        }
+    } catch(e) { exibirToast('Erro ao criar','erro'); }
+}
+
 async function carregarVerticalOrg() {
     if (!currentOrgId) return;
     try {
@@ -1186,6 +1227,14 @@ function aplicarVertical(slug) {
                     <div><label class="form-label">Último check-in</label><input id="${prefix}-cc-checkin" type="date" class="form-input"></div>
                 </div>
             `;
+        } else if (slug.startsWith('custom')) {
+            const vert = verticaisCache.find(v=> v.slug===slug);
+            const campos = (vert && vert.config_json && vert.config_json.campos_extras) || [];
+            if (campos.length===0) {
+                html = `<p class="text-xs text-slate-400">Sem campos extras. Edite o vertical para adicionar.</p>`;
+            } else {
+                html = '<div class="grid grid-cols-2 gap-3">' + campos.map(campo=> `<div><label class="form-label">${escaparHTML(campo)}</label><input id="${prefix}-cc-${campo}" type="text" placeholder="${escaparHTML(campo)}" class="form-input"></div>`).join('') + '</div>';
+            }
         }
         camposDiv.innerHTML = html;
         if (window.lucide) lucide.createIcons();
@@ -1257,9 +1306,16 @@ function coletarCamposCustom(prefix) {
         if (g('retorno')) out.data_retorno = g('retorno');
     } else if (slug === 'academia') {
         if (g('plano_mensal')) out.plano_mensal = g('plano_mensal');
-        if (g('treino')) out.treino = g('treino');
-        if (g('freq')) out.frequencia_semanal = g('freq');
         if (g('checkin')) out.ultimo_checkin = g('checkin');
+    } else if (slug.startsWith('custom')) {
+        const vert = verticaisCache.find(v=> v.slug===slug);
+        const camposList = (vert && vert.config_json && vert.config_json.campos_extras) || Object.keys(campos || {});
+        // Para custom, coleta todos os inputs que começam com prefix-cc-
+        document.querySelectorAll('#'+prefix+'-vertical-campos input').forEach(inp=> {
+            const key = inp.id.replace(prefix+'-cc-','');
+            const val = inp.value.trim();
+            if (val) out[key] = val;
+        });
     }
     return out;
 }
@@ -1277,7 +1333,11 @@ function preencherCamposCustom(prefix, campos) {
     } else if (currentVertical === 'dentista') {
         g('dente', campos.dente); g('procedimento', campos.procedimento); g('conv_odo', campos.convenio_odonto); g('retorno', campos.data_retorno);
     } else if (currentVertical === 'academia') {
-        g('plano_mensal', campos.plano_mensal); g('treino', campos.treino); g('freq', campos.frequencia_semanal); g('checkin', campos.ultimo_checkin);
+        g('plano_mensal', campos.plano_mensal); g('checkin', campos.ultimo_checkin);
+    } else if (currentVertical.startsWith('custom')) {
+        for (const [k,v] of Object.entries(campos)) {
+            g(k, v);
+        }
     }
 }
 async function trocarVertical(slug) {
@@ -4660,6 +4720,54 @@ function validarFormulario(ctx) {
             valido = false;
         } else {
             ocultarErroField(`${ctx}-telefone-error`);
+        }
+    }
+
+    // 4A validacao vertical
+    if (currentVertical === 'lava_rapido_oficina') {
+        const placas = document.querySelectorAll('#'+ctx+'-carros-container [data-cc="placa"]');
+        for (const inp of placas) {
+            const placa = inp.value.trim().toUpperCase();
+            if (placa && !/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(placa)) {
+                inp.classList.add('input-error-shake', 'border-rose-500');
+                exibirToast('Placa inválida: use ABC1234 ou ABC1D23', 'erro');
+                valido = false;
+            } else {
+                inp.classList.remove('input-error-shake', 'border-rose-500');
+            }
+            // modelo obrigatório se placa preenchida
+            const row = inp.closest('div').parentElement;
+            const modelo = row?.querySelector('[data-cc="modelo"]')?.value.trim();
+            if (placa && !modelo) {
+                exibirToast('Informe o modelo do veículo com placa '+placa, 'erro');
+                valido = false;
+            }
+            const km = row?.querySelector('[data-cc="km_carro"]')?.value.trim();
+            if (km && (isNaN(km) || parseInt(km) < 0 || parseInt(km) > 1000000)) {
+                exibirToast('KM inválido (0-1000000)', 'erro');
+                valido = false;
+            }
+        }
+    }
+    if (currentVertical === 'dentista') {
+        const dente = document.getElementById(ctx+'-cc-dente')?.value.trim();
+        if (dente && (isNaN(dente) || parseInt(dente) < 1 || parseInt(dente) > 32)) {
+            exibirToast('Dente deve ser 1-32 (FDI)', 'erro');
+            valido = false;
+        }
+    }
+    if (currentVertical === 'hospital') {
+        const crm = document.getElementById(ctx+'-cc-crm')?.value.trim();
+        if (crm && !/^[0-9]{4,6}-[A-Z]{2}$/.test(crm.toUpperCase())) {
+            exibirToast('CRM inválido: ex 123456-SP', 'erro');
+            valido = false;
+        }
+    }
+    if (currentVertical === 'academia') {
+        const checkin = document.getElementById(ctx+'-cc-checkin')?.value;
+        if (checkin && new Date(checkin) > new Date()) {
+            exibirToast('Check-in não pode ser no futuro', 'erro');
+            valido = false;
         }
     }
 
