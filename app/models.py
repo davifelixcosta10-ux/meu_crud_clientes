@@ -928,3 +928,52 @@ class AlterarSenhaRequest(BaseModel):
         if len(v) < 6:
             raise ValueError("Senha deve ter no mínimo 6 caracteres")
         return v
+
+
+class TemplateCreate(BaseModel):
+    nome: str
+    mensagem: str
+    plano_id: Optional[Union[int, str]] = None
+    etapa_id: Optional[Union[int, str]] = None
+    vertical: Optional[str] = None
+
+    @validator("vertical")
+    def vertical_must_be_valid(cls, v):
+        if v is None:
+            return v
+        allowed = {"geral","hospital","lava_rapido_oficina","dentista","academia"}
+        if v not in allowed:
+            raise ValueError(f"vertical deve ser um de: {', '.join(allowed)}")
+        return v
+
+
+class TemplateUpdate(BaseModel):
+    nome: Optional[str] = None
+    mensagem: Optional[str] = None
+    plano_id: Optional[Union[int, str]] = None
+    etapa_id: Optional[Union[int, str]] = None
+    vertical: Optional[str] = None
+
+    @validator("vertical")
+    def vertical_must_be_valid(cls, v):
+        if v is None:
+            return v
+        allowed = {"geral","hospital","lava_rapido_oficina","dentista","academia"}
+        if v not in allowed:
+            raise ValueError(f"vertical deve ser um de: {', '.join(allowed)}")
+        return v
+
+
+class Template(BaseModel):
+    id: Union[int, str]
+    org_id: Optional[str] = None
+    user_id: str
+    nome: str
+    mensagem: str
+    plano_id: Optional[Union[int, str]] = None
+    etapa_id: Optional[Union[int, str]] = None
+    vertical: Optional[str] = None
+    created_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True

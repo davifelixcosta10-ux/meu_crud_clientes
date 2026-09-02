@@ -472,6 +472,11 @@
                     <span class="hidden md:inline">Etapas</span>
                 </button>
 
+                <button id="btn-toolbar-templates" onclick="abrirModalTemplates()" type="button" class="btn-ghost whitespace-nowrap" title="Templates WhatsApp">
+                    <i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i>
+                    <span class="hidden md:inline">Zap Templates</span>
+                </button>
+
                 <button id="btn-toolbar-tags" onclick="abrirModalTags()" type="button" class="btn-ghost whitespace-nowrap" title="Gerenciar Tags">
                     <i data-lucide="tag" class="w-4 h-4 text-slate-500"></i>
                     <span class="hidden md:inline">Tags</span>
@@ -2097,6 +2102,33 @@
                     <h4 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Chaves ativas</h4>
                     <div id="lista-apikeys" class="space-y-2 text-xs"><p class="text-[11px] text-slate-400">Carregando...</p></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================
+         MODAL: TEMPLATES WHATSAPP (Fase 2B)
+         ==================================================== -->
+    <div id="modal-templates" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center modal-container bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#1e293b] rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-700/80 modal-box flex flex-col max-h-[92vh] sm:mx-4 scale-95 opacity-0">
+            <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
+                <div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/60 flex items-center justify-center"><i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i></div><div><h3 class="text-base font-bold">Templates WhatsApp</h3><p class="text-[11px] text-slate-400">Frases prontas com {{nome}} {{telefone}} {{placa}} etc</p></div></div>
+                <button onclick="fecharModalTemplates()" class="p-2 rounded-xl text-slate-400 hover:bg-slate-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="overflow-y-auto flex-1 px-5 sm:px-6 py-4 space-y-4">
+                <div id="lista-templates" class="space-y-2 text-xs"></div>
+                <form id="form-template" onsubmit="salvarTemplate(event)" class="p-3 rounded-xl border bg-slate-50 dark:bg-slate-800/30 space-y-2">
+                    <input type="hidden" id="template-id">
+                    <div><label class="form-label">Nome</label><input id="template-nome" type="text" placeholder="Ex: Boas vindas Oficina" class="form-input" required></div>
+                    <div><label class="form-label">Mensagem (use {{nome}} {{telefone}} {{placa}} {{modelo}} {{dente}} {{convenio}} etc)</label><textarea id="template-mensagem" rows="3" placeholder="Olá {{nome}}, seu {{modelo}} placa {{placa}} está pronto!" class="form-input" required></textarea></div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <select id="template-vertical" class="form-input text-xs"><option value="">Geral</option><option value="hospital">Hospital</option><option value="lava_rapido_oficina">Oficina</option><option value="dentista">Dentista</option><option value="academia">Academia</option></select>
+                        <select id="template-plano" class="form-input text-xs"><option value="">Todos planos</option></select>
+                        <select id="template-etapa" class="form-input text-xs"><option value="">Todas etapas</option></select>
+                    </div>
+                    <div class="flex justify-end gap-2"><button type="button" onclick="resetarFormTemplate()" class="btn-ghost text-xs">Cancelar</button><button type="submit" class="btn-primary text-xs">Salvar Template</button></div>
+                </form>
+                <p class="text-[11px] text-slate-400">Dica: Oficina use {{placa}} {{modelo}}, Hospital {{prontuario}} {{leito}}, Dentista {{dente}}, Academia {{treino}}.</p>
             </div>
         </div>
     </div>

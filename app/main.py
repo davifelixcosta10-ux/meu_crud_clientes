@@ -45,6 +45,7 @@ from app.models import (
     Anexo, AnexoCreate, ApiKey, ApiKeyCreate,
     Vertical, VerticalUpdate,
     UsuarioMe, UsuarioUpdate, AlterarSenhaRequest,
+    Template, TemplateCreate, TemplateUpdate,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -67,6 +68,7 @@ from app.storage import (
     listar_api_keys, criar_api_key, deletar_api_key, verificar_api_key,
     listar_verticais, get_org_vertical, set_org_vertical,
     get_usuario_me, update_usuario_me, alterar_senha_usuario,
+    listar_templates, criar_template, atualizar_template, deletar_template,
 )
 
 # --- Rate Limiter ---
@@ -1197,6 +1199,77 @@ async def export_me(user_id: str = Depends(obter_user_id)):
     except Exception as e:
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao exportar: {str(e)[:300]}")
+
+
+# ============================================================
+# TEMPLATES WHATSAPP — Fase 2B
+# ============================================================
+@app.get("/api/templates", tags=["Templates"])
+async def get_templates(org_id: str | None = None, vertical: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Lista templates da org, filtra por vertical se fornecido."""
+    try:
+        return listar_templates(user_id, org_id, vertical)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar templates: {str(e)[:300]}")
+
+@app.post("/api/templates", tags=["Templates"])
+async def post_template(dados: TemplateCreate, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Cria template (apenas admin)."""
+    try:
+        payload = dados.model_dump(mode="json")
+        if org_id:
+            payload["org_id"] = org_id
+        return criar_template(payload, user_id, org_id)
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao criar template: {str(e)[:300]}")
+
+@app.patch("/api/templates/{template_id}", tags=["Templates"])
+async def patch_template(template_id: str, dados: TemplateUpdate, user_id: str = Depends(obter_user_id)):
+    """Atualiza template (apenas admin)."""
+    try:
+        campos = dados.model_dump(exclude_unset=True, mode="json")
+        if not campos:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo enviado.")
+        res = atualizar_template(template_id, campos, user_id)
+        if not res:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template não encontrado.")
+        return res
+    except HTTPException:
+        raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atualizar template: {str(e)[:300]}")
+
+@app.delete("/api/templates/{template_id}", tags=["Templates"])
+async def delete_template(template_id: str, user_id: str = Depends(obter_user_id)):
+    """Remove template (apenas admin)."""
+    try:
+        if not deletar_template(template_id, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template não encontrado.")
+        return {"mensagem": "Template removido"}
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao remover template: {str(e)[:300]}")
+
 
 
 
