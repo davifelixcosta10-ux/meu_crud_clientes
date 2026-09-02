@@ -2365,6 +2365,52 @@ def deletar_template(template_id: str, user_id: str) -> bool:
     res = supabase.table("templates_whatsapp").delete().eq("id", template_id).execute()
     return len(res.data) > 0
 
+def listar_automacoes(user_id: str, org_id: str | None = None) -> list[dict]:
+    supabase = get_supabase_client()
+    q = supabase.table("automacoes").select("*")
+    if org_id:
+        q = q.eq("org_id", org_id)
+    else:
+        try:
+            orgs = listar_organizacoes(user_id)
+            org_ids = [o["id"] for o in orgs]
+            if org_ids:
+                res = supabase.table("automacoes").select("*").in_("org_id", org_ids).execute()
+                if res.data is not None:
+                    return res.data
+        except Exception:
+            pass
+        # fallback sem org
+        return []
+    res = q.order("tipo").execute()
+    return res.data or []
+
+def atualizar_automacao(automacao_id: str, dados: dict, user_id: str) -> dict | None:
+    supabase = get_supabase_client()
+    try:
+        cur = supabase.table("automacoes").select("org_id").eq("id", automacao_id).execute()
+        if cur.data and cur.data[0].get("org_id"):
+            _verificar_admin(user_id, cur.data[0].get("org_id"))
+    except ValueError:
+        raise
+    except Exception:
+        pass
+    dados_f = {k: v for k, v in dados.items() if v is not None}
+    if not dados_f:
+        return None
+    res = supabase.table("automacoes").update(dados_f).eq("id", automacao_id).execute()
+    return res.data[0] if res.data else None
+
+def run_automacoes_manual() -> dict:
+    """Dispara run_automacoes() manualmente (para teste/preview sem esperar cron)."""
+    supabase = get_supabase_client()
+    try:
+        supabase.rpc("run_automacoes", {}).execute()
+        return {"status": "ok"}
+    except Exception as e:
+        raise ValueError(str(e))
+
+
 def get_usuario_me(user_id: str) -> dict:
     supabase = get_supabase_client()
     supa_admin = get_supabase_admin_client()

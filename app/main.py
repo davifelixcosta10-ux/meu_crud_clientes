@@ -46,6 +46,7 @@ from app.models import (
     Vertical, VerticalUpdate,
     UsuarioMe, UsuarioUpdate, AlterarSenhaRequest,
     Template, TemplateCreate, TemplateUpdate,
+    Automacao, AutomacaoUpdate,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -69,6 +70,7 @@ from app.storage import (
     listar_verticais, get_org_vertical, set_org_vertical,
     get_usuario_me, update_usuario_me, alterar_senha_usuario,
     listar_templates, criar_template, atualizar_template, deletar_template,
+    listar_automacoes, atualizar_automacao, run_automacoes_manual,
 )
 
 # --- Rate Limiter ---
@@ -1269,6 +1271,61 @@ async def delete_template(template_id: str, user_id: str = Depends(obter_user_id
     except Exception as e:
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao remover template: {str(e)[:300]}")
+
+
+# ============================================================
+# AUTOMAÇÕES — Fase 2C
+# ============================================================
+@app.get("/api/automacoes", tags=["Automações"])
+async def get_automacoes(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Lista automações da org (inativo_30d, vence_3d)."""
+    try:
+        return listar_automacoes(user_id, org_id)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar automações: {str(e)[:300]}")
+
+@app.patch("/api/automacoes/{automacao_id}", tags=["Automações"])
+async def patch_automacao(automacao_id: str, dados: AutomacaoUpdate, user_id: str = Depends(obter_user_id)):
+    """Ativa/desativa automação (apenas admin)."""
+    try:
+        campos = dados.model_dump(exclude_unset=True, mode="json")
+        if not campos:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo enviado.")
+        res = atualizar_automacao(automacao_id, campos, user_id)
+        if not res:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Automação não encontrada.")
+        return res
+    except HTTPException:
+        raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atualizar automação: {str(e)[:300]}")
+
+@app.post("/api/automacoes/run", tags=["Automações"])
+async def post_run_automacoes(user_id: str = Depends(obter_user_id)):
+    """Dispara automações manualmente (para teste, sem esperar cron). Apenas admin."""
+    try:
+        # verifica se user é admin de alguma org (ou da default)
+        from app.storage import _get_default_org_id, _verificar_admin
+        oid = _get_default_org_id(user_id)
+        if oid:
+            _verificar_admin(user_id, oid)
+        return run_automacoes_manual()
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao executar automações: {str(e)[:300]}")
+
 
 
 
