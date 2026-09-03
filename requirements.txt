@@ -16,3 +16,4 @@ python-dotenv>=1.0.0
 supabase>=2.30.0
 uvicorn>=0.30.0
 slowapi>=0.1.9
+sentry-sdk[fastapi]>=2.0.0

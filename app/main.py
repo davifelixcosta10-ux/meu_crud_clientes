@@ -28,6 +28,19 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+# Sentry — deve ser inicializado antes de app = FastAPI()
+import sentry_sdk
+_sentry_dsn = os.environ.get("SENTRY_DSN") or "https://b4a4edbad60f643cd0ca8e0e83f99f16@o4512024164368384.ingest.us.sentry.io/4512024170790912"
+try:
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        send_default_pii=True,
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+    )
+except Exception:
+    pass
+
 from app.models import (
     Cliente, ClienteCreate, ClienteUpdate,
     Plano, PlanoCreate, PlanoUpdate,
@@ -220,6 +233,12 @@ async def obter_user_id_com_api_key(
 def health_check():
     """Health check simples para monitoramento e load balancers."""
     return {"status": "online", "message": "DaviFlow API v1.4.0"}
+
+
+@app.get("/sentry-debug", tags=["Status"])
+async def trigger_error():
+    """Rota para verificar Sentry — gera erro teste (apenas com ?confirm=1 para evitar abuso)."""
+    raise RuntimeError("Sentry debug: test error from /sentry-debug — ignore")
 
 
 # ============================================================
