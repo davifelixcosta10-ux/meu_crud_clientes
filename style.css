@@ -468,12 +468,70 @@ body {
 }
 .feature-card:hover {
     transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
+    border-color: #cbd5e1;
+}
+.dark .feature-card:hover {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 .navbar-scrolled {
-    background: rgba(15, 23, 42, 0.93) !important;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(100, 116, 139, 0.12);
+    background: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 8px rgba(15, 23, 42, 0.06);
+}
+
+/* ============================================================
+   LANDING CLARA — Efeitos sutis profissionais
+   ============================================================ */
+@keyframes mockupRise {
+    from { opacity: 0; transform: translateY(32px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.mockup-rise {
+    animation: mockupRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+}
+.mockup-frame {
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.mockup-frame:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12);
+}
+.btn-lift {
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.btn-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+}
+.btn-lift:active { transform: translateY(0) scale(0.99); }
+.step-num {
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.step-card:hover .step-num {
+    transform: scale(1.1);
+}
+.table-row-hi {
+    transition: background-color 0.15s ease;
+}
+.table-row-hi:hover {
+    background-color: #f8fafc;
+}
+.pulse-dot {
+    animation: pulseDot 2s ease-in-out infinite;
+}
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(0.85); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .mockup-rise, .animate-fade-in-up, .reveal {
+        animation: none;
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
 }
