@@ -13,12 +13,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DaviFlow — Gestão de Clientes sem Planilhas</title>
+    <title>DaviFlow — Gestão de Clientes sem Planilhas | CRM para Freelancers</title>
     <meta name="description" content="O DaviFlow centraliza cadastros, métricas e planos em um painel intuitivo. Perfeito para freelancers, autônomos e pequenos negócios. Comece gratuitamente.">
     <meta name="keywords" content="gestão de clientes, CRM, freelancer, pequenos negócios, painel de métricas, DaviFlow">
+    <link rel="canonical" href="https://daviflow.vercel.app/">
+    <meta name="robots" content="index, follow">
     <meta property="og:title" content="DaviFlow — Gestão de Clientes sem Planilhas">
     <meta property="og:description" content="Centralize cadastros, métricas e planos. Sem o caos das planilhas.">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="https://daviflow.vercel.app/">
+    <meta property="og:image" content="https://daviflow.vercel.app/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="pt_BR">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="DaviFlow — Gestão de Clientes sem Planilhas">
+    <meta name="twitter:description" content="Centralize cadastros, métricas e planos. Sem o caos das planilhas.">
+    <meta name="twitter:image" content="https://daviflow.vercel.app/og-image.png">
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f46e5'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
@@ -163,12 +174,12 @@
                         <button id="hero-register-btn" onclick="openModal('modal-register')"
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-bold text-slate-900 bg-indigo-600 rounded-2xl transition-all duration-200 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
                             <i data-lucide="rocket" class="w-4 h-4"></i>
-                            Criar conta grátis
+                            Criar conta em 30 segundos
                         </button>
                         <a href="#how-it-works"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-2xl hover:bg-white/5 transition-all duration-200">
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-slate-300 hover:text-white border border-slate-700 hover:border-slate-600 rounded-xl hover:bg-slate-800 transition-all duration-200">
                             <i data-lucide="play-circle" class="w-4 h-4"></i>
-                            Ver demonstração
+                            Ver em 60 segundos
                         </a>
                     </div>
 
@@ -191,7 +202,7 @@
 
                 <!-- Right: Dashboard Mockup -->
                 <div class="relative animate-fade-in-up stagger-2">
-                    <div class="relative rounded-3xl overflow-hidden border border-slate-800 shadow-2xl glass-card">
+                    <div class="relative rounded-xl overflow-hidden border border-slate-800 shadow-lg bg-slate-900">
 
                         <!-- Browser Chrome Mock -->
                         <div class="flex items-center gap-1.5 px-4 py-3 border-b border-slate-800 bg-slate-900/50">
@@ -211,7 +222,7 @@
 
                             <!-- Metric Cards Row -->
                             <div class="grid grid-cols-4 gap-2">
-                                <div class="rounded-xl p-3 text-center bg-slate-800/60 border border-slate-700/50">
+                                <div class="rounded-xl p-3 text-center bg-slate-900 border border-slate-800">
                                     <div class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Total</div>
                                     <div class="text-xl font-black text-white mt-0.5">48</div>
                                     <div class="text-[9px] text-slate-500">clientes</div>
@@ -311,27 +322,27 @@
             <div class="grid sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
 
                 <!-- Card 1: Gestão Centralizada -->
-                <div class="feature-card glass-card rounded-2xl p-6 reveal">
-                    <div class="w-12 h-12 rounded-xl border border-slate-700/20 flex items-center justify-center mb-5">
-                        <i data-lucide="users" class="w-6 h-6 text-indigo-400"></i>
+                <div class="feature-card rounded-xl p-6 reveal border border-slate-800 bg-slate-900 hover:border-slate-700">
+                    <div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
+                        <i data-lucide="users" class="w-5 h-5 text-slate-300"></i>
                     </div>
                     <h3 class="text-lg font-bold text-white mb-2">Gestão Centralizada</h3>
                     <p class="text-sm text-slate-400 leading-relaxed">Cadastre, edite e acompanhe o status de cada cliente em tempo real, sem abrir uma única planilha.</p>
                 </div>
 
                 <!-- Card 2: Métricas em Tempo Real -->
-                <div class="feature-card glass-card rounded-2xl p-6 reveal">
-                    <div class="w-12 h-12 rounded-xl border border-slate-700/20 flex items-center justify-center mb-5">
-                        <i data-lucide="bar-chart-3" class="w-6 h-6 text-indigo-400"></i>
+                <div class="feature-card rounded-xl p-6 reveal border border-slate-800 bg-slate-900 hover:border-slate-700 border-l-2 border-l-indigo-600">
+                    <div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-slate-300"></i>
                     </div>
                     <h3 class="text-lg font-bold text-white mb-2">Métricas em Tempo Real</h3>
                     <p class="text-sm text-slate-400 leading-relaxed">Visualize instantaneamente total de clientes, taxa de ativos e distribuição por plano com dados sempre atualizados.</p>
                 </div>
 
                 <!-- Card 3: Segurança Corporativa -->
-                <div class="feature-card glass-card rounded-2xl p-6 reveal">
-                    <div class="w-12 h-12 rounded-xl border border-slate-700/20 flex items-center justify-center mb-5">
-                        <i data-lucide="shield-check" class="w-6 h-6 text-indigo-400"></i>
+                <div class="feature-card rounded-xl p-6 reveal border border-slate-800 bg-slate-900 hover:border-slate-700">
+                    <div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-slate-300"></i>
                     </div>
                     <h3 class="text-lg font-bold text-white mb-2">Segurança Corporativa</h3>
                     <p class="text-sm text-slate-400 leading-relaxed">Dados criptografados, isolamento por conta (RLS) e autenticação JWT. Nível enterprise para o seu negócio.</p>
@@ -361,8 +372,8 @@
                 <!-- Step 1 -->
                 <div class="text-center reveal">
                     <div class="flex flex-col items-center">
-                        <div class="w-14 h-14 rounded-2xl border border-slate-700/20 flex items-center justify-center shadow-lg mb-5">
-                            <i data-lucide="user-plus" class="w-6 h-6 text-indigo-400"></i>
+                        <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
+                            <i data-lucide="user-plus" class="w-5 h-5 text-slate-300"></i>
                         </div>
                         <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white mb-4">1</div>
                         <h3 class="text-lg font-bold text-white mb-2">Crie sua conta</h3>
@@ -373,8 +384,8 @@
                 <!-- Step 2 -->
                 <div class="text-center reveal">
                     <div class="flex flex-col items-center">
-                        <div class="w-14 h-14 rounded-2xl border border-slate-700/20 flex items-center justify-center shadow-lg mb-5">
-                            <i data-lucide="clipboard-list" class="w-6 h-6 text-indigo-400"></i>
+                        <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
+                            <i data-lucide="clipboard-list" class="w-5 h-5 text-slate-300"></i>
                         </div>
                         <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white mb-4">2</div>
                         <h3 class="text-lg font-bold text-white mb-2">Cadastre seus clientes</h3>
@@ -385,8 +396,8 @@
                 <!-- Step 3 -->
                 <div class="text-center reveal">
                     <div class="flex flex-col items-center">
-                        <div class="w-14 h-14 rounded-2xl border border-slate-700/20 flex items-center justify-center shadow-lg mb-5">
-                            <i data-lucide="trending-up" class="w-6 h-6 text-indigo-400"></i>
+                        <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
+                            <i data-lucide="trending-up" class="w-5 h-5 text-slate-300"></i>
                         </div>
                         <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white mb-4">3</div>
                         <h3 class="text-lg font-bold text-white mb-2">Acompanhe o crescimento</h3>
@@ -413,8 +424,8 @@
          ===================================================== -->
     <section id="about" class="relative py-24 sm:py-28 px-4 z-10">
         <div class="max-w-4xl mx-auto">
-            <div class="glass-card rounded-3xl p-8 sm:p-14 text-center reveal" style="border: 1px solid rgba(99,102,241,0.15); box-shadow: 0 0 80px rgba(99,102,241,0.05);">
-                <div class="w-14 h-14 rounded-2xl bg-indigo-600/20 flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <div class="rounded-2xl p-8 sm:p-14 text-center reveal border border-slate-800 bg-slate-900">
+                <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-6">
                     <i data-lucide="zap" class="w-7 h-7 text-white"></i>
                 </div>
                 <span class="inline-flex items-center px-3.5 py-1.5 rounded-full border border-slate-700/20 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-6">
@@ -465,10 +476,8 @@
          ===================================================== -->
     <section class="relative py-24 px-4 z-10">
         <div class="max-w-4xl mx-auto">
-            <div class="relative rounded-3xl p-10 sm:p-16 text-center overflow-hidden reveal"
-                 style="background: #1e293b; border: 1px solid rgba(99,102,241,0.2);">
-                <div class="absolute inset-0 rounded-3xl overflow-hidden bg-indigo-600/10"></div>
-                <div class="absolute top-0 left-0 right-0 h-px bg-indigo-600/20"></div>
+            <div class="relative rounded-2xl p-10 sm:p-16 text-center overflow-hidden reveal border border-slate-800 bg-slate-900">
+                <div class="absolute top-0 left-0 right-0 h-px bg-slate-800"></div>
                 <div class="relative">
                     <h2 class="text-3xl sm:text-4xl font-black text-white mb-4">
                         Pronto para organizar<br><span class="text-indigo-400 font-medium">seu negócio de verdade?</span>
@@ -508,17 +517,27 @@
                     <p class="text-slate-400 text-sm leading-relaxed max-w-xs">
                         Gestão de clientes inteligente para freelancers e pequenos negócios. Simples, rápido e seguro.
                     </p>
+                    <address class="not-italic text-xs text-slate-500 mt-3 leading-relaxed">
+                        DaviFlow Gestões — CNPJ 00.000.000/0001-00<br>
+                        Rua Example, 123, Sala 45 — São Paulo, SP — CEP 01310-100<br>
+                        <a href="mailto:contato@daviflow.com.br" class="text-indigo-400 hover:text-indigo-300">contato@daviflow.com.br</a> — <a href="tel:+5511999999999" class="text-indigo-400 hover:text-indigo-300">(11) 99999-9999</a>
+                    </address>
+                    <address class="not-italic text-xs text-slate-500 mt-3 leading-relaxed">
+                        DaviFlow Gestões — CNPJ 00.000.000/0001-00<br>
+                        Rua Example, 123, Sala 45 — São Paulo, SP — CEP 01310-100<br>
+                        <a href="mailto:contato@daviflow.com.br" class="text-indigo-400 hover:text-indigo-300">contato@daviflow.com.br</a> — <a href="tel:+5511999999999" class="text-indigo-400 hover:text-indigo-300">(11) 99999-9999</a>
+                    </address>
                     <!-- Social Links -->
                     <div class="flex items-center gap-3 mt-5">
-                        <a href="#" aria-label="LinkedIn" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-slate-400 hover:text-indigo-400 hover:border-cyan-500/40 transition-all duration-200">
+                        <span class="w-9 h-9 rounded-xl border border-slate-800 bg-slate-900 flex items-center justify-center text-slate-500" aria-label="LinkedIn (em breve)">
                             <i data-lucide="linkedin" class="w-4 h-4"></i>
-                        </a>
-                        <a href="#" aria-label="GitHub" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-400/40 transition-all duration-200">
+                        </span>
+                        <span class="w-9 h-9 rounded-xl border border-slate-800 bg-slate-900 flex items-center justify-center text-slate-500" aria-label="GitHub (em breve)">
                             <i data-lucide="github" class="w-4 h-4"></i>
-                        </a>
-                        <a href="#" aria-label="Twitter/X" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-slate-400 hover:text-slate-200 hover:border-slate-400/40 transition-all duration-200">
+                        </span>
+                        <span class="w-9 h-9 rounded-xl border border-slate-800 bg-slate-900 flex items-center justify-center text-slate-500" aria-label="Twitter (em breve)">
                             <i data-lucide="twitter" class="w-4 h-4"></i>
-                        </a>
+                        </span>
                     </div>
                 </div>
 
@@ -547,7 +566,7 @@
             <!-- Footer Bottom -->
             <div class="pt-6 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <p class="text-xs text-slate-500">
-                    &copy; 2026 DaviFlow. Todos os direitos reservados. Feito com ❤️ no Brasil.
+                    &copy; 2026 DaviFlow. Todos os direitos reservados. Feito no Brasil.
                 </p>
                 <div class="flex items-center gap-2 text-xs text-slate-600">
                     <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500/60"></i>
@@ -556,6 +575,24 @@
             </div>
         </div>
     </footer>
+
+    <!-- Sticky Mobile CTA -->
+    <div class="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[#0f172a]/95 backdrop-blur-lg border-t border-slate-800 px-4 py-3 flex items-center gap-3">
+        <div class="flex-1 min-w-0">
+            <p class="text-xs font-bold text-white leading-tight">Pronto para começar?</p>
+            <p class="text-[11px] text-slate-400">Sem cartão • Cancele quando quiser</p>
+        </div>
+        <button onclick="openModal('modal-register')" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-xl">Criar conta</button>
+    </div>
+
+    <!-- Sticky Mobile CTA -->
+    <div class="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[#0f172a]/95 backdrop-blur-lg border-t border-slate-800 px-4 py-3 flex items-center gap-3">
+        <div class="flex-1 min-w-0">
+            <p class="text-xs font-bold text-white leading-tight">Pronto para começar?</p>
+            <p class="text-[11px] text-slate-400">Sem cartão • Cancele quando quiser</p>
+        </div>
+        <button onclick="openModal('modal-register')" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-xl">Criar conta</button>
+    </div>
 
     <!-- =====================================================
          MODAL: LOGIN
