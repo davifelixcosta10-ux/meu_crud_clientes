@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "opencode-wakatime",
+    "opencode-supermemory",
+    "opencode-vibeguard",
+    "opencode-pty",
+    "opencode-sentry-monitor",
+    "opencode-notify",
+    "opencode-notification",
+    "https://github.com/tavily-ai/opencode-tavily",
+    "https://github.com/firecrawl/opencode-firecrawl"
+  ]
+}

@@ -1808,7 +1808,7 @@ def convidar_membro_org(org_id: str, email: str, papel: str, inviter_id: str) ->
                             pass
                 except Exception:
                     pass
-                return {"status": "ja_cadastrado", "email": email, "msg": "Usuário já possui conta e foi vinculado. Enviamos um email para definir a senha — peça para verificar inbox/spam e clicar em Definir senha."}
+                return {"status": "ja_cadastrado", "email": email, "msg": "Usuário já possui conta e foi vinculado. Enviamos um email para definir a senha. Peça para verificar inbox/spam e clicar em Definir senha."}
             raise ValueError(f"Não foi possível enviar convite automático: {str(e)[:180]}. Verifique SMTP/service_role ou peça para o usuário se cadastrar primeiro e então adicione como membro existente.")
 
 def deletar_organizacao(org_id: str, user_id: str) -> bool:
