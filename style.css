@@ -158,8 +158,8 @@ html {
     transition: background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
     box-shadow: var(--dash-shadow-sm);
 }
-.btn-primary:hover  { background-color: var(--dash-accent-hover); }
-.btn-primary:active { transform: scale(0.98); }
+.btn-primary:hover  { background-color: var(--dash-accent-hover); transform: translateY(-1px); box-shadow: var(--dash-shadow-md); }
+.btn-primary:active { transform: translateY(0) scale(0.98); }
 .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
 .btn-ghost {
@@ -181,6 +181,7 @@ html {
     background-color: var(--dash-surface-2);
     border-color: var(--dash-text-3);
     color: var(--dash-text-1);
+    transform: translateY(-1px);
 }
 
 .btn-danger {
@@ -535,3 +536,45 @@ body {
         transition: none;
     }
 }
+
+/* ============================================================
+   DASHBOARD — Mesmos efeitos da landing (hover/transição)
+   ============================================================ */
+.sidebar-link, .sidebar-link-mobile {
+    transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.sidebar-link:hover, .sidebar-link-mobile:hover {
+    transform: translateX(2px);
+}
+#tabela-clientes-body tr {
+    transition: background-color 0.15s ease;
+}
+#tabela-clientes-body tr:hover {
+    background-color: var(--dash-surface-2);
+}
+.dark #tabela-clientes-body tr:hover {
+    background-color: rgba(51, 65, 85, 0.4);
+}
+.kanban-card {
+    transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.kanban-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--dash-shadow-md);
+}
+.modal-box {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+}
+#api-status-dot {
+    animation: pulseDot 2s ease-in-out infinite;
+}
+#secao-overview .metric-card {
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+#secao-overview .metric-card:nth-child(2) { animation-delay: 0.05s; }
+#secao-overview .metric-card:nth-child(3) { animation-delay: 0.1s; }
+#secao-overview .metric-card:nth-child(4) { animation-delay: 0.15s; }
+#secao-overview .metric-card:nth-child(5) { animation-delay: 0.2s; }
+#secao-overview .metric-card:nth-child(6) { animation-delay: 0.25s; }
+#secao-overview .metric-card:nth-child(7) { animation-delay: 0.3s; }
+#secao-overview .metric-card:nth-child(8) { animation-delay: 0.35s; }
