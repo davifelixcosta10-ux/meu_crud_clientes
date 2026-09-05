@@ -1876,8 +1876,8 @@ async function carregarAtividadesAgenda() {
 //    Toggle manual em #theme-toggle; ícone moon/sun via Tailwind dark:
 /// ============================================================
 function configurarTema() {
-    const prefereDark = localStorage.getItem('theme') === 'dark' ||
-        (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    // Padrão claro igual à landing (só usa dark se o usuário escolheu antes)
+    const prefereDark = localStorage.getItem('theme') === 'dark';
     document.documentElement.classList.toggle('dark', prefereDark);
 }
 
