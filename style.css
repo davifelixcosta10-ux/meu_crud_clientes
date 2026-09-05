@@ -54,9 +54,9 @@ html {
     --dash-text-1:        #0f172a;
     --dash-text-2:        #475569;
     --dash-text-3:        #64748b;
-    --dash-accent:        #4f46e5;
-    --dash-accent-hover:  #4338ca;
-    --dash-accent-light:  #e0e7ff;
+    --dash-accent:        #0f172a;
+    --dash-accent-hover:  #000000;
+    --dash-accent-light:  #f1f5f9;
     --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
     --dash-shadow-md:     0 8px 24px rgba(79,70,229,0.12), 0 2px 8px rgba(0,0,0,0.08);
     --dash-radius:        0.75rem;
@@ -158,8 +158,8 @@ html {
     transition: background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
     box-shadow: var(--dash-shadow-sm);
 }
-.btn-primary:hover  { background-color: var(--dash-accent-hover); }
-.btn-primary:active { transform: scale(0.98); }
+.btn-primary:hover  { background-color: var(--dash-accent-hover); transform: translateY(-1px); box-shadow: var(--dash-shadow-md); }
+.btn-primary:active { transform: translateY(0) scale(0.98); }
 .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
 .btn-ghost {
@@ -181,6 +181,7 @@ html {
     background-color: var(--dash-surface-2);
     border-color: var(--dash-text-3);
     color: var(--dash-text-1);
+    transform: translateY(-1px);
 }
 
 .btn-danger {
@@ -468,12 +469,143 @@ body {
 }
 .feature-card:hover {
     transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
+    border-color: #cbd5e1;
+}
+.dark .feature-card:hover {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 .navbar-scrolled {
-    background: rgba(15, 23, 42, 0.93) !important;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(100, 116, 139, 0.12);
+    background: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 1px 8px rgba(15, 23, 42, 0.06);
 }
+
+/* ============================================================
+   LANDING CLARA — Efeitos sutis profissionais
+   ============================================================ */
+@keyframes mockupRise {
+    from { opacity: 0; transform: translateY(32px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.mockup-rise {
+    animation: mockupRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+}
+.mockup-frame {
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.mockup-frame:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12);
+}
+.btn-lift {
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.btn-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+}
+.btn-lift:active { transform: translateY(0) scale(0.99); }
+.step-num {
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.step-card:hover .step-num {
+    transform: scale(1.1);
+}
+.table-row-hi {
+    transition: background-color 0.15s ease;
+}
+.table-row-hi:hover {
+    background-color: #f8fafc;
+}
+.pulse-dot {
+    animation: pulseDot 2s ease-in-out infinite;
+}
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(0.85); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .mockup-rise, .animate-fade-in-up, .reveal {
+        animation: none;
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+/* ============================================================
+   DASHBOARD — Mesmos efeitos da landing (hover/transição)
+   ============================================================ */
+.sidebar-link, .sidebar-link-mobile {
+    transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.sidebar-link:hover, .sidebar-link-mobile:hover {
+    transform: translateX(2px);
+}
+#tabela-clientes-body tr {
+    transition: background-color 0.15s ease;
+}
+#tabela-clientes-body tr:hover {
+    background-color: var(--dash-surface-2);
+}
+.dark #tabela-clientes-body tr:hover {
+    background-color: rgba(51, 65, 85, 0.4);
+}
+.kanban-card {
+    transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.kanban-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--dash-shadow-md);
+}
+.modal-box {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+}
+#api-status-dot {
+    animation: pulseDot 2s ease-in-out infinite;
+}
+#secao-overview .metric-card {
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+#secao-overview .metric-card:nth-child(2) { animation-delay: 0.05s; }
+#secao-overview .metric-card:nth-child(3) { animation-delay: 0.1s; }
+#secao-overview .metric-card:nth-child(4) { animation-delay: 0.15s; }
+#secao-overview .metric-card:nth-child(5) { animation-delay: 0.2s; }
+#secao-overview .metric-card:nth-child(6) { animation-delay: 0.25s; }
+#secao-overview .metric-card:nth-child(7) { animation-delay: 0.3s; }
+#secao-overview .metric-card:nth-child(8) { animation-delay: 0.35s; }
+
+/* ============================================================
+   DASHBOARD copia a LANDING (modo claro): tinta neutra slate.
+   Escopo html:not(.dark) preserva o dark mode e as cores de
+   dados (ex: .bg-indigo-500 sólido dos dots de plano).
+   ============================================================ */
+html:not(.dark) .bg-indigo-600 { background-color: #0f172a !important; }
+html:not(.dark) .hover\:bg-indigo-700:hover { background-color: #000000 !important; }
+html:not(.dark) .hover\:bg-indigo-500:hover { background-color: #1e293b !important; }
+html:not(.dark) .bg-indigo-50,
+html:not(.dark) .bg-indigo-100 { background-color: #f1f5f9 !important; }
+html:not(.dark) .text-indigo-600,
+html:not(.dark) .text-indigo-700 { color: #0f172a !important; }
+html:not(.dark) .text-indigo-400 { color: #334155 !important; }
+html:not(.dark) .border-indigo-200,
+html:not(.dark) .border-indigo-100 { border-color: #e2e8f0 !important; }
+html:not(.dark) .bg-indigo-600\/15,
+html:not(.dark) .bg-indigo-500\/10,
+html:not(.dark) .bg-indigo-50\/40,
+html:not(.dark) .bg-indigo-950\/20,
+html:not(.dark) .bg-indigo-900\/20,
+html:not(.dark) .bg-indigo-900\/40,
+html:not(.dark) .bg-indigo-800\/40 { background-color: #f1f5f9 !important; }
+html:not(.dark) .border-indigo-500\/20,
+html:not(.dark) .border-indigo-200\/60 { border-color: #e2e8f0 !important; }
+html:not(.dark) .border-indigo-500\/60,
+html:not(.dark) .border-indigo-400 { border-color: #cbd5e1 !important; }
+html:not(.dark) .ring-indigo-500\/30 { --tw-ring-color: rgb(15 23 42 / 0.15) !important; }
+html:not(.dark) .hover\:bg-indigo-50:hover,
+html:not(.dark) .hover\:bg-indigo-100:hover { background-color: #f1f5f9 !important; }
+html:not(.dark) .focus\:border-indigo-500\/60:focus { border-color: #0f172a !important; }

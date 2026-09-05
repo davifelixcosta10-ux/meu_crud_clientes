@@ -527,7 +527,7 @@ async function carregarMembros() {
         container.innerHTML = membros.map(m => {
             const isOwner = ownerId && m.user_id === ownerId;
             const canRemove = isAdmin && !isOwner;
-            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' 👑 dono' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover membro (apenas admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
+            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' (dono)' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover membro (apenas admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
         }).join('');
         if (window.lucide) lucide.createIcons();
     } catch(e) {
@@ -588,18 +588,18 @@ async function enviarConvite() {
             let msg = err.detail || 'Erro ao convidar';
             const low = msg.toLowerCase();
             if (low.includes('already') || low.includes('registered') || low.includes('ja cadastrado') || low.includes('já cadastrado')) {
-                exibirToast(`✅ ${email} já tem conta — use "Esqueci a senha" no login.`, 'sucesso');
+                exibirToast(`${email} já tem conta. Use "Esqueci a senha" no login.`, 'sucesso');
                 document.getElementById('convite-email-input').value = '';
                 await carregarMembros();
                 await carregarMembrosGerenciar();
                 return;
             }
             if (low.includes('já é membro') || low.includes('ja e membro')) {
-                exibirToast(`ℹ️ ${email} já é membro desta organização`, 'info');
+                exibirToast(`${email} já é membro desta organização`, 'info');
                 return;
             }
             if (low.includes('smtp') || low.includes('service_role') || low.includes('cadastrar')) {
-                msg += ' — Dica: peça para o colega criar conta em daviflowgestoes.vercel.app e convide novamente (entra direto).';
+                msg += ' Dica: peça para o colega criar conta em daviflowgestoes.vercel.app e convide novamente (entra direto).';
             }
             exibirToast(msg, 'erro');
             return;
@@ -609,15 +609,15 @@ async function enviarConvite() {
         await carregarMembros();
         await carregarMembrosGerenciar();
         if (data.status === 'convite_enviado') {
-            exibirToast(`✉️ Convite enviado para ${email}! Ele receberá um email com link para ${data.redirect_to || 'daviflowgestoes.vercel.app'} — peça para verificar spam.`, 'sucesso');
+            exibirToast(`Convite enviado para ${email}! Ele receberá um email com link para ${data.redirect_to || 'daviflowgestoes.vercel.app'}. Peça para verificar spam.`, 'sucesso');
         } else if (data.status === 'convite_reenviado') {
-            exibirToast(`🔄 Convite reenviado para ${email} (já estava pendente) e já adicionado como ${papel}! Peça para verificar email/spam ou usar o link anterior.`, 'sucesso');
+            exibirToast(`Convite reenviado para ${email} (já estava pendente) e já adicionado como ${papel}! Peça para verificar email/spam ou usar o link anterior.`, 'sucesso');
         } else if (data.status === 'ja_cadastrado') {
-            exibirToast(`✅ ${email} já tem conta — ${data.msg || 'foi vinculado à organização. Peça para usar "Esqueci a senha" para acessar.'}`, 'sucesso');
+            exibirToast(`${email} já tem conta. ${data.msg || 'Foi vinculado à organização. Peça para usar "Esqueci a senha" para acessar.'}`, 'sucesso');
         } else if (data.status === 'ja_membro') {
-            exibirToast(`ℹ️ ${email} já é membro desta organização`, 'info');
+            exibirToast(`${email} já é membro desta organização`, 'info');
         } else {
-            exibirToast(`✅ ${email} adicionado como ${papel} em "${orgsCache.find(o=>o.id===currentOrgId)?.nome || 'org'}"!`, 'sucesso');
+            exibirToast(`${email} adicionado como ${papel} em "${orgsCache.find(o=>o.id===currentOrgId)?.nome || 'org'}"!`, 'sucesso');
         }
     } catch (e) {
         console.warn(e);
@@ -638,7 +638,7 @@ async function excluirOrgAtual() {
                 exibirToast(err.detail || 'Erro ao excluir organização. Verifique se é dono e se está sem clientes.', 'erro');
                 return;
             }
-            exibirToast(`🗑️ Organização "${nome}" excluída!`, 'sucesso');
+            exibirToast(`Organização "${nome}" excluída!`, 'sucesso');
             orgsCache = orgsCache.filter(o => o.id !== currentOrgId);
             currentOrgId = orgsCache[0]?.id || null;
             if (currentOrgId) localStorage.setItem('daviflow_org_id', currentOrgId);
@@ -726,7 +726,7 @@ async function carregarMembrosGerenciar() {
         container.innerHTML = membros.map(m => {
             const isOwner = ownerId && m.user_id === ownerId;
             const canRemove = isAdmin && !isOwner;
-            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' 👑 dono' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover (admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
+            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' (dono)' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover (admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
         }).join('');
         if (window.lucide) lucide.createIcons();
     } catch(e) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro</p>'; }
@@ -743,13 +743,13 @@ async function enviarConviteGerenciar() {
             const detail = (err.detail || '').toLowerCase();
             // already registered não é erro — trata como sucesso
             if (detail.includes('already') || detail.includes('registered') || detail.includes('ja cadastrado') || detail.includes('já cadastrado')) {
-                exibirToast(`✅ ${email} já tem conta — use "Esqueci a senha" no login para acessar. Atualizando lista...`, 'sucesso');
+                exibirToast(`${email} já tem conta. Use "Esqueci a senha" no login para acessar. Atualizando lista...`, 'sucesso');
                 document.getElementById('gerenciar-email-input').value = '';
                 await carregarMembrosGerenciar();
                 return;
             }
             if (detail.includes('já é membro') || detail.includes('ja e membro')) {
-                exibirToast(`ℹ️ ${email} já é membro desta organização`, 'info');
+                exibirToast(`${email} já é membro desta organização`, 'info');
                 return;
             }
             exibirToast(err.detail || 'Erro ao convidar', 'erro');
@@ -759,11 +759,11 @@ async function enviarConviteGerenciar() {
         document.getElementById('gerenciar-email-input').value = '';
         await carregarMembrosGerenciar();
         await carregarMembros();
-        if (data.status === 'convite_enviado') exibirToast(`✉️ Convite enviado para ${email}!`, 'sucesso');
-        else if (data.status === 'convite_reenviado') exibirToast(`🔄 Convite reenviado para ${email} (pendente) e já adicionado como ${papel}!`, 'sucesso');
-        else if (data.status === 'ja_cadastrado') exibirToast(`✅ ${email} já tem conta — ${data.msg || 'vinculado. Peça para usar "Esqueci a senha".'}`, 'sucesso');
-        else if (data.status === 'ja_membro') exibirToast(`ℹ️ ${email} já é membro desta organização`, 'info');
-        else exibirToast(`✅ ${email} adicionado como ${papel}!`, 'sucesso');
+        if (data.status === 'convite_enviado') exibirToast(`Convite enviado para ${email}!`, 'sucesso');
+        else if (data.status === 'convite_reenviado') exibirToast(`Convite reenviado para ${email} (pendente) e já adicionado como ${papel}!`, 'sucesso');
+        else if (data.status === 'ja_cadastrado') exibirToast(`${email} já tem conta. ${data.msg || 'Vinculado. Peça para usar "Esqueci a senha".'}`, 'sucesso');
+        else if (data.status === 'ja_membro') exibirToast(`${email} já é membro desta organização`, 'info');
+        else exibirToast(`${email} adicionado como ${papel}!`, 'sucesso');
     } catch(e) { exibirToast('Erro ao enviar convite', 'erro'); }
 }
 async function criarOrgGerenciar() {
@@ -1403,7 +1403,7 @@ function renderizarTemplates() {
         return `<div class="p-3 rounded-xl border bg-white dark:bg-slate-800/40">
             <div class="flex items-center justify-between gap-2"><span class="font-bold text-sm">${escaparHTML(tp.nome)}</span> ${vert} <div class="flex gap-1"><button onclick="editarTemplate('${tp.id}')" class="p-1 rounded hover:bg-slate-100"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button><button onclick="deletarTemplate('${tp.id}')" class="p-1 rounded hover:bg-rose-50 text-rose-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div></div>
             <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 whitespace-pre-wrap">${escaparHTML(tp.mensagem)}</p>
-            <button onclick="usarTemplate('${tp.id}', null)" class="mt-2 px-2.5 py-1 text-[11px] font-bold rounded-full bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> Usar (escolha cliente)</button>
+            <button onclick="usarTemplate('${tp.id}', null)" class="mt-2 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> Usar (escolha cliente)</button>
         </div>`;
     }).join('');
     if (window.lucide) lucide.createIcons();
@@ -1664,7 +1664,7 @@ async function rodarAutomacoesManual() {
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/automacoes/run`, { method: 'POST' });
         if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro ao rodar','erro'); return; }
-        exibirToast('🤖 Automações rodaram! Verifique Agenda.','sucesso');
+        exibirToast('Automações rodaram! Verifique Agenda.','sucesso');
         carregarAtividadesAgenda();
         carregarAtividades();
     } catch(e) { exibirToast('Erro','erro'); }
@@ -1876,8 +1876,8 @@ async function carregarAtividadesAgenda() {
 //    Toggle manual em #theme-toggle; ícone moon/sun via Tailwind dark:
 /// ============================================================
 function configurarTema() {
-    const prefereDark = localStorage.getItem('theme') === 'dark' ||
-        (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    // Padrão claro igual à landing (só usa dark se o usuário escolheu antes)
+    const prefereDark = localStorage.getItem('theme') === 'dark';
     document.documentElement.classList.toggle('dark', prefereDark);
 }
 
@@ -2887,11 +2887,11 @@ async function confirmarImport() {
                     const hintDup = isDup ? '<br><span class="text-xs font-bold text-amber-700 dark:text-amber-300">Dica: e-mail já existe. Rode supabase_fix_email_unique.sql se ainda não rodou.</span>' : '';
                     const planosInfo = data.planos_criados?.length ? `<br><span class="text-xs font-semibold text-emerald-700">Planos criados: ${data.planos_criados.join(', ')}</span>` : '';
                     resultDiv.className = data.sucessos > 0 ? 'p-3 rounded-xl border text-sm bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300' : 'p-3 rounded-xl border text-sm bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300';
-                    resultDiv.innerHTML = `${data.sucessos > 0 ? '⚠️' : '❌'} ${data.sucessos}/${data.total} importados. ${data.erros.length} erro(s):<br><span class="text-xs">${detalhes}${mais}${hintDup}${planosInfo}</span>`;
+                    resultDiv.innerHTML = `${data.sucessos > 0 ? 'Atenção:' : 'Erro:'} ${data.sucessos}/${data.total} importados. ${data.erros.length} erro(s):<br><span class="text-xs">${detalhes}${mais}${hintDup}${planosInfo}</span>`;
                 } else {
                     const planosInfo = data.planos_criados?.length ? `<br><span class="text-xs">Planos criados: ${data.planos_criados.join(', ')}</span>` : '';
                     resultDiv.className = 'p-3 rounded-xl border text-sm bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300';
-                    resultDiv.innerHTML = `✅ ${data.sucessos}/${data.total} importados.${planosInfo}`;
+                    resultDiv.innerHTML = `${data.sucessos}/${data.total} importados.${planosInfo}`;
                 }
                 resultDiv.classList.remove('hidden');
                 exibirToast(`${data.sucessos} clientes importados!${data.planos_criados?.length ? ` Planos: ${data.planos_criados.join(', ')}` : ''}${data.erros?.length ? ` (${data.erros.length} erros)` : ''}`, data.sucessos > 0 ? 'sucesso' : 'erro');
@@ -2924,7 +2924,7 @@ async function confirmarImport() {
         } catch(e) {}
     });
     resultDiv.className = 'p-3 rounded-xl border text-sm bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300';
-    resultDiv.textContent = `✅ ${sucessos}/${importPreviewData.length} importados (Local)`;
+    resultDiv.textContent = `${sucessos}/${importPreviewData.length} importados (Local)`;
     resultDiv.classList.remove('hidden');
     atualizarMetricas(clientesCache);
     filtrarTabela();
@@ -3356,7 +3356,7 @@ function renderizarRelatorioChurn(data) {
         chartChurn = new Chart(ctx, {
             type: 'line',
             data: { labels, datasets: [{ label: 'Churn %', data: vals, borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.12)', fill: true, tension: 0.35, pointRadius: 4, pointBackgroundColor: '#f43f5e', pointBorderColor: '#fff', pointBorderWidth: 1.5 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.parsed.y}% — ${data.itens[c.dataIndex].inativos} de ${data.itens[c.dataIndex].total} cancelaram` } } }, scales: { x: { ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', callback: (v) => `${v}%` }, grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' } } } }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.parsed.y}% (${data.itens[c.dataIndex].inativos} de ${data.itens[c.dataIndex].total} cancelaram)` } } }, scales: { x: { ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', callback: (v) => `${v}%` }, grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' } } } }
         });
         if (tabelaEl) {
             tabelaEl.innerHTML = data.itens.map(i => `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><span class="text-xs font-medium text-slate-600 dark:text-slate-300">${escaparHTML(i.mes)}</span><span class="text-xs font-bold ${i.churn_percent > 20 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}">${i.churn_percent}% <span class="text-[10px] font-normal text-slate-400">(${i.inativos} de ${i.total} cancelaram)</span></span></div>`).join('');
@@ -3378,7 +3378,7 @@ function renderizarRelatorioChurn(data) {
             chartChurnPlano = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: labelsPlano, datasets: [{ data: valsPlano, backgroundColor: bg, borderWidth: 2, borderColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff' }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155', font: { size: 10 }, padding: 12 } }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${porPlano[c.dataIndex].inativos} de ${porPlano[c.dataIndex].total} cancelaram — ${c.parsed}%` } } } }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155', font: { size: 10 }, padding: 12 } }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${porPlano[c.dataIndex].inativos} de ${porPlano[c.dataIndex].total} cancelaram (${c.parsed}%)` } } } }
             });
             if (tabelaPlanoEl) {
                 tabelaPlanoEl.innerHTML = porPlano.map(p => {
@@ -3708,20 +3708,20 @@ function avatarInitials(nome) {
 }
 
 function avatarGradient(nome) {
-    const gradients = [
-        'linear-gradient(135deg,#4f46e5,#06b6d4)',
-        'linear-gradient(135deg,#059669,#10b981)',
-        'linear-gradient(135deg,#d97706,#f59e0b)',
-        'linear-gradient(135deg,#7c3aed,#ec4899)',
-        'linear-gradient(135deg,#2563eb,#3b82f6)',
-        'linear-gradient(135deg,#e11d48,#f43f5e)',
+    const colors = [
+        '#4f46e5',
+        '#059669',
+        '#b45309',
+        '#334155',
+        '#2563eb',
+        '#be123c',
     ];
-    const idx = (nome || '').charCodeAt(0) % gradients.length;
-    return gradients[idx];
+    const idx = (nome || '').charCodeAt(0) % colors.length;
+    return colors[idx];
 }
 
 function formatarData(rawDate) {
-    if (!rawDate) return '—';
+    if (!rawDate) return '-';
     if (rawDate.includes('-')) {
         const parts = rawDate.split('T')[0].split('-');
         if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
@@ -4212,7 +4212,7 @@ function abrirModalDetalhes(id) {
             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Endereço</h4>
             <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
                 ${escaparHTML(cliente.logradouro || '')} ${escaparHTML(cliente.numero ? ', ' + cliente.numero : '')} ${escaparHTML(cliente.complemento ? ' (' + cliente.complemento + ')' : '')}<br>
-                ${escaparHTML(cliente.bairro ? cliente.bairro + ' — ' : '')}${escaparHTML(cliente.cidade || '')} ${escaparHTML(cliente.estado ? '/ ' + cliente.estado : '')}<br>
+                ${escaparHTML(cliente.bairro ? cliente.bairro + ', ' : '')}${escaparHTML(cliente.cidade || '')} ${escaparHTML(cliente.estado ? '/ ' + cliente.estado : '')}<br>
                 ${cliente.cep ? `<span class="font-mono text-slate-400">CEP: ${escaparHTML(cliente.cep)}</span>` : ''}
             </p>
         </div>
@@ -4294,7 +4294,7 @@ function abrirModalDetalhes(id) {
     // 4A: mostra campos_custom no detalhes
     if (cliente.campos_custom && Object.keys(cliente.campos_custom).length) {
         const cc = cliente.campos_custom;
-        let ccHtml = '<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60"><h4 class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Vertical — ' + escaparHTML(currentVertical) + '</h4><div class="grid grid-cols-2 gap-2 text-xs">';
+        let ccHtml = '<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60"><h4 class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Vertical: ' + escaparHTML(currentVertical) + '</h4><div class="grid grid-cols-2 gap-2 text-xs">';
         for (const [k,v] of Object.entries(cc)) {
             if (Array.isArray(v)) {
                 ccHtml += `<div class="col-span-2"><span class="text-slate-400">${escaparHTML(k)}:</span> <strong class="text-slate-800 dark:text-slate-200">${v.map(x=> escaparHTML((x.placa||'')+' '+(x.modelo||'')+(x.km?' ('+x.km+'km)':''))).join(' • ')}</strong></div>`;

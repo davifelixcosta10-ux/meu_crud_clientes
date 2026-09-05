@@ -1,25 +1,15 @@
 <!DOCTYPE html>
-<!--
-  DaviFlow — Landing Page (index.html)
-  ==============================
-  Página pública com: navbar fixa, hero com mockup do dashboard, features (3 cards),
-  how-it-works (3 passos), about, CTA final, footer e modais de login/registro.
-  - Tailwind CDN + style.css (tokens, animações)
-  - Lucide Icons + Inter (Google Fonts)
-  - Animações: animate-fade-in-up (hero) + .reveal via IntersectionObserver
-  - Auth: modais chamam /api/auth/* do FastAPI (mesma base do dashboard)
--->
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DaviFlow — Gestão de Clientes sem Planilhas | CRM para Freelancers</title>
+    <title>DaviFlow | Gestão de Clientes sem Planilhas</title>
     <meta name="description" content="O DaviFlow centraliza cadastros, métricas e planos em um painel intuitivo. Perfeito para freelancers, autônomos e pequenos negócios. Comece gratuitamente.">
     <meta name="keywords" content="gestão de clientes, CRM, freelancer, pequenos negócios, painel de métricas, DaviFlow">
     <link rel="canonical" href="https://daviflow.vercel.app/">
     <meta name="robots" content="index, follow">
-    <meta property="og:title" content="DaviFlow — Gestão de Clientes sem Planilhas">
-    <meta property="og:description" content="Centralize cadastros, métricas e planos. Sem o caos das planilhas.">
+    <meta property="og:title" content="DaviFlow | Gestão de Clientes sem Planilhas">
+    <meta property="og:description" content="Cadastre clientes, controle cobranças e receba lembretes de retorno.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://daviflow.vercel.app/">
     <meta property="og:image" content="https://daviflow.vercel.app/og-image.png">
@@ -27,824 +17,228 @@
     <meta property="og:image:height" content="630">
     <meta property="og:locale" content="pt_BR">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="DaviFlow — Gestão de Clientes sem Planilhas">
-    <meta name="twitter:description" content="Centralize cadastros, métricas e planos. Sem o caos das planilhas.">
+    <meta name="twitter:title" content="DaviFlow | Gestão de Clientes sem Planilhas">
+    <meta name="twitter:description" content="Cadastre clientes, controle cobranças e receba lembretes de retorno.">
     <meta name="twitter:image" content="https://daviflow.vercel.app/og-image.png">
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f46e5'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
-    <link rel="alternate icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f46e5'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='8' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
-
-    <!-- Preconnect & DNS Prefetch (Performance) -->
-    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
-    <link rel="dns-prefetch" href="https://unpkg.com">
-    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
-    <link rel="preconnect" href="https://unpkg.com" crossorigin>
-    <link rel="preload" href="style.css" as="style">
-
-    <!-- Google Fonts -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-    <!-- Tailwind CSS CDN -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        slate: {
-                            950: '#0f172a',
-                            900: '#0f172a',
-                            850: '#131e30',
-                            800: '#1e293b',
-                        }
-                    }
+                    colors: { slate: { 950: '#020617' } }
                 }
             }
         }
-
-        // ============================================================
-        // CONFIGURAÇÃO DE API BASE URL (igual ao app.js)
-        // ============================================================
-        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
-            ? 'http://127.0.0.1:8000/api'
-            : `${window.location.origin}/api`;
+        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://127.0.0.1:8000/api' : `${window.location.origin}/api`;
     </script>
-
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="style.css">
-
-    <!-- Vercel Speed Insights -->
     <script>
         window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
-<body class="bg-[#0f172a] text-slate-100 antialiased font-sans overflow-x-hidden">
-
-<!-- =====================================================
-       NAVBAR
-       ===================================================== -->
-    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 sm:h-18">
-
-                <!-- Logo -->
-                <a href="#" class="flex items-center space-x-2.5 group" aria-label="DaviFlow Home">
-                    <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-200">
-                        <i data-lucide="zap" class="w-5 h-5 text-white"></i>
-                    </div>
-                    <span class="text-xl font-bold text-white tracking-tight">Davi<span class="text-indigo-400 font-medium">Flow</span></span>
-                </a>
-
-                <!-- Desktop Nav Links -->
-                <div class="hidden md:flex items-center space-x-1">
-                    <a href="#features" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-150">Recursos</a>
-                    <a href="#how-it-works" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-150">Como Funciona</a>
-                    <a href="#about" class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-150">Sobre</a>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex items-center space-x-3">
-                    <button id="nav-login-btn" onclick="openModal('modal-login')"
-                        class="hidden sm:inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-xl bg-transparent hover:bg-white/5 transition-all duration-200">
-                        Entrar
-                    </button>
-                    <button id="nav-register-btn" onclick="openModal('modal-register')"
-                        class="inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 bg-indigo-600 rounded-xl transition-all duration-200">
-                        Criar Conta
-                    </button>
-
-                    <!-- Mobile menu button -->
-                    <button id="mobile-menu-btn" class="md:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all" aria-label="Menu">
-                        <i data-lucide="menu" class="w-5 h-5" id="menu-icon-open"></i>
-                        <i data-lucide="x" class="w-5 h-5 hidden" id="menu-icon-close"></i>
-                    </button>
-                </div>
+<body class="bg-white text-slate-900 antialiased font-sans">
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+            <a href="#" class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div>
+                <span class="text-sm font-bold tracking-tight">DaviFlow</span>
+            </a>
+            <nav class="hidden md:flex items-center gap-6 text-sm">
+                <a href="#features" class="text-slate-600 hover:text-slate-900">Recursos</a>
+                <a href="#how-it-works" class="text-slate-600 hover:text-slate-900">Como funciona</a>
+                <a href="#about" class="text-slate-600 hover:text-slate-900">Sobre</a>
+            </nav>
+            <div class="flex items-center gap-2">
+                <button onclick="openModal('modal-login')" class="hidden sm:inline-flex px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-slate-900">Entrar</button>
+                <button onclick="openModal('modal-register')" class="inline-flex px-4 py-1.5 text-sm font-semibold text-white bg-slate-900 rounded-lg hover:bg-slate-800">Criar conta</button>
+                <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-600" aria-label="Menu"><i data-lucide="menu" class="w-5 h-5" id="menu-icon-open"></i><i data-lucide="x" class="w-5 h-5 hidden" id="menu-icon-close"></i></button>
             </div>
         </div>
-
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-800 bg-[#0f172a]/95 backdrop-blur-lg">
-            <div class="px-4 py-4 space-y-1">
-                <a href="#features" onclick="closeMobileMenu()" class="block px-4 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-all">Recursos</a>
-                <a href="#how-it-works" onclick="closeMobileMenu()" class="block px-4 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-all">Como Funciona</a>
-                <a href="#about" onclick="closeMobileMenu()" class="block px-4 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-all">Sobre</a>
-                <div class="pt-3 border-t border-slate-800 flex flex-col space-y-2">
-                    <button onclick="closeMobileMenu(); openModal('modal-login')"
-                        class="w-full px-4 py-2.5 text-sm font-semibold text-slate-300 border border-slate-700 rounded-xl hover:bg-white/5 transition-all">
-                        Entrar
-                    </button>
-                    <button onclick="closeMobileMenu(); openModal('modal-register')"
-                        class="w-full px-4 py-2.5 text-sm font-semibold text-slate-900 bg-indigo-600 rounded-xl">
-                        Criar Conta Gratuita
-                    </button>
-                </div>
-            </div>
+        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2">
+            <a href="#features" onclick="closeMobileMenu()" class="block py-2 text-sm text-slate-600">Recursos</a>
+            <a href="#how-it-works" onclick="closeMobileMenu()" class="block py-2 text-sm text-slate-600">Como funciona</a>
+            <a href="#about" onclick="closeMobileMenu()" class="block py-2 text-sm text-slate-600">Sobre</a>
         </div>
-    </nav>
+    </header>
 
-    <!-- =====================================================
-         HERO SECTION
-         ===================================================== -->
-    <section id="hero" class="relative pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 z-10">
-        <div class="max-w-7xl mx-auto">
-            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-
-                <!-- Left: Copy -->
-                <div class="text-center lg:text-left">
-                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.08] tracking-tight text-white animate-fade-in-up stagger-1">
-                        Gestão de clientes<br>
-                        <span class="text-indigo-400 font-medium">sem planilhas.</span>
-                    </h1>
-
-                    <p class="mt-6 text-base sm:text-lg text-slate-400 leading-relaxed max-w-xl mx-auto lg:mx-0 animate-fade-in-up stagger-2">
-                        Cadastros, métricas e planos centralizados em um painel rápido e seguro. Feito para quem valoriza tempo e organização.
-                    </p>
-
-                    <!-- CTAs -->
-                    <div class="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 animate-fade-in-up stagger-3">
-                        <button id="hero-register-btn" onclick="openModal('modal-register')"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-bold text-slate-900 bg-indigo-600 rounded-2xl transition-all duration-200 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
-                            <i data-lucide="rocket" class="w-4 h-4"></i>
-                            Criar conta em 30 segundos
-                        </button>
-                        <a href="#how-it-works"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold text-slate-300 hover:text-white border border-slate-700 hover:border-slate-600 rounded-xl hover:bg-slate-800 transition-all duration-200">
-                            <i data-lucide="play-circle" class="w-4 h-4"></i>
-                            Ver em 60 segundos
-                        </a>
-                    </div>
-
-                    <!-- Social Proof -->
-                    <div class="mt-10 flex items-center justify-center lg:justify-start gap-6 animate-fade-in-up stagger-4">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span class="text-sm text-slate-400">Sistema online</span>
-                        </div>
-                        <div class="flex items-center gap-2 border-l border-slate-800 pl-6">
-                            <span class="text-white font-semibold">+500</span>
-                            <span class="text-slate-400 text-sm">profissionais ativos</span>
-                        </div>
-                        <div class="flex items-center gap-2 border-l border-slate-800 pl-6">
-                            <span class="text-white font-semibold">99.9%</span>
-                            <span class="text-slate-400 text-sm">uptime</span>
-                        </div>
-                    </div>
+    <main>
+        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-12">
+            <div class="max-w-2xl">
+                <p class="text-xs font-semibold tracking-widest uppercase text-slate-500 mb-3 animate-fade-in-up stagger-1">CRM para freelancers e pequenas equipes</p>
+                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight animate-fade-in-up stagger-2">Todos os seus clientes,<br>cobranças e follow-ups em um painel.</h1>
+                <p class="mt-4 text-base text-slate-600 leading-relaxed animate-fade-in-up stagger-3">Cadastre clientes, defina planos e vencimentos, acompanhe quem pagou e receba lembretes de retorno. Leva 30 segundos para criar a conta.</p>
+                <div class="mt-7 flex flex-col sm:flex-row gap-3 animate-fade-in-up stagger-4">
+                    <button onclick="openModal('modal-register')" class="btn-lift inline-flex justify-center px-5 py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-lg hover:bg-black">Criar conta em 30 segundos</button>
+                    <a href="#how-it-works" class="btn-lift inline-flex justify-center px-5 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50">Ver em 60 segundos</a>
                 </div>
-
-                <!-- Right: Dashboard Mockup -->
-                <div class="relative animate-fade-in-up stagger-2">
-                    <div class="relative rounded-xl overflow-hidden border border-slate-800 shadow-lg bg-slate-900">
-
-                        <!-- Browser Chrome Mock -->
-                        <div class="flex items-center gap-1.5 px-4 py-3 border-b border-slate-800 bg-slate-900/50">
-                            <div class="w-3 h-3 rounded-full bg-rose-500"></div>
-                            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
-                            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
-                            <div class="flex-1"></div>
-                            <span class="text-[10px] text-slate-500 font-medium">dashboard.daviflow.com</span>
-                            <div class="flex-1"></div>
-                            <div class="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center">
-                                <i data-lucide="zap" class="w-3 h-3 text-indigo-400"></i>
-                            </div>
-                        </div>
-
-                        <!-- Mockup Body -->
-                        <div class="p-4 bg-[#0f172a]/80 space-y-4">
-
-                            <!-- Metric Cards Row -->
-                            <div class="grid grid-cols-4 gap-2">
-                                <div class="rounded-xl p-3 text-center bg-slate-900 border border-slate-800">
-                                    <div class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Total</div>
-                                    <div class="text-xl font-black text-white mt-0.5">48</div>
-                                    <div class="text-[9px] text-slate-500">clientes</div>
-                                </div>
-                                <div class="rounded-xl p-3 text-center bg-slate-800/60 border border-slate-700/50">
-                                    <div class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Ativos</div>
-                                    <div class="text-xl font-black text-emerald-400 mt-0.5">36</div>
-                                    <div class="text-[9px] text-emerald-600 font-medium">75%</div>
-                                </div>
-                                <div class="rounded-xl p-3 text-center bg-slate-800/60 border border-slate-700/50">
-                                    <div class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Inativos</div>
-                                    <div class="text-xl font-black text-rose-400 mt-0.5">12</div>
-                                    <div class="text-[9px] text-rose-600 font-medium">25%</div>
-                                </div>
-                                <div class="rounded-xl p-3 text-center bg-slate-800/60 border border-slate-700/50">
-                                    <div class="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">Planos</div>
-                                    <div class="flex gap-1 justify-center mt-1">
-                                        <span class="px-2 py-0.5 text-[8px] font-bold bg-amber-500/20 text-amber-400 rounded">12</span>
-                                        <span class="px-2 py-0.5 text-[8px] font-bold bg-slate-500/20 text-slate-300 rounded">20</span>
-                                        <span class="px-2 py-0.5 text-[8px] font-bold bg-indigo-500/20 text-indigo-400 rounded">16</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Search Bar Mock -->
-                            <div class="flex gap-2">
-                                <div class="flex-1 flex items-center gap-2 rounded-xl px-3 py-2 bg-slate-800/60 border border-slate-700/50">
-                                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500"></i>
-                                    <span class="text-slate-500 text-xs">Buscar cliente...</span>
-                                </div>
-                                <div class="rounded-xl px-3 py-2 text-xs text-slate-500 bg-slate-800/60 border border-slate-700/50">Plano ▾</div>
-                                <div class="rounded-xl px-3 py-2 text-xs text-slate-500 bg-slate-800/60 border border-slate-700/50">Status ▾</div>
-                                <div class="bg-indigo-600 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 flex items-center gap-1">
-                                    <i data-lucide="plus" class="w-3 h-3"></i> Novo
-                                </div>
-                            </div>
-
-                            <!-- Client Table Mock -->
-                            <div class="rounded-xl overflow-hidden bg-slate-800/60 border border-slate-700/50">
-                                <div class="grid grid-cols-4 gap-2 px-3 py-2 border-b border-slate-700/60 text-[9px] font-semibold uppercase tracking-wider text-slate-500">
-                                    <span>Nome</span>
-                                    <span>Email</span>
-                                    <span>Plano</span>
-                                    <span>Status</span>
-                                </div>
-                                <!-- Row 1 -->
-                                <div class="grid grid-cols-4 gap-2 px-3 py-2 border-b border-slate-800/60 items-center">
-                                    <span class="text-xs text-white font-medium truncate">Ana Lima</span>
-                                    <span class="text-[10px] text-slate-500 truncate">ana@mail.com</span>
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-400 rounded-full">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Ouro
-                                    </span>
-                                    <span class="inline-flex items-center gap-1 text-[9px] font-medium text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>Ativo</span>
-                                </div>
-                                <!-- Row 2 -->
-                                <div class="grid grid-cols-4 gap-2 px-3 py-2 border-b border-slate-800/60 items-center">
-                                    <span class="text-xs text-white font-medium truncate">Carlos M.</span>
-                                    <span class="text-[10px] text-slate-500 truncate">carlos@mail.com</span>
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold bg-slate-500/20 text-slate-300 rounded-full">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Prata
-                                    </span>
-                                    <span class="inline-flex items-center gap-1 text-[9px] font-medium text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>Ativo</span>
-                                </div>
-                                <!-- Row 3 -->
-                                <div class="grid grid-cols-4 gap-2 px-3 py-2 items-center">
-                                    <span class="text-xs text-white font-medium truncate">Juliana R.</span>
-                                    <span class="text-[10px] text-slate-500 truncate">ju@mail.com</span>
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold bg-indigo-500/20 text-indigo-400 rounded-full">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> Pro
-                                    </span>
-                                    <span class="inline-flex items-center gap-1 text-[9px] font-medium text-rose-400"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block"></span>Inativo</span>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
+                <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 animate-fade-in-up stagger-5">
+                    <span>Sem cartão de crédito</span>
+                    <span>Cancele quando quiser</span>
+                    <span>Seus dados isolados por conta</span>
                 </div>
-
             </div>
+            <div class="mockup-rise mockup-frame mt-10 border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                <div class="flex items-center gap-1.5 px-3 py-2 border-b border-slate-200 bg-white">
+                    <span class="w-2.5 h-2.5 rounded-full bg-slate-200"></span><span class="w-2.5 h-2.5 rounded-full bg-slate-200"></span><span class="w-2.5 h-2.5 rounded-full bg-slate-200"></span>
+                    <span class="ml-3 text-xs text-slate-500 font-mono">dashboard.daviflow.com</span>
+                </div>
+                <div class="p-4 grid grid-cols-4 gap-3 text-center">
+                    <div class="border border-slate-200 rounded-lg p-3 bg-white"><div class="text-xs text-slate-500">Total</div><div class="text-lg font-bold">48</div></div>
+                    <div class="border border-slate-200 rounded-lg p-3 bg-white"><div class="text-xs text-slate-500">Ativos</div><div class="text-lg font-bold text-emerald-600">36</div></div>
+                    <div class="border border-slate-200 rounded-lg p-3 bg-white"><div class="text-xs text-slate-500">Inativos</div><div class="text-lg font-bold">12</div></div>
+                    <div class="border border-slate-200 rounded-lg p-3 bg-white"><div class="text-xs text-slate-500">Planos</div><div class="text-xs font-mono mt-1">VIP 12 • Básico 20</div></div>
+                </div>
+                <div class="px-4 pb-4">
+                    <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                        <div class="grid grid-cols-4 gap-3 px-3 py-2 border-b bg-slate-50 text-xs font-medium text-slate-500"><span>Nome</span><span>Email</span><span>Plano</span><span>Status</span></div>
+                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs border-b"><span>Ana Lima</span><span class="text-slate-500">ana@mail.com</span><span>Ouro</span><span class="text-emerald-600">Ativo</span></div>
+                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs border-b"><span>Carlos M.</span><span class="text-slate-500">carlos@mail.com</span><span>Prata</span><span class="text-emerald-600">Ativo</span></div>
+                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs"><span>Juliana R.</span><span class="text-slate-500">ju@mail.com</span><span>Pro</span><span class="text-rose-600">Inativo</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
+            <div class="max-w-2xl reveal">
+                <h2 class="text-xl font-bold tracking-tight">Cadastro, cobrança e acompanhamento em um lugar.</h2>
+                <p class="mt-2 text-sm text-slate-600">Três recursos que cobrem a rotina: registrar clientes, controlar pagamentos e ver números.</p>
+            </div>
+            <div class="mt-6 grid md:grid-cols-3 gap-4">
+                <div class="feature-card reveal border border-slate-200 rounded-xl p-5 bg-white">
+                    <div class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center mb-3"><i data-lucide="users" class="w-4 h-4"></i></div>
+                    <h3 class="text-sm font-semibold">Cadastro com filtros</h3>
+                    <p class="mt-1 text-sm text-slate-600 leading-relaxed">Registre nome, contato, plano e etapa. Filtre por status, plano, etapa ou tag.</p>
+                </div>
+                <div class="feature-card reveal border border-slate-200 rounded-xl p-5 bg-white border-l-2 border-l-slate-900">
+                    <div class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center mb-3"><i data-lucide="bar-chart-3" class="w-4 h-4"></i></div>
+                    <h3 class="text-sm font-semibold">Cobrança e métricas</h3>
+                    <p class="mt-1 text-sm text-slate-600 leading-relaxed">Defina valor e vencimento por cliente. Veja receita prevista, inadimplentes, churn e LTV.</p>
+                </div>
+                <div class="feature-card reveal border border-slate-200 rounded-xl p-5 bg-white">
+                    <div class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center mb-3"><i data-lucide="shield-check" class="w-4 h-4"></i></div>
+                    <h3 class="text-sm font-semibold">Equipe com permissões</h3>
+                    <p class="mt-1 text-sm text-slate-600 leading-relaxed">Convide membros por email. Administradores gerenciam tudo, membros operam o dia a dia.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
+            <h2 class="text-xl font-bold reveal">Comece em 3 passos.</h2>
+            <div class="mt-6 grid md:grid-cols-3 gap-6">
+                <div class="step-card reveal flex gap-3">
+                    <span class="step-num w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                    <div><h3 class="text-sm font-semibold">Crie a conta</h3><p class="text-sm text-slate-600 mt-1">30 segundos, sem cartão.</p></div>
+                </div>
+                <div class="step-card reveal flex gap-3">
+                    <span class="step-num w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                    <div><h3 class="text-sm font-semibold">Cadastre clientes</h3><p class="text-sm text-slate-600 mt-1">Nome, email, plano, etapa.</p></div>
+                </div>
+                <div class="step-card reveal flex gap-3">
+                    <span class="step-num w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                    <div><h3 class="text-sm font-semibold">Acompanhe</h3><p class="text-sm text-slate-600 mt-1">Kanban e relatórios com período.</p></div>
+                </div>
+            </div>
+            <div class="mt-8 reveal">
+                <button onclick="openModal('modal-register')" class="btn-lift inline-flex px-5 py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-lg">Começar gratuitamente agora</button>
+            </div>
+        </section>
+
+        <section id="about" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
+            <div class="feature-card reveal border border-slate-200 rounded-xl p-6 bg-white max-w-3xl">
+                <h2 class="text-lg font-bold">Feito para quem atende cliente todo dia.</h2>
+                <p class="mt-2 text-sm text-slate-600 leading-relaxed">Clínicas, oficinas, dentistas, academias e freelancers usam o DaviFlow para manter cadastro, pagamento e retorno em dia, com campos próprios para cada tipo de negócio.</p>
+                <div class="mt-4 grid sm:grid-cols-3 gap-4 text-xs">
+                    <div class="border border-slate-200 rounded-lg p-3"><div class="font-semibold">Acesso controlado</div><div class="text-slate-600 mt-1">Cada conta vê só os próprios dados. Convites por email.</div></div>
+                    <div class="border border-slate-200 rounded-lg p-3"><div class="font-semibold">Lembretes automáticos</div><div class="text-slate-600 mt-1">Avisos de vencimento e clientes sem retorno.</div></div>
+                    <div class="border border-slate-200 rounded-lg p-3"><div class="font-semibold">Funciona no celular</div><div class="text-slate-600 mt-1">Painel adaptado para atender entre um cliente e outro.</div></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="reveal border border-slate-200 rounded-xl p-8 text-center bg-slate-900 text-white">
+                <h2 class="text-xl font-bold">Crie sua conta e cadastre o primeiro cliente hoje.</h2>
+                <p class="mt-2 text-sm text-slate-400">Leva 30 segundos. Sem cartão de crédito.</p>
+                <div class="mt-5 flex flex-col sm:flex-row gap-3 justify-center">
+                    <button onclick="openModal('modal-register')" class="btn-lift px-5 py-2.5 text-sm font-semibold bg-white text-slate-900 rounded-lg">Criar conta grátis</button>
+                    <button onclick="openModal('modal-login')" class="btn-lift px-5 py-2.5 text-sm font-semibold border border-slate-700 rounded-lg">Já tem conta → Entrar</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="border-t border-slate-200 py-8 px-4">
+        <div class="max-w-6xl mx-auto grid md:grid-cols-4 gap-6">
+            <div class="md:col-span-2">
+                <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div><span class="text-sm font-bold">DaviFlow</span></div>
+                <p class="mt-2 text-sm text-slate-600 max-w-xs">Cadastro, cobrança e acompanhamento de clientes para pequenos negócios.</p>
+                <address class="not-italic text-xs text-slate-500 mt-2">CNPJ 00.000.000/0001-00 • Rua Example 123 • São Paulo, SP<br><a href="mailto:contato@daviflow.com.br" class="underline">contato@daviflow.com.br</a> • <a href="tel:+5511999999999" class="underline">(11) 99999-9999</a></address>
+            </div>
+            <div><h4 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Produto</h4><ul class="space-y-1 text-sm"><li><a href="#features" class="text-slate-600 hover:text-slate-900">Recursos</a></li><li><a href="#how-it-works" class="text-slate-600 hover:text-slate-900">Como funciona</a></li><li><a href="/dashboard.html" class="text-slate-600 hover:text-slate-900">Painel</a></li></ul></div>
+            <div><h4 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Legal</h4><ul class="space-y-1 text-sm"><li><a href="/privacidade.html" class="text-slate-600 hover:text-slate-900">Privacidade</a></li><li><a href="/termos.html" class="text-slate-600 hover:text-slate-900">Termos</a></li></ul></div>
         </div>
-    </section>
-
-    <!-- =====================================================
-         FEATURES SECTION
-         ===================================================== -->
-    <section id="features" class="relative py-20 sm:py-28 px-4 z-10">
-        <div class="max-w-7xl mx-auto">
-
-            <!-- Section Header -->
-            <div class="text-center mb-12 reveal">
-                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full border border-slate-700/20 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-4">Recursos</span>
-                <h2 class="text-3xl sm:text-4xl font-black text-white">Tudo que você precisa,<br>em um só lugar.</h2>
-                <p class="mt-4 text-slate-400 max-w-xl mx-auto">Projetado para quem não tem tempo a perder. Rápido, inteligente e feito para o seu ritmo.</p>
-            </div>
-
-            <!-- Feature Cards Grid - 3 cards -->
-            <div class="grid sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
-
-                <!-- Card 1: Gestão Centralizada -->
-                <div class="feature-card rounded-xl p-6 reveal border border-slate-800 bg-slate-900 hover:border-slate-700">
-                    <div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
-                        <i data-lucide="users" class="w-5 h-5 text-slate-300"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-white mb-2">Gestão Centralizada</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">Cadastre, edite e acompanhe o status de cada cliente em tempo real, sem abrir uma única planilha.</p>
-                </div>
-
-                <!-- Card 2: Métricas em Tempo Real -->
-                <div class="feature-card rounded-xl p-6 reveal border border-slate-800 bg-slate-900 hover:border-slate-700 border-l-2 border-l-indigo-600">
-                    <div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
-                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-slate-300"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-white mb-2">Métricas em Tempo Real</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">Visualize instantaneamente total de clientes, taxa de ativos e distribuição por plano com dados sempre atualizados.</p>
-                </div>
-
-                <!-- Card 3: Segurança Corporativa -->
-                <div class="feature-card rounded-xl p-6 reveal border border-slate-800 bg-slate-900 hover:border-slate-700">
-                    <div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
-                        <i data-lucide="shield-check" class="w-5 h-5 text-slate-300"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-white mb-2">Segurança Corporativa</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">Dados criptografados, isolamento por conta (RLS) e autenticação JWT. Nível enterprise para o seu negócio.</p>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- =====================================================
-         HOW IT WORKS SECTION
-         ===================================================== -->
-    <section id="how-it-works" class="relative py-20 sm:py-28 px-4 z-10">
-        <div class="max-w-5xl mx-auto">
-
-            <!-- Section Header -->
-            <div class="text-center mb-16 reveal">
-                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-widest mb-4">
-                    Como Funciona
-                </span>
-                <h2 class="text-3xl sm:text-4xl font-black text-white">Configure em minutos.<br>Use para sempre.</h2>
-            </div>
-
-            <!-- Steps -->
-            <div class="grid md:grid-cols-3 gap-8">
-
-                <!-- Step 1 -->
-                <div class="text-center reveal">
-                    <div class="flex flex-col items-center">
-                        <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
-                            <i data-lucide="user-plus" class="w-5 h-5 text-slate-300"></i>
-                        </div>
-                        <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white mb-4">1</div>
-                        <h3 class="text-lg font-bold text-white mb-2">Crie sua conta</h3>
-                        <p class="text-sm text-slate-400 leading-relaxed max-w-xs">Cadastre-se no DaviFlow em menos de 1 minuto. Sem cartão de crédito.</p>
-                    </div>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="text-center reveal">
-                    <div class="flex flex-col items-center">
-                        <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
-                            <i data-lucide="clipboard-list" class="w-5 h-5 text-slate-300"></i>
-                        </div>
-                        <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white mb-4">2</div>
-                        <h3 class="text-lg font-bold text-white mb-2">Cadastre seus clientes</h3>
-                        <p class="text-sm text-slate-400 leading-relaxed max-w-xs">Adicione clientes e defina status e planos personalizados em segundos.</p>
-                    </div>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="text-center reveal">
-                    <div class="flex flex-col items-center">
-                        <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
-                            <i data-lucide="trending-up" class="w-5 h-5 text-slate-300"></i>
-                        </div>
-                        <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white mb-4">3</div>
-                        <h3 class="text-lg font-bold text-white mb-2">Acompanhe o crescimento</h3>
-                        <p class="text-sm text-slate-400 leading-relaxed max-w-xs">Visualize métricas precisas e tome decisões inteligentes para o seu negócio.</p>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- CTA after steps -->
-            <div class="mt-14 text-center reveal">
-                <button onclick="openModal('modal-register')"
-                    class="inline-flex items-center gap-2 px-8 py-4 text-base font-bold text-slate-900 bg-indigo-600 rounded-2xl transition-all duration-200 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
-                    <i data-lucide="rocket" class="w-5 h-5"></i>
-                    Começar gratuitamente agora
-                </button>
-            </div>
-
-        </div>
-    </section>
-
-    <!-- =====================================================
-         ABOUT SECTION
-         ===================================================== -->
-    <section id="about" class="relative py-24 sm:py-28 px-4 z-10">
-        <div class="max-w-4xl mx-auto">
-            <div class="rounded-2xl p-8 sm:p-14 text-center reveal border border-slate-800 bg-slate-900">
-                <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-6">
-                    <i data-lucide="zap" class="w-7 h-7 text-white"></i>
-                </div>
-                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full border border-slate-700/20 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-6">
-                    Sobre o DaviFlow
-                </span>
-                <h2 class="text-2xl sm:text-3xl font-black text-white mb-6">Nossa missão é simples:<br><span class="text-indigo-400 font-medium">menos caos, mais resultado.</span></h2>
-                <p class="text-slate-300 leading-relaxed text-base sm:text-lg max-w-2xl mx-auto mb-10">
-                    O DaviFlow nasceu para descomplicar a gestão operacional de profissionais independentes e pequenos negócios. Unimos simplicidade, performance e segurança de nível corporativo — transformando processos manuais em fluxos organizados e eficientes. Isolamento total de dados (RLS), autenticação JWT e infraestrutura serverless garantem que você gaste menos tempo administrando e <strong class="text-indigo-400 font-semibold">mais tempo faturando.</strong>
-                </p>
-                <!-- Value pillars -->
-                <div class="grid sm:grid-cols-3 gap-6 max-w-2xl mx-auto text-left">
-                    <div class="flex items-start gap-3 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
-                        <div class="w-10 h-10 rounded-lg bg-indigo-600/20 flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="shield-check" class="w-5 h-5 text-indigo-400"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-white text-sm">Segurança por Design</h4>
-                            <p class="text-slate-400 text-xs mt-1">Criptografia ponta-a-ponta, RLS no Supabase, tokens JWT rotativos.</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start gap-3 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
-                        <div class="w-10 h-10 rounded-lg bg-indigo-600/20 flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="zap" class="w-5 h-5 text-indigo-400"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-white text-sm">Performance Real</h4>
-                            <p class="text-slate-400 text-xs mt-1">Edge functions, cache inteligente, <100ms latency global.</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start gap-3 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
-                        <div class="w-10 h-10 rounded-lg bg-indigo-600/20 flex items-center justify-center flex-shrink-0">
-                            <i data-lucide="layout-dashboard" class="w-5 h-5 text-indigo-400"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-white text-sm">Feito para Escalar</h4>
-                            <p class="text-slate-400 text-xs mt-1">Arquitetura serverless, zero manutenção, cresce com seu negócio.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    
-
-    <!-- =====================================================
-         FINAL CTA BANNER
-         ===================================================== -->
-    <section class="relative py-24 px-4 z-10">
-        <div class="max-w-4xl mx-auto">
-            <div class="relative rounded-2xl p-10 sm:p-16 text-center overflow-hidden reveal border border-slate-800 bg-slate-900">
-                <div class="absolute top-0 left-0 right-0 h-px bg-slate-800"></div>
-                <div class="relative">
-                    <h2 class="text-3xl sm:text-4xl font-black text-white mb-4">
-                        Pronto para organizar<br><span class="text-indigo-400 font-medium">seu negócio de verdade?</span>
-                    </h2>
-                    <p class="text-slate-400 mb-8 text-lg max-w-xl mx-auto">Junte-se a centenas de profissionais que já largaram as planilhas para sempre.</p>
-                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <button onclick="openModal('modal-register')"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold text-slate-900 bg-indigo-600 rounded-2xl transition-all duration-200 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
-                            <i data-lucide="rocket" class="w-5 h-5"></i>
-                            Criar conta grátis
-                        </button>
-                        <button onclick="openModal('modal-login')"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-2xl hover:bg-white/5 transition-all duration-200">
-                            Já tem conta → Entrar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- =====================================================
-         FOOTER
-         ===================================================== -->
-    <footer class="relative z-10 border-t border-slate-800/60 py-12 px-4">
-        <div class="max-w-7xl mx-auto">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-
-                <!-- Brand Column -->
-                <div class="md:col-span-2">
-                    <a href="#" class="flex items-center space-x-2.5 mb-4">
-                        <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center">
-                            <i data-lucide="zap" class="w-4 h-4 text-white"></i>
-                        </div>
-                        <span class="text-lg font-bold text-white">Davi<span class="text-indigo-400 font-medium">Flow</span></span>
-                    </a>
-                    <p class="text-slate-400 text-sm leading-relaxed max-w-xs">
-                        Gestão de clientes inteligente para freelancers e pequenos negócios. Simples, rápido e seguro.
-                    </p>
-                    <address class="not-italic text-xs text-slate-500 mt-3 leading-relaxed">
-                        DaviFlow Gestões — CNPJ 00.000.000/0001-00<br>
-                        Rua Example, 123, Sala 45 — São Paulo, SP — CEP 01310-100<br>
-                        <a href="mailto:contato@daviflow.com.br" class="text-indigo-400 hover:text-indigo-300">contato@daviflow.com.br</a> — <a href="tel:+5511999999999" class="text-indigo-400 hover:text-indigo-300">(11) 99999-9999</a>
-                    </address>
-                    <address class="not-italic text-xs text-slate-500 mt-3 leading-relaxed">
-                        DaviFlow Gestões — CNPJ 00.000.000/0001-00<br>
-                        Rua Example, 123, Sala 45 — São Paulo, SP — CEP 01310-100<br>
-                        <a href="mailto:contato@daviflow.com.br" class="text-indigo-400 hover:text-indigo-300">contato@daviflow.com.br</a> — <a href="tel:+5511999999999" class="text-indigo-400 hover:text-indigo-300">(11) 99999-9999</a>
-                    </address>
-                    <!-- Social Links -->
-                    <div class="flex items-center gap-3 mt-5">
-                        <span class="w-9 h-9 rounded-xl border border-slate-800 bg-slate-900 flex items-center justify-center text-slate-500" aria-label="LinkedIn (em breve)">
-                            <i data-lucide="linkedin" class="w-4 h-4"></i>
-                        </span>
-                        <span class="w-9 h-9 rounded-xl border border-slate-800 bg-slate-900 flex items-center justify-center text-slate-500" aria-label="GitHub (em breve)">
-                            <i data-lucide="github" class="w-4 h-4"></i>
-                        </span>
-                        <span class="w-9 h-9 rounded-xl border border-slate-800 bg-slate-900 flex items-center justify-center text-slate-500" aria-label="Twitter (em breve)">
-                            <i data-lucide="twitter" class="w-4 h-4"></i>
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Product Links -->
-                <div>
-                    <h4 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">Produto</h4>
-                    <ul class="space-y-2.5">
-                        <li><a href="#features" class="text-sm text-slate-400 hover:text-white transition-colors">Recursos</a></li>
-                        <li><a href="#how-it-works" class="text-sm text-slate-400 hover:text-white transition-colors">Como Funciona</a></li>
-                        <li><a href="/dashboard" class="text-sm text-slate-400 hover:text-white transition-colors">Painel</a></li>
-                    </ul>
-                </div>
-
-                <!-- Legal Links -->
-                <div>
-                    <h4 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">Legal</h4>
-                    <ul class="space-y-2.5">
-                        <li><a href="/privacidade.html" class="text-sm text-slate-400 hover:text-white transition-colors">Política de Privacidade</a></li>
-                        <li><a href="/termos.html" class="text-sm text-slate-400 hover:text-white transition-colors">Termos de Serviço</a></li>
-                        <li><a href="#about" class="text-sm text-slate-400 hover:text-white transition-colors">Sobre Nós</a></li>
-                    </ul>
-                </div>
-
-            </div>
-
-            <!-- Footer Bottom -->
-            <div class="pt-6 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <p class="text-xs text-slate-500">
-                    &copy; 2026 DaviFlow. Todos os direitos reservados. Feito no Brasil.
-                </p>
-                <div class="flex items-center gap-2 text-xs text-slate-600">
-                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500/60"></i>
-                    <span>Powered by FastAPI + Supabase + Vercel</span>
-                </div>
-            </div>
+        <div class="max-w-6xl mx-auto mt-6 pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p class="text-xs text-slate-500">© 2026 DaviFlow. Feito no Brasil.</p>
+            <span class="text-xs text-slate-500">FastAPI + Supabase + Vercel</span>
         </div>
     </footer>
 
-    <!-- Sticky Mobile CTA -->
-    <div class="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[#0f172a]/95 backdrop-blur-lg border-t border-slate-800 px-4 py-3 flex items-center gap-3">
-        <div class="flex-1 min-w-0">
-            <p class="text-xs font-bold text-white leading-tight">Pronto para começar?</p>
-            <p class="text-[11px] text-slate-400">Sem cartão • Cancele quando quiser</p>
-        </div>
-        <button onclick="openModal('modal-register')" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-xl">Criar conta</button>
+    <div class="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3">
+        <div class="flex-1 min-w-0"><p class="text-xs font-semibold leading-tight">Pronto para começar?</p><p class="text-xs text-slate-500">Sem cartão • Cancele quando quiser</p></div>
+        <button onclick="openModal('modal-register')" class="px-4 py-2 text-sm font-semibold text-white bg-slate-900 rounded-lg">Criar conta</button>
     </div>
 
-    <!-- Sticky Mobile CTA -->
-    <div class="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[#0f172a]/95 backdrop-blur-lg border-t border-slate-800 px-4 py-3 flex items-center gap-3">
-        <div class="flex-1 min-w-0">
-            <p class="text-xs font-bold text-white leading-tight">Pronto para começar?</p>
-            <p class="text-[11px] text-slate-400">Sem cartão • Cancele quando quiser</p>
-        </div>
-        <button onclick="openModal('modal-register')" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-xl">Criar conta</button>
-    </div>
-
-    <!-- =====================================================
-         MODAL: LOGIN
-         ===================================================== -->
-    <div id="modal-login" class="fixed inset-0 z-[100] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
-        <!-- Backdrop -->
-        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeModal('modal-login')"></div>
-
-        <!-- Modal Box -->
-        <div class="relative w-full max-w-md animate-fade-in-up">
-            <div class="glass-card rounded-3xl overflow-hidden" style="border: 1px solid rgba(99,102,241,0.15); box-shadow: 0 25px 80px rgba(0,0,0,0.6);">
-                <div class="p-8">
-                    <!-- Header -->
-                    <div class="flex items-start justify-between mb-7">
-                        <div>
-                            <div class="flex items-center gap-2.5 mb-2">
-                                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
-                                    <i data-lucide="zap" class="w-4 h-4 text-white"></i>
-                                </div>
-                                <span class="font-bold text-white text-lg">DaviFlow</span>
-                            </div>
-                            <h2 id="login-modal-title" class="text-2xl font-black text-white">Bem-vindo de volta</h2>
-                            <p class="text-slate-400 text-sm mt-1">Entre na sua conta para continuar.</p>
-                        </div>
-                        <button onclick="closeModal('modal-login')" class="p-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/10 transition-all" aria-label="Fechar">
-                            <i data-lucide="x" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-
-                    <!-- Login Form (Auth shell — wire up Supabase JS here) -->
-                    <form id="form-login" onsubmit="handleLogin(event)" class="space-y-5" novalidate>
-                        <div>
-                            <label for="login-email" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">E-mail</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-                                    <i data-lucide="mail" class="w-4 h-4"></i>
-                                </div>
-                                <input type="email" id="login-email" name="email" required autocomplete="email"
-                                    placeholder="seu@email.com"
-                                    class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-indigo-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all">
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <label for="login-password" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Senha</label>
-                                <a href="#" onclick="handleForgotPassword(event)" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors font-medium">Esqueci a senha</a>
-                            </div>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-                                    <i data-lucide="lock" class="w-4 h-4"></i>
-                                </div>
-                                <input type="password" id="login-password" name="password" required autocomplete="current-password"
-                                    placeholder="••••••••"
-                                    class="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-indigo-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all">
-                                <button type="button" onclick="togglePassword('login-password', 'login-eye-icon')"
-                                    class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors">
-                                    <i data-lucide="eye" class="w-4 h-4" id="login-eye-icon"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Error message slot -->
-                        <div id="login-error" class="hidden px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2">
-                            <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
-                            <span id="login-error-text"></span>
-                        </div>
-
-                        <button type="submit" id="btn-login-submit"
-                            class="w-full py-3.5 text-sm font-bold text-slate-900 bg-indigo-600 rounded-2xl transition-all duration-200 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 flex items-center justify-center gap-2">
-                            <span id="btn-login-text">Entrar na minha conta</span>
-                            <i data-lucide="arrow-right" class="w-4 h-4" id="btn-login-arrow"></i>
-                            <i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="btn-login-spinner"></i>
-                        </button>
-                    </form>
-
-                    <p class="mt-6 text-center text-sm text-slate-500">
-                        Não tem conta?
-                        <button onclick="closeModal('modal-login'); openModal('modal-register')"
-                            class="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors ml-1">
-                            Criar conta grátis
-                        </button>
-                    </p>
-                </div>
-            </div>
+    <div id="modal-login" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modal-login')"></div>
+        <div class="relative w-full max-w-md bg-white rounded-xl border border-slate-200 p-6">
+            <div class="flex items-start justify-between mb-4"><div><h2 class="text-lg font-bold">Bem-vindo de volta</h2><p class="text-sm text-slate-600">Entre na sua conta.</p></div><button onclick="closeModal('modal-login')" class="p-2 text-slate-500 hover:text-slate-900"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+            <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4" novalidate>
+                <div><label for="login-email" class="text-xs font-semibold uppercase tracking-widest text-slate-600">E-mail</label><input type="email" id="login-email" required autocomplete="email" placeholder="seu@email.com" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
+                <div><div class="flex items-center justify-between"><label for="login-password" class="text-xs font-semibold uppercase tracking-widest text-slate-600">Senha</label><a href="#" onclick="handleForgotPassword(event)" class="text-xs text-slate-900 underline">Esqueci a senha</a></div><input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
+                <div id="login-error" class="hidden px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-2"><span id="login-error-text"></span></div>
+                <button type="submit" id="btn-login-submit" class="w-full py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-lg">Entrar na minha conta</button>
+            </form>
+            <p class="mt-4 text-center text-sm text-slate-600">Não tem conta? <button onclick="closeModal('modal-login'); openModal('modal-register')" class="font-semibold text-slate-900 underline">Criar conta grátis</button></p>
         </div>
     </div>
 
-    <!-- =====================================================
-         MODAL: REGISTER
-         ===================================================== -->
-    <div id="modal-register" class="fixed inset-0 z-[100] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="register-modal-title">
-        <!-- Backdrop -->
-        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeModal('modal-register')"></div>
-
-        <!-- Modal Box -->
-        <div class="relative w-full max-w-md animate-fade-in-up">
-            <div class="glass-card rounded-3xl overflow-hidden" style="border: 1px solid rgba(99,102,241,0.15); box-shadow: 0 25px 80px rgba(0,0,0,0.6);">
-                <div class="p-8">
-                    <!-- Header -->
-                    <div class="flex items-start justify-between mb-7">
-                        <div>
-                            <div class="flex items-center gap-2.5 mb-2">
-                                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
-                                    <i data-lucide="zap" class="w-4 h-4 text-white"></i>
-                                </div>
-                                <span class="font-bold text-white text-lg">DaviFlow</span>
-                            </div>
-                            <h2 id="register-modal-title" class="text-2xl font-black text-white">Crie sua conta grátis</h2>
-                            <p class="text-slate-400 text-sm mt-1">Sem cartão de crédito. Cancele quando quiser.</p>
-                        </div>
-                        <button onclick="closeModal('modal-register')" class="p-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/10 transition-all" aria-label="Fechar">
-                            <i data-lucide="x" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-
-                    <!-- Register Form -->
-                    <form id="form-register" onsubmit="cadastrarUsuarioPelaModal(event)" class="space-y-4" novalidate>
-                        <div>
-                            <label for="signup-nome" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nome Completo</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-                                    <i data-lucide="user" class="w-4 h-4"></i>
-                                </div>
-                                <input type="text" id="signup-nome" name="name" required autocomplete="name"
-                                    placeholder="Seu nome completo"
-                                    class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-indigo-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="signup-email" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">E-mail</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-                                    <i data-lucide="mail" class="w-4 h-4"></i>
-                                </div>
-                                <input type="email" id="signup-email" name="email" required autocomplete="email"
-                                    placeholder="seu@email.com"
-                                    class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-indigo-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="signup-senha" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Senha</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-                                    <i data-lucide="lock" class="w-4 h-4"></i>
-                                </div>
-                                <input type="password" id="signup-senha" name="password" required autocomplete="new-password"
-                                    placeholder="Mínimo 6 caracteres"
-                                    class="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-indigo-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all">
-                                <button type="button" onclick="togglePassword('signup-senha', 'register-eye-icon')"
-                                    class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300 transition-colors">
-                                    <i data-lucide="eye" class="w-4 h-4" id="register-eye-icon"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="signup-confirm-senha" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Confirmar Senha</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-                                    <i data-lucide="lock" class="w-4 h-4"></i>
-                                </div>
-                                <input type="password" id="signup-confirm-senha" name="confirm" required autocomplete="new-password"
-                                    placeholder="Repita a senha"
-                                    class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-indigo-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all">
-                            </div>
-                        </div>
-
-                        <!-- Terms -->
-                        <label class="flex items-start gap-3 cursor-pointer">
-                            <input type="checkbox" id="register-terms" required
-                                class="mt-0.5 w-4 h-4 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500/30 cursor-pointer">
-                            <span class="text-xs text-slate-400 leading-relaxed">
-                                Concordo com os
-                                <a href="/termos.html" class="text-indigo-400 hover:text-indigo-300 transition-colors font-medium">Termos de Serviço</a>
-                                e
-                                <a href="/privacidade.html" class="text-indigo-400 hover:text-indigo-300 transition-colors font-medium">Política de Privacidade</a>
-                                do DaviFlow.
-                            </span>
-                        </label>
-
-                        <!-- Error message slot -->
-                        <div id="register-error" class="hidden px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2">
-                            <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
-                            <span id="register-error-text"></span>
-                        </div>
-
-                        <button type="submit" id="btn-register-submit"
-                            class="w-full py-3.5 text-sm font-bold text-slate-900 bg-indigo-600 rounded-2xl transition-all duration-200 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 flex items-center justify-center gap-2">
-                            <span id="btn-register-text">Criar minha conta grátis</span>
-                            <i data-lucide="arrow-right" class="w-4 h-4" id="btn-register-arrow"></i>
-                            <i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="btn-register-spinner"></i>
-                        </button>
-                    </form>
-
-                    <p class="mt-5 text-center text-sm text-slate-500">
-                        Já tem conta?
-                        <button onclick="closeModal('modal-register'); openModal('modal-login')"
-                            class="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors ml-1">
-                            Entrar
-                        </button>
-                    </p>
-                </div>
-            </div>
+    <div id="modal-register" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modal-register')"></div>
+        <div class="relative w-full max-w-md bg-white rounded-xl border border-slate-200 p-6">
+            <div class="flex items-start justify-between mb-4"><div><h2 class="text-lg font-bold">Crie sua conta grátis</h2><p class="text-sm text-slate-600">Sem cartão. Cancele quando quiser.</p></div><button onclick="closeModal('modal-register')" class="p-2 text-slate-500 hover:text-slate-900"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+            <form id="form-register" onsubmit="cadastrarUsuarioPelaModal(event)" class="space-y-3" novalidate>
+                <div><label for="signup-nome" class="text-xs font-semibold uppercase tracking-widest text-slate-600">Nome</label><input type="text" id="signup-nome" required autocomplete="name" placeholder="Seu nome" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
+                <div><label for="signup-email" class="text-xs font-semibold uppercase tracking-widest text-slate-600">E-mail</label><input type="email" id="signup-email" required autocomplete="email" placeholder="seu@email.com" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
+                <div><label for="signup-senha" class="text-xs font-semibold uppercase tracking-widest text-slate-600">Senha</label><input type="password" id="signup-senha" required autocomplete="new-password" placeholder="Mínimo 8 caracteres" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
+                <div><label for="signup-confirm-senha" class="text-xs font-semibold uppercase tracking-widest text-slate-600">Confirmar senha</label><input type="password" id="signup-confirm-senha" required autocomplete="new-password" placeholder="Repita a senha" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
+                <label class="flex items-start gap-2 text-xs text-slate-600"><input type="checkbox" id="register-terms" required class="mt-0.5"> Concordo com <a href="/termos.html" class="underline">Termos</a> e <a href="/privacidade.html" class="underline">Privacidade</a></label>
+                <button type="submit" class="w-full py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-lg">Criar conta grátis</button>
+            </form>
+            <p class="mt-4 text-center text-sm text-slate-600">Já tem conta? <button onclick="closeModal('modal-register'); openModal('modal-login')" class="font-semibold text-slate-900 underline">Entrar</button></p>
         </div>
     </div>
 
-    <!-- MODAL: RECOVERY — Definir nova senha (invite / esqueci a senha) -->
-    <div id="modal-recovery" class="fixed inset-0 z-[100] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="recovery-modal-title">
-        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeModal('modal-recovery')"></div>
-        <div class="relative w-full max-w-md animate-fade-in-up">
-            <div class="glass-card rounded-3xl overflow-hidden" style="border:1px solid rgba(99,102,241,0.15);box-shadow:0 25px 80px rgba(0,0,0,0.6);">
-                <div class="p-8">
-                    <div class="flex items-start justify-between mb-6">
-                        <div>
-                            <div class="flex items-center gap-2.5 mb-2">
-                                <div class="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center"><i data-lucide="key-round" class="w-4 h-4 text-white"></i></div>
-                                <span class="font-bold text-white text-lg">DaviFlow</span>
-                            </div>
-                            <h2 id="recovery-modal-title" class="text-2xl font-black text-white">Defina sua nova senha</h2>
-                            <p class="text-slate-400 text-sm mt-1">Link válido por 1h. Após definir, você será redirecionado ao login.</p>
-                        </div>
-                        <button onclick="closeModal('modal-recovery')" class="p-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/10"><i data-lucide="x" class="w-5 h-5"></i></button>
-                    </div>
-                    <form id="form-recovery" onsubmit="handleRecoverySubmit(event)" class="space-y-4" novalidate>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nova senha</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500"><i data-lucide="lock" class="w-4 h-4"></i></div>
-                                <input type="password" id="recovery-password" required autocomplete="new-password" placeholder="Mínimo 6 caracteres" class="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-emerald-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
-                                <button type="button" onclick="togglePassword('recovery-password','recovery-eye')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300"><i data-lucide="eye" class="w-4 h-4" id="recovery-eye"></i></button>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Confirmar senha</label>
-                            <input type="password" id="recovery-confirm" required autocomplete="new-password" placeholder="Repita a senha" class="w-full px-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 focus:border-emerald-500/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
-                        </div>
-                        <div id="recovery-error" class="hidden px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4"></i><span id="recovery-error-text"></span></div>
-                        <div id="recovery-success" class="hidden px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm"></div>
-                        <button type="submit" id="btn-recovery-submit" class="w-full py-3.5 text-sm font-bold text-white bg-emerald-600 rounded-2xl hover:bg-emerald-500 flex items-center justify-center gap-2"><span id="btn-recovery-text">Salvar nova senha</span><i data-lucide="check" class="w-4 h-4" id="btn-recovery-icon"></i><i data-lucide="loader-2" class="w-4 h-4 animate-spin hidden" id="btn-recovery-spinner"></i></button>
-                    </form>
-                    <p class="mt-4 text-center text-xs text-slate-500">Não recebeu o email? Verifique spam ou peça para o admin reenviar o convite em Gerenciar → Membros.</p>
-                </div>
-            </div>
+    <div id="modal-recovery" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modal-recovery')"></div>
+        <div class="relative w-full max-w-md bg-white rounded-xl border border-slate-200 p-6">
+            <h2 class="text-lg font-bold">Definir nova senha</h2>
+            <p class="text-sm text-slate-600 mt-1">Token de recuperação detectado.</p>
+            <form id="form-recovery" onsubmit="handleRecoverySubmit(event)" class="mt-4 space-y-3">
+                <input type="password" id="recovery-password" placeholder="Nova senha (mín 8)" required class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm">
+                <input type="password" id="recovery-confirm" placeholder="Confirmar" required class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm">
+                <button type="submit" class="w-full py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-lg">Atualizar senha</button>
+            </form>
         </div>
     </div>
 
-    <!-- =====================================================
-         LANDING PAGE JAVASCRIPT
-         ===================================================== -->
     <script>
         // --- Initialize Lucide Icons ---
         lucide.createIcons();
@@ -1209,7 +603,7 @@
                 });
                 const data = await resp.json().catch(() => ({}));
                 if (!resp.ok) throw new Error(data.detail || 'Falha ao atualizar senha');
-                if (okEl) { okEl.textContent = '✅ ' + (data.mensagem || 'Senha atualizada! Redirecionando para login...'); okEl.classList.remove('hidden'); }
+                if (okEl) { okEl.textContent = data.mensagem || 'Senha atualizada! Redirecionando para login...'; okEl.classList.remove('hidden'); }
                 setTimeout(() => { closeModal('modal-recovery'); openModal('modal-login'); if (errText) errText.textContent=''; try{ history.replaceState(null,'', window.location.pathname); localStorage.removeItem('df_recovery_token'); }catch(e){} }, 1800);
             } catch (err) {
                 if (errEl && errText) { errText.textContent = err.message || 'Erro ao atualizar senha. Solicite novo link.'; errEl.classList.remove('hidden'); }
@@ -1256,6 +650,6 @@
             });
         });
     </script>
-
+    </script>
 </body>
 </html>

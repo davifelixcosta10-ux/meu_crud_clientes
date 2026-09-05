@@ -30,12 +30,12 @@ begin
             select 1 from atividades a
             where a.cliente_id = c.id
               and a.tipo = 'tarefa'
-              and a.nota ilike '%🤖 automação inativo%'
+              and a.nota ilike '%Automação inativo%'
               and a.created_at > now() - interval '24 hours'
           )
         loop
           insert into atividades (user_id, cliente_id, org_id, tipo, data, concluida, nota)
-          values (cli.user_id, cli.id, cli.org_id, 'tarefa', current_date, false, '🤖 automação inativo '||dias_inativo||'d: ligar para '||cli.nome);
+          values (cli.user_id, cli.id, cli.org_id, 'tarefa', current_date, false, 'Automação inativo '||dias_inativo||'d: ligar para '||cli.nome);
         end loop;
       for cli in
         select c.id, c.user_id, c.org_id, c.nome
@@ -47,11 +47,11 @@ begin
             select 1 from atividades a where a.cliente_id = c.id and a.created_at > now() - (dias_inativo || ' days')::interval
           )
           and not exists (
-            select 1 from atividades a where a.cliente_id = c.id and a.nota ilike '%🤖 automação inativo%' and a.created_at > now() - interval '24 hours'
+            select 1 from atividades a where a.cliente_id = c.id and a.nota ilike '%Automação inativo%' and a.created_at > now() - interval '24 hours'
           )
         loop
           insert into atividades (user_id, cliente_id, org_id, tipo, data, concluida, nota)
-          values (cli.user_id, cli.id, cli.org_id, 'tarefa', current_date, false, '🤖 automação inativo '||dias_inativo||'d: follow-up '||cli.nome);
+          values (cli.user_id, cli.id, cli.org_id, 'tarefa', current_date, false, 'Automação inativo '||dias_inativo||'d: follow-up '||cli.nome);
         end loop;
     end if;
 
@@ -67,11 +67,11 @@ begin
             or (extract(day from current_date)::int + dias_vence > 31 and c.vencimento_dia <= (extract(day from current_date)::int + dias_vence - 31))
           )
           and not exists (
-            select 1 from atividades a where a.cliente_id = c.id and a.nota ilike '%🤖 automação vence%' and a.created_at > now() - interval '24 hours'
+            select 1 from atividades a where a.cliente_id = c.id and a.nota ilike '%Automação vence%' and a.created_at > now() - interval '24 hours'
           )
         loop
           insert into atividades (user_id, cliente_id, org_id, tipo, data, concluida, nota)
-          values (cli.user_id, cli.id, cli.org_id, 'tarefa', current_date + 1, false, '🤖 automação vence em '||dias_vence||'d: cobrar '||cli.nome||' (dia '||cli.vencimento_dia||')');
+          values (cli.user_id, cli.id, cli.org_id, 'tarefa', current_date + 1, false, 'Automação vence em '||dias_vence||'d: cobrar '||cli.nome||' (dia '||cli.vencimento_dia||')');
         end loop;
     end if;
 
@@ -81,10 +81,10 @@ begin
         from clientes c
         where c.org_id = r.org_id
           and not exists (select 1 from atividades a where a.cliente_id = c.id and a.created_at > now() - interval '7 days')
-          and not exists (select 1 from atividades a where a.cliente_id = c.id and a.nota ilike '%🤖 automação sem_atividade%' and a.created_at > now() - interval '24 hours')
+          and not exists (select 1 from atividades a where a.cliente_id = c.id and a.nota ilike '%Automação sem atividade%' and a.created_at > now() - interval '24 hours')
         loop
           insert into atividades (user_id, cliente_id, org_id, tipo, data, concluida, nota)
-          values (cli.user_id, cli.id, cli.org_id, 'nota', current_date, false, '🤖 automação sem atividade 7d: verificar '||cli.nome);
+          values (cli.user_id, cli.id, cli.org_id, 'nota', current_date, false, 'Automação sem atividade 7d: verificar '||cli.nome);
         end loop;
     end if;
 
