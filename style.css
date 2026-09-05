@@ -54,9 +54,9 @@ html {
     --dash-text-1:        #0f172a;
     --dash-text-2:        #475569;
     --dash-text-3:        #64748b;
-    --dash-accent:        #4f46e5;
-    --dash-accent-hover:  #4338ca;
-    --dash-accent-light:  #e0e7ff;
+    --dash-accent:        #0f172a;
+    --dash-accent-hover:  #000000;
+    --dash-accent-light:  #f1f5f9;
     --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
     --dash-shadow-md:     0 8px 24px rgba(79,70,229,0.12), 0 2px 8px rgba(0,0,0,0.08);
     --dash-radius:        0.75rem;
@@ -578,3 +578,34 @@ body {
 #secao-overview .metric-card:nth-child(6) { animation-delay: 0.25s; }
 #secao-overview .metric-card:nth-child(7) { animation-delay: 0.3s; }
 #secao-overview .metric-card:nth-child(8) { animation-delay: 0.35s; }
+
+/* ============================================================
+   DASHBOARD copia a LANDING (modo claro): tinta neutra slate.
+   Escopo html:not(.dark) preserva o dark mode e as cores de
+   dados (ex: .bg-indigo-500 sólido dos dots de plano).
+   ============================================================ */
+html:not(.dark) .bg-indigo-600 { background-color: #0f172a !important; }
+html:not(.dark) .hover\:bg-indigo-700:hover { background-color: #000000 !important; }
+html:not(.dark) .hover\:bg-indigo-500:hover { background-color: #1e293b !important; }
+html:not(.dark) .bg-indigo-50,
+html:not(.dark) .bg-indigo-100 { background-color: #f1f5f9 !important; }
+html:not(.dark) .text-indigo-600,
+html:not(.dark) .text-indigo-700 { color: #0f172a !important; }
+html:not(.dark) .text-indigo-400 { color: #334155 !important; }
+html:not(.dark) .border-indigo-200,
+html:not(.dark) .border-indigo-100 { border-color: #e2e8f0 !important; }
+html:not(.dark) .bg-indigo-600\/15,
+html:not(.dark) .bg-indigo-500\/10,
+html:not(.dark) .bg-indigo-50\/40,
+html:not(.dark) .bg-indigo-950\/20,
+html:not(.dark) .bg-indigo-900\/20,
+html:not(.dark) .bg-indigo-900\/40,
+html:not(.dark) .bg-indigo-800\/40 { background-color: #f1f5f9 !important; }
+html:not(.dark) .border-indigo-500\/20,
+html:not(.dark) .border-indigo-200\/60 { border-color: #e2e8f0 !important; }
+html:not(.dark) .border-indigo-500\/60,
+html:not(.dark) .border-indigo-400 { border-color: #cbd5e1 !important; }
+html:not(.dark) .ring-indigo-500\/30 { --tw-ring-color: rgb(15 23 42 / 0.15) !important; }
+html:not(.dark) .hover\:bg-indigo-50:hover,
+html:not(.dark) .hover\:bg-indigo-100:hover { background-color: #f1f5f9 !important; }
+html:not(.dark) .focus\:border-indigo-500\/60:focus { border-color: #0f172a !important; }
