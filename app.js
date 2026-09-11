@@ -224,6 +224,8 @@ const MAPA_CORES_PLANO = {
     }
 };
 
+// === API ===
+// Centraliza toda comunicação REST com FastAPI/Supabase (fetchAuth, org/etapa/tag, clientes)
 // ============================================================
 // AUTENTICAÇÃO E SESSÃO — JWT via Supabase Auth
 // - obterUserId(): lê df_user_id do localStorage (para métricas/debug)
@@ -1085,6 +1087,8 @@ async function deletarApiKey(id) {
     });
 }
 
+// === VERTICAL ===
+// Verticais: geral/hospital/oficina/dentista/academia + customs; aplica máscaras/campos
 // ============================================================
 // 4A — VERTICAIS
 // ============================================================
@@ -1998,6 +2002,8 @@ function inicializarFiltroPlanos() {
 // ============================================================
 // 3B. FASE 1A — ETAPAS (Kanban)
 // ============================================================
+// === KANBAN ===
+// Kanban: etapas, drag & drop (SortableJS), renderização por coluna, viewMode
 async function carregarEtapas() {
     try {
         const response = await fetchAuth(`${API_BASE_URL}/etapas${getOrgQuery()}`, { method: 'GET' });
@@ -3522,6 +3528,8 @@ function restaurarEstadoRelatorios() {
     });
 }
 
+// === RENDER ===
+// Render: filtrarTabela + renderizarClientes + badges + lista com truncate anti-overflow
 // ============================================================
 // 6. FILTRAGEM E RENDERIZAÇÃO — busca textual + filtros de plano/status
 //    - filtrarTabela(): filtra clientesCache por termo, plano e status -> renderizarClientes()
@@ -3594,14 +3602,14 @@ function renderizarClientes(clientes) {
                 <div class="flex items-center gap-2.5 cursor-pointer" onclick="abrirModalDetalhes(${cliente.id})" title="Ver detalhes completos">
                     <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-black text-white shadow-sm"
                          style="background: ${avatarGradient(cliente.nome)};">${avatarInitials(cliente.nome)}</div>
-                    <div>
-                        <span class="font-bold text-slate-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">${escaparHTML(cliente.nome)}</span>
-                        ${cliente.empresa ? `<p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">${escaparHTML(cliente.empresa)}</p>` : ''}
+                    <div class="min-w-0">
+                        <span class="font-bold text-slate-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate max-w-[200px] block" title="${escaparHTML(cliente.nome)}">${escaparHTML(cliente.nome)}</span>
+                        ${cliente.empresa ? `<p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate max-w-[200px]">${escaparHTML(cliente.empresa)}</p>` : ''}
                     </div>
                 </div>
             </td>
-            <td class="py-3 px-5 text-sm text-slate-600 dark:text-slate-300">${escaparHTML(cliente.email)}</td>
-            <td class="py-3 px-5 hidden xl:table-cell text-xs text-slate-500 dark:text-slate-400 font-mono">${escaparHTML(cliente.telefone || '—')}</td>
+            <td class="py-3 px-5 text-sm text-slate-600 dark:text-slate-300 truncate max-w-[200px]" title="${escaparHTML(cliente.email)}">${escaparHTML(cliente.email)}</td>
+            <td class="py-3 px-5 hidden xl:table-cell text-xs text-slate-500 dark:text-slate-400 font-mono truncate max-w-[160px]">${escaparHTML(cliente.telefone || '—')}</td>
             <td class="py-3 px-5">${planoBadgeHTML}</td>
             <td class="py-3 px-5">${statusBadgeHTML}</td>
             <td class="py-3 px-5 hidden lg:table-cell text-xs text-slate-400 dark:text-slate-500">${dataFormatada}</td>

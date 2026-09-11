@@ -31,7 +31,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS CDN — TODO: migrar para build local (npm tailwind + purge) para reduzir 300KB e melhorar LCP; manter CDN por ora para compat Vercel sem build step -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -190,7 +190,7 @@
         <section id="secao-overview" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 
             <!-- Total -->
-            <div class="metric-card">
+            <div class="metric-card hover:shadow-lg transition-all duration-200">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Total</span>
                     <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100 dark:border-indigo-500/20">
@@ -204,7 +204,7 @@
             </div>
 
             <!-- Ativos -->
-            <div class="metric-card">
+            <div class="metric-card hover:shadow-lg transition-all duration-200">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Ativos</span>
                     <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-500/20">
@@ -218,7 +218,7 @@
             </div>
 
             <!-- Inativos -->
-            <div class="metric-card">
+            <div class="metric-card hover:shadow-lg transition-all duration-200">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Inativos</span>
                     <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-500/20">
@@ -232,7 +232,7 @@
             </div>
 
             <!-- Planos breakdown -->
-            <div class="metric-card">
+            <div class="metric-card hover:shadow-lg transition-all duration-200">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Por Plano</span>
                     <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100 dark:border-indigo-500/20">
@@ -245,7 +245,7 @@
             </div>
 
             <!-- Follow-ups atrasados (Fase 1B) -->
-            <div class="metric-card">
+            <div class="metric-card hover:shadow-lg transition-all duration-200">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Atrasados</span>
                     <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-500/20">
@@ -259,7 +259,7 @@
             </div>
 
             <!-- Receita prevista (Fase 1D) -->
-            <div class="metric-card">
+            <div class="metric-card hover:shadow-lg transition-all duration-200">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Receita</span>
                     <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-500/20">
@@ -273,7 +273,7 @@
             </div>
 
             <!-- Churn (Fase 2A) -->
-            <div class="metric-card">
+            <div class="metric-card hover:shadow-lg transition-all duration-200">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Churn</span>
                     <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-500/20">
@@ -287,7 +287,7 @@
             </div>
 
             <!-- LTV (Fase 2A-4) -->
-            <div class="metric-card">
+            <div class="metric-card hover:shadow-lg transition-all duration-200">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">LTV</span>
                     <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center border border-violet-100 dark:border-violet-500/20">
