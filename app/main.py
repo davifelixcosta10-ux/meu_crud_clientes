@@ -30,14 +30,15 @@ from slowapi.errors import RateLimitExceeded
 
 # Sentry — deve ser inicializado antes de app = FastAPI()
 import sentry_sdk
-_sentry_dsn = os.environ.get("SENTRY_DSN") or "https://b4a4edbad60f643cd0ca8e0e83f99f16@o4512024164368384.ingest.us.sentry.io/4512024170790912"
+_sentry_dsn = os.environ.get("SENTRY_DSN")  # sem fallback. Se vazio, não inicializa Sentry
 try:
-    sentry_sdk.init(
-        dsn=_sentry_dsn,
-        send_default_pii=True,
-        traces_sample_rate=0.1,
-        profiles_sample_rate=0.1,
-    )
+    if _sentry_dsn:
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            send_default_pii=True,
+            traces_sample_rate=0.1,
+            profiles_sample_rate=0.1,
+        )
 except Exception:
     pass
 
@@ -147,7 +148,7 @@ app.add_middleware(
 # ============================================================
 # DEPENDÊNCIA DE AUTENTICAÇÃO — Valida JWT com Supabase (assinatura verificada)
 # ============================================================
-async def obter_user_id(authorization: str = Header(None), df_token: str = Header(None, alias="Cookie")) -> str:
+async def obter_user_id(request: Request, authorization: str = Header(None)) -> str:
     """
     Extrai e valida o user_id. Tenta Authorization Bearer primeiro, depois cookie httpOnly df_token (F9).
     
@@ -155,10 +156,10 @@ async def obter_user_id(authorization: str = Header(None), df_token: str = Heade
     1. Verifica presença do header Authorization
     2. Valida formato "Bearer <token>"
     3. Chama Supabase Auth get_user() — isso verifica:
-       - Assinatura JWT (chave pública do Supabase/JWKS)
-       - Expiração (exp claim)
-       - Revogação (token não invalidado)
-       - Estrutura válida
+        - Assinatura JWT (chave pública do Supabase/JWKS)
+        - Expiração (exp claim)
+        - Revogação (token não invalidado)
+        - Estrutura válida
     4. Retorna user_id (UUID) do token válido
     
     IMPORTANTE: Não aceita UUID direto — isso previnia spoofing de identidade
@@ -169,12 +170,13 @@ async def obter_user_id(authorization: str = Header(None), df_token: str = Heade
         parts = authorization.split(" ", 1)
         if len(parts) == 2 and parts[0].lower() == "bearer" and parts[1].strip():
             raw_token = parts[1].strip()
-    # Fallback para cookie httpOnly (F9)
-    if not raw_token and df_token:
-        import re
-        m = re.search(r"df_token=([^;\s]+)", df_token)
-        if m:
-            raw_token = m.group(1).strip()
+    # Fallback para cookie httpOnly (F9) via Request
+    if not raw_token:
+        raw_token = request.cookies.get("df_token")
+        if raw_token:
+            raw_token = raw_token.strip()
+            if not raw_token:
+                raw_token = None
     if not raw_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -205,6 +207,7 @@ async def obter_user_id(authorization: str = Header(None), df_token: str = Heade
 
 
 async def obter_user_id_com_api_key(
+    request: Request,
     authorization: str = Header(None),
     x_api_key: str = Header(None, alias="X-API-Key"),
 ) -> str:
@@ -221,7 +224,7 @@ async def obter_user_id_com_api_key(
             pass
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="X-API-Key inválida ou expirada.")
     # 2. Fallback para JWT
-    return await obter_user_id(authorization)
+    return await obter_user_id(request, authorization)
 
 
 # ============================================================
@@ -236,8 +239,10 @@ def health_check():
 
 
 @app.get("/sentry-debug", tags=["Status"])
-async def trigger_error():
+async def trigger_error(request: Request, confirm: str | None = None, user_id: str = Depends(obter_user_id)):
     """Rota para verificar Sentry — gera erro teste (apenas com ?confirm=1 para evitar abuso)."""
+    if confirm != "1":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Use ?confirm=1 para testar Sentry")
     raise RuntimeError("Sentry debug: test error from /sentry-debug — ignore")
 
 
@@ -1116,7 +1121,8 @@ async def delete_api_key(key_id: str, user_id: str = Depends(obter_user_id)):
 
 # Exemplo de endpoint que aceita X-API-Key além de JWT
 @app.get("/api/clientes-public", tags=["API Keys"])
-async def listar_clientes_via_api_key(org_id: str | None = None, user_id: str = Depends(obter_user_id_com_api_key)):
+@limiter.limit("20/minute")
+async def listar_clientes_via_api_key(request: Request, org_id: str | None = None, user_id: str = Depends(obter_user_id_com_api_key)):
     """Lista clientes via JWT ou X-API-Key (para Zapier/contaazul externo)."""
     try:
         return carregar_clientes(user_id, org_id)
