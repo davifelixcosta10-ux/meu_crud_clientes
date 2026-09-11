@@ -85,13 +85,13 @@ def get_supabase_admin_client() -> Client:
         if not url:
             raise ValueError("SUPABASE_URL não configurada nas variáveis de ambiente.")
         if not key:
-            logger.warning("SUPABASE_SERVICE_ROLE_KEY não encontrada; service_role é obrigatório para operações admin")
-            raise ValueError("SUPABASE_SERVICE_ROLE_KEY não configurada; service_role é obrigatório para operações admin")
+            logger.warning("SUPABASE_SERVICE_ROLE_KEY não encontrada; usando anon key como fallback (Preview sem service_role — get_usuario_me retornará dados limitados)")
+            return get_supabase_client()
         try:
             _supabase_admin_client = create_client(url, key)
         except Exception as e:
-            logger.warning(f"Falha ao criar supabase admin client: {e}")
-            raise ValueError(f"Falha ao criar supabase admin client: {e}")
+            logger.warning(f"Falha ao criar supabase admin client: {e} — fallback para anon")
+            return get_supabase_client()
     return _supabase_admin_client
 
 
