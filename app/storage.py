@@ -74,20 +74,24 @@ def get_supabase_admin_client() -> Client:
     global _supabase_admin_client
     if _supabase_admin_client is None:
         url: str = os.environ.get("SUPABASE_URL", "")
-        # tenta service_role em várias vars comuns
+        # tenta service_role em várias vars comuns (sem fallback para SUPABASE_KEY anon)
         key: str = (
             os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
             or os.environ.get("SUPABASE_SERVICE_KEY")
             or os.environ.get("SUPABASE_SERVICE_ROLE")
             or os.environ.get("SERVICE_ROLE_KEY")
-            or os.environ.get("SUPABASE_KEY", "")
+            or ""
         )
-        if not url or not key:
+        if not url:
+            raise ValueError("SUPABASE_URL não configurada nas variáveis de ambiente.")
+        if not key:
+            logger.warning("SUPABASE_SERVICE_ROLE_KEY não encontrada; usando anon key como fallback (Preview sem service_role — get_usuario_me retornará dados limitados)")
             return get_supabase_client()
         try:
             _supabase_admin_client = create_client(url, key)
-        except Exception:
-            _supabase_admin_client = get_supabase_client()
+        except Exception as e:
+            logger.warning(f"Falha ao criar supabase admin client: {e} — fallback para anon")
+            return get_supabase_client()
     return _supabase_admin_client
 
 
