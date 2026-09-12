@@ -54,11 +54,12 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Fase 1 — Libs (Kanban + Import) -->
+    <!-- TODO lazy-load futuro: Sortable/PapaParse/xlsx sob demanda para reduzir bundle inicial (manter SRI/CSP ao migrar para import dinâmico) -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" integrity="sha384-BSxuMLxX+FCbTdYec3TbXlnMGEEM2QXTFdtDaveen71o+jswm2J36+xFqp8k4VHM" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" integrity="sha384-D/t0ZMqQW31H3az8ktEiNb39wyKnS82iFY52QPACM+IjKW3jDUhyIgh2PApRqJZs" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
-    <!-- Fase 2A — Relatórios -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
+    <!-- Fase 2A — Relatórios — Chart.js lazy-loaded via app.js ensureChartJS() (SRI: sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4; CSP: https://cdn.jsdelivr.net já permitido em vercel.json) -->
+    <!-- Chart.js removido do <head> eager para lazy-load: será injetado dinamicamente apenas quando entrar em secao-relatorios via ensureChartJS() (ver app.js). Reduz 1 request bloqueante; 3 libs restantes mantidas com SRI/CSP e TODO acima. -->
 
     <!-- Application Script -->
     <script src="app.js" defer></script>

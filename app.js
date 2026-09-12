@@ -154,6 +154,35 @@ function getOrgQS(qs = '') {
 }
 function getOrgQuery() { return currentOrgId ? `?org_id=${currentOrgId}` : ''; }
 
+// ============================================================
+// PERF: Lazy-load Chart.js apenas em secao-relatorios
+// - Reduz 1 request bloqueante no <head> (Chart.js 4.4.1 ~200KB)
+// - SRI preservado (sha384-9nhczxU...) e CSP (cdn.jsdelivr.net) já permitido em vercel.json
+// - Uso: await ensureChartJS() antes de new Chart(); retorna true se carregado, false se falhou
+// - Mantém compatibilidade: se já existe (eager legacy), resolve imediatamente
+// ============================================================
+let _chartJSPromise = null;
+async function ensureChartJS() {
+    if (typeof Chart !== 'undefined') return true;
+    if (_chartJSPromise) return _chartJSPromise;
+    _chartJSPromise = new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+        s.integrity = 'sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4';
+        s.crossOrigin = 'anonymous';
+        s.onload = () => resolve(true);
+        s.onerror = () => {
+            console.error('Falha ao carregar Chart.js lazy');
+            _chartJSPromise = null;
+            resolve(false);
+        };
+        document.head.appendChild(s);
+    });
+    return _chartJSPromise;
+}
+// Alias para compatibilidade com spec alternativa (carregarChartJS)
+async function carregarChartJS() { return ensureChartJS(); }
+
 // Mapa de tema por cor de plano — usado em badges, métricas e cards de seleção.
 // Cada entrada define: bg, text, border, dot, activeBorder, activeBg (Tailwind classes)
 // Cores disponíveis: indigo, cyan, emerald, amber, rose, purple, slate, orange
@@ -3126,6 +3155,8 @@ async function carregarRelatorioConversao() {
     const tabelaEl = document.getElementById('relatorio-conversao-tabela');
     const totalEl = document.getElementById('relatorio-conversao-total');
     if (!canvas) return;
+    // Lazy-load Chart.js antes de buscar/desenhar (perf)
+    await ensureChartJS();
     const periodo = document.getElementById('relatorio-periodo')?.value || '';
     const qs = getOrgQS(periodo ? `?periodo=${periodo}` : '');
     try {
@@ -3136,17 +3167,25 @@ async function carregarRelatorioConversao() {
             return;
         }
         const data = await resp.json();
-        renderizarRelatorioConversao(data);
+        await renderizarRelatorioConversao(data);
     } catch (e) {
         console.warn('Erro ao carregar relatório conversão', e);
         if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-rose-400 text-center col-span-3">Erro ao carregar</p>';
     }
 }
-function renderizarRelatorioConversao(data) {
+async function renderizarRelatorioConversao(data) {
     const canvas = document.getElementById('chart-conversao');
     const tabelaEl = document.getElementById('relatorio-conversao-tabela');
     const totalEl = document.getElementById('relatorio-conversao-total');
     if (!canvas || !data || !data.itens) return;
+    // Garante Chart.js lazy (se ainda não carregado, tenta carregar agora)
+    if (typeof Chart === 'undefined') {
+        const ok = await ensureChartJS();
+        if (!ok || typeof Chart === 'undefined') {
+            if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-amber-600 text-center col-span-3">Chart.js não carregado</p>';
+            return;
+        }
+    }
     // Destrói chart anterior
     if (chartConversao) {
         try { chartConversao.destroy(); } catch(e) {}
@@ -3163,11 +3202,7 @@ function renderizarRelatorioConversao(data) {
         return corMap[cor] || '#64748b';
     });
     const borderColors = bgColors;
-    // Verifica Chart.js carregado (CDN)
-    if (typeof Chart === 'undefined') {
-        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-amber-600 text-center col-span-3">Chart.js não carregado</p>';
-        return;
-    }
+    // Verifica Chart.js carregado (CDN) - já garantido acima
     const ctx = canvas.getContext('2d');
     chartConversao = new Chart(ctx, {
         type: 'bar',
@@ -3240,6 +3275,7 @@ async function carregarRelatorioReceita() {
     const canvasMes = document.getElementById('chart-receita-mes');
     const totalEl = document.getElementById('relatorio-receita-total');
     if (!canvasPlano && !canvasMes) return;
+    await ensureChartJS();
     const periodo = document.getElementById('relatorio-periodo')?.value || '';
     const qs = getOrgQS(periodo ? `?periodo=${periodo}` : '');
     try {
@@ -3249,13 +3285,13 @@ async function carregarRelatorioReceita() {
             return;
         }
         const data = await resp.json();
-        renderizarRelatorioReceita(data);
+        await renderizarRelatorioReceita(data);
     } catch (e) {
         console.warn('Erro ao carregar relatório receita', e);
         if (totalEl) totalEl.textContent = 'R$ 0';
     }
 }
-function renderizarRelatorioReceita(data) {
+async function renderizarRelatorioReceita(data) {
     const canvasPlano = document.getElementById('chart-receita-plano');
     const canvasMes = document.getElementById('chart-receita-mes');
     const totalEl = document.getElementById('relatorio-receita-total');
@@ -3264,7 +3300,10 @@ function renderizarRelatorioReceita(data) {
     if (!data) return;
     const totalFmt = `R$ ${Number(data.total_receita || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
     if (totalEl) totalEl.textContent = totalFmt;
-    if (typeof Chart === 'undefined') return;
+    if (typeof Chart === 'undefined') {
+        const ok = await ensureChartJS();
+        if (!ok || typeof Chart === 'undefined') return;
+    }
     // Por plano - doughnut
     if (canvasPlano) {
         if (chartReceitaPlano) { try { chartReceitaPlano.destroy(); } catch(e) {} chartReceitaPlano = null; }
@@ -3320,6 +3359,7 @@ async function carregarRelatorioChurn() {
     const canvas = document.getElementById('chart-churn');
     const totalEl = document.getElementById('relatorio-churn-total');
     if (!canvas) return;
+    await ensureChartJS();
     const periodo = document.getElementById('relatorio-periodo')?.value || '';
     const qs = getOrgQS(periodo ? `?periodo=${periodo}` : '');
     try {
@@ -3329,13 +3369,13 @@ async function carregarRelatorioChurn() {
             return;
         }
         const data = await resp.json();
-        renderizarRelatorioChurn(data);
+        await renderizarRelatorioChurn(data);
     } catch (e) {
         console.warn('Erro ao carregar relatório churn', e);
         if (totalEl) totalEl.textContent = '0%';
     }
 }
-function renderizarRelatorioChurn(data) {
+async function renderizarRelatorioChurn(data) {
     const canvas = document.getElementById('chart-churn');
     const canvasPlano = document.getElementById('chart-churn-plano');
     const totalEl = document.getElementById('relatorio-churn-total');
@@ -3347,7 +3387,10 @@ function renderizarRelatorioChurn(data) {
     if (totalEl) totalEl.textContent = `${Number(data.churn_medio || 0).toFixed(1)}%`;
     if (churnHeaderEl) churnHeaderEl.textContent = `${Number(data.churn_medio || 0).toFixed(1)}%`;
     if (footerEl) footerEl.textContent = `${data.total_inativos || 0} inativos de ${data.total_geral || 0} • média ${Number(data.churn_medio || 0).toFixed(1)}%${document.getElementById('relatorio-periodo')?.value ? ` • últimos ${document.getElementById('relatorio-periodo').value} dias` : ''}`;
-    if (typeof Chart === 'undefined') return;
+    if (typeof Chart === 'undefined') {
+        const ok = await ensureChartJS();
+        if (!ok || typeof Chart === 'undefined') return;
+    }
     if (chartChurn) { try { chartChurn.destroy(); } catch(e) {} chartChurn = null; }
     if (chartChurnPlano) { try { chartChurnPlano.destroy(); } catch(e) {} chartChurnPlano = null; }
     // Por mês - line
@@ -3401,6 +3444,7 @@ async function carregarRelatorioLtv() {
     const canvas = document.getElementById('chart-ltv-plano');
     const totalEl = document.getElementById('relatorio-ltv-total');
     if (!canvas) return;
+    await ensureChartJS();
     const periodo = document.getElementById('relatorio-periodo')?.value || '';
     const qs = getOrgQS(periodo ? `?periodo=${periodo}` : '');
     try {
@@ -3410,13 +3454,13 @@ async function carregarRelatorioLtv() {
             return;
         }
         const data = await resp.json();
-        renderizarRelatorioLtv(data);
+        await renderizarRelatorioLtv(data);
     } catch (e) {
         console.warn('Erro ao carregar relatório LTV', e);
         if (totalEl) totalEl.textContent = 'R$ 0';
     }
 }
-function renderizarRelatorioLtv(data) {
+async function renderizarRelatorioLtv(data) {
     const canvas = document.getElementById('chart-ltv-plano');
     const totalEl = document.getElementById('relatorio-ltv-total');
     const tabelaEl = document.getElementById('relatorio-ltv-plano-tabela');
@@ -3429,7 +3473,10 @@ function renderizarRelatorioLtv(data) {
     if (headerEl) headerEl.textContent = Number(data.ltv_medio_geral || 0) >= 1000 ? `R$ ${(Number(data.ltv_medio_geral)/1000).toFixed(1)}k` : fmt(data.ltv_medio_geral);
     if (headerEl) headerEl.title = `${fmt(data.ltv_medio_geral)} médio • ${data.meses_medio_geral} meses • ${fmt(data.valor_medio_mensal_geral)}/mês`;
     if (footerEl) footerEl.textContent = `${data.total_clientes || 0} clientes • ${fmt(data.receita_estimada_total)} estimado • ${data.meses_medio_geral} meses médio${document.getElementById('relatorio-periodo')?.value ? ` • últimos ${document.getElementById('relatorio-periodo').value} dias` : ''}`;
-    if (typeof Chart === 'undefined') return;
+    if (typeof Chart === 'undefined') {
+        const ok = await ensureChartJS();
+        if (!ok || typeof Chart === 'undefined') return;
+    }
     if (chartLtvPlano) { try { chartLtvPlano.destroy(); } catch(e) {} chartLtvPlano = null; }
     const porPlano = data.por_plano || [];
     if (!canvas) return;

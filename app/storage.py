@@ -2136,6 +2136,42 @@ def criar_anexo(dados: dict, user_id: str, org_id: str | None = None, file_bytes
     import uuid as _uuid
     safe_name = "".join(c if c.isalnum() or c in "._-" else "_" for c in nome)
     path = f"{oid}/{cliente_id}/{_uuid.uuid4().hex}_{safe_name}"
+    # PERF: magic-bytes check (valida assinatura vs mime declarado)
+    def _validar_magic_bytes(data: bytes, mime_type: str):
+        if not data or len(data) < 4:
+            return True  # muito pequeno, deixa passar (será validado pelo Storage)
+        # assinaturas conhecidas
+        sigs = {
+            "application/pdf": [b"%PDF"],
+            "image/png": [b"\x89PNG"],
+            "image/jpeg": [b"\xff\xd8\xff"],
+            "image/gif": [b"GIF87a", b"GIF89a"],
+            "image/webp": [b"RIFF"],
+            "text/csv": None,  # texto, não verifica
+            "text/plain": None,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [b"PK\x03\x04"],  # xlsx é zip
+            "application/vnd.ms-excel": [b"\xd0\xcf\x11\xe0"],
+        }
+        expected = sigs.get(mime_type)
+        if expected is None:
+            return True  # mime genérico ou texto, não valida
+        head = data[:8]
+        for s in expected:
+            if head.startswith(s):
+                # caso especial webp: RIFF....WEBP
+                if mime_type == "image/webp" and b"WEBP" not in data[:12]:
+                    return False
+                return True
+        return False
+    # valida magic bytes antes do upload
+    _bytes_to_check = file_bytes if file_bytes is not None else None
+    if _bytes_to_check is None and dados.get("content_base64"):
+        try:
+            _bytes_to_check = base64.b64decode(dados.get("content_base64"))
+        except Exception:
+            _bytes_to_check = None
+    if _bytes_to_check and not _validar_magic_bytes(_bytes_to_check, mime):
+        raise ValueError(f"Arquivo inválido: assinatura não corresponde ao tipo {mime}")
     # upload para Storage se tiver bytes
     if file_bytes:
         try:

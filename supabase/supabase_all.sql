@@ -1,7 +1,8 @@
 -- ============================================================
--- DaviFlow — Fase 1 (1A-1E) — Migração Supabase
+-- DaviFlow — Supabase All-in-One (001→007 + fixes)
 -- Executar no SQL Editor do Supabase Dashboard
 -- Ordem importa: extensões -> tabelas -> índices -> RLS -> policies
+-- FIX: após 001-007, aplique supabase/archive/fix_security_anon.sql (REVOKE anon em is_org_member) — já incluso em produção via supabase_all.sql cat
 -- ============================================================
 
 -- Extensão para UUID (se ainda não habilitada)
