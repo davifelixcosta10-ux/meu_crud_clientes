@@ -479,23 +479,22 @@ body {
 .reveal.visible { opacity: 1; transform: translateY(0); }
 
 .feature-card {
-    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
 }
 .feature-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
-    border-color: #cbd5e1;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #000;
 }
 .dark .feature-card:hover {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    box-shadow: 6px 6px 0 rgba(255, 255, 255, 0.25);
 }
 
 .navbar-scrolled {
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid #e2e8f0;
-    box-shadow: 0 1px 8px rgba(15, 23, 42, 0.06);
+    background: #fafafa; /* zinc-50 — sólido, sem blur (neo-brutalista) */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 2px solid #000;
+    box-shadow: none;
 }
 
 /* ============================================================
@@ -509,31 +508,32 @@ body {
     animation: mockupRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
 }
 .mockup-frame {
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 .mockup-frame:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12);
+    transform: translate(-2px, -2px);
+    box-shadow: 12px 12px 0 #000;
 }
 .btn-lift {
-    transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 .btn-lift:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #000;
 }
-.btn-lift:active { transform: translateY(0) scale(0.99); }
+.btn-lift:active { transform: translate(0, 0); box-shadow: none; }
 .step-num {
-    transition: transform 0.2s ease, background-color 0.2s ease;
+    transition: transform 0.15s ease, background-color 0.15s ease;
 }
 .step-card:hover .step-num {
-    transform: scale(1.1);
+    transform: translate(-2px, -2px);
+    box-shadow: 3px 3px 0 #71717a;
 }
 .table-row-hi {
-    transition: background-color 0.15s ease;
+    transition: background-color 0.1s ease;
 }
 .table-row-hi:hover {
-    background-color: #f8fafc;
+    background-color: #f4f4f5; /* zinc-100 */
 }
 .pulse-dot {
     animation: pulseDot 2s ease-in-out infinite;
