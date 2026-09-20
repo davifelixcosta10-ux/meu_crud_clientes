@@ -36,7 +36,7 @@ Env Vars (Vercel → Settings → Environment Variables):
 - `data/arquivos.env` — **gitignored**, segredos locais
 
 ## Fase Atual
-`main@56a5180` — Fase 1 ✅, 2A (4 relatórios) ✅, 3A-2 (permissões) ✅, 3B (Calendar/Zapier) ✅, 3C (Anexos/API Keys) ✅, 4A (Verticals) ✅, 4B (Sidebar) ✅, 4C (Settings 7 abas) ✅, 2B (WhatsApp Templates) ✅, 2C (Automações pg_cron) ✅. 3D (Stripe) pausado.
+`main@9ad5981` — Fase 1 ✅, 2A (4 relatórios) ✅, 3A-2 (permissões) ✅, 3B (Calendar/Zapier) ✅, 3C (Anexos/API Keys) ✅, 4A (Verticals) ✅, 4B (Sidebar) ✅, 4C (Settings 7 abas) ✅, 2B (WhatsApp Templates) ✅, 2C (Automações pg_cron) ✅, **Tema Neo-Brutalista monocromático** ✅ (2026-09-20). 3D (Stripe) pausado.
 
 ## Branch Workflow
 `instructions.md:6` + `~/.opencode/skills/instrucoes-gerais/SKILL.md` — nunca direto em `main`; `git checkout -b feat/xyz` → `push -u origin` → Preview Vercel → `merge --no-ff` após validar.

@@ -113,3 +113,9 @@ Caso sejam feitas alterações que possam ter risco de segurança (injeção, XS
 - Páginas legais adicionadas (privacidade.html, termos.html)
 - Correções de segurança aplicadas (JWT, CORS, rate limiting)
 - Documentação adicionada nos módulos principais
+
+**Título**: feat — Tema Neo-Brutalista monocromático (2026-09-20, `main@9ad5981`)
+
+**Descrição**: Refatoração visual completa do frontend para estética neo-brutalista monocromática (regra 60-30-10: fundo zinc-50, estrutura zinc-800, destaque preto puro). Sem radius (rounded-none), bordas estruturais `border-2 border-black`, sombras duras offset, sem blur/gradientes, `font-mono` em números/valores/IDs. Lógica, ids, integrações Supabase e backend 100% preservados.
+
+**Arquivos modificados**: `index.html` (landing), `dashboard.html`, `app.js` (MAPA_CORES_PLANO em escala de cinza, Chart.js monocromático, toasts), `style.css` (tokens --dash-*), `privacidade.html`, `termos.html`, `404.html`, `CONTEXTO_KIMI.md` (novo).

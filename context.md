@@ -93,10 +93,10 @@ supabase/archive/     # fix_*.sql já aplicados (recursion, planos_org, security
 - **Settings 4C dcf9f77:** `secao-config` 7 abas (`Geral` nome/empresa/vertical/tema, `Org` rename/membros/convite, `Planos/Etapas/Tags` inline com `dot` cor real, `Notificações` toggles, `Conta` senha/export/deletar), `PATCH /api/usuarios/me`, `POST /alterar-senha`, `GET /export`
 - **WhatsApp 2B 6f87c34-a769326:** `templates_whatsapp` `plano_id bigint`, `modal-templates` CRUD, `wa.me/55{{telefone}}?text=` com `{{nome}}{{placa}}{{modelo}}{{dente}}` + `vertical` filter
 - **Automações 2C 3cb9f71-546cbfe:** `automacoes` (`inativo_30d` 30d/14d academia, `vence_3d`, `sem_atividade_7d`) + `run_automacoes()` `SECURITY DEFINER` + `pg_cron 09:00 UTC` (06:00 SP), `Config → Notificações` com `carregarAutomacoes()` + `▶️ Rodar agora`
-- **Paleta b8f3589/38ed255:** `slate-50→e0e7ff indigo-100`, `indigo-600` sóbrio, `dark .bg-white→var(--dash-surface)`, `body var(--dash-bg)`
+- **Paleta neo-brutalista monocromática 9ad5981 (2026-09-20):** regra 60-30-10 — fundo `zinc-50`, textos/divisórias `zinc-*`, destaque preto puro. `rounded-none` em tudo, bordas estruturais `border-2 border-black`, sombras duras offset (`3px/6px solid #000`), zero blur/gradientes. `font-mono` em números/valores/IDs. Dark mode: `zinc-950/900` com accent branco.
 
 ### Styling (style.css)
-- Tokens `slate-50→e0e7ff`, `indigo-500→indigo-600`, `dark slate-950 #020617`, `body var(--dash-bg) !important`, `metric-card:hover border-accent`, `.kanban-*`, `dark .bg-white` fix brancão, `skeleton`, `modal-box` 0.22s
+- Tokens `--dash-*`: accent `#000` light / `#fff` dark, radius `0`, sombras duras `3px/6px solid #000`, scrollbars quadradas, toggles com borda, override `html:not(.dark) .bg-indigo-*` neutralizando restos → zinc/preto.
 
 ### JavaScript (app.js 5000+ linhas)
 - Globals: `clientesCache`, `planosCache`, `etapasCache`, `tagsCache`, `atividadesCache`, `filtrosCache`, `orgsCache/currentOrgId`, `verticaisCache/currentVertical`, `templatesCache`, `integracoesCache/anexosCache/apiKeysCache`, `viewMode`, `secaoAtiva`

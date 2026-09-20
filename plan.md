@@ -1,6 +1,6 @@
-# DaviFlow — Plano de Evolução Atualizado (2026-09-02)
+# DaviFlow — Plano de Evolução Atualizado (2026-09-20)
 
-> **Status `main@2670d3a` + `f267a98` + `56a5180`: Fase 1 ✅, 2A ✅, 2B ✅, 2C ✅, 3A-3C ✅, 4A-4C ✅. 3D pausado (Stripe). Próximo: Consolidação QA ou 2B refinamento.**
+> **Status `main@9ad5981`: Fase 1 ✅, 2A ✅, 2B ✅, 2C ✅, 3A-3C ✅, 4A-4C ✅. Neo-Brutalista monocromático ✅ (landing + dashboard + legais). 3D pausado (Stripe). Próximo: Consolidação QA ou 2B refinamento.**
 
 ## Resumo Fase Atual (15 merges, 55+ rotas)
 
@@ -18,6 +18,7 @@
 | 2C | ✅ 2026-09-02 | `feat/fase2c-automacoes` → `6e35f40` | `automacoes` + `pg_cron 09:00 UTC` |
 | Security | ✅ 2026-09-02 | direto → `56a5180` | 22 fixes OWASP (F1-F21 Mega Brain) |
 | Org | ✅ 2026-09-02 | direto → `f267a98` | `supabase/migrations 001-007` + `README` |
+| Neo-Brutalista | ✅ 2026-09-20 | `feat/landing-neo-brutalista` → `9ad5981` | Tema monocromático 60-30-10 (zinc-50/zinc-800/preto) em `index/404/privacidade/termos/dashboard.html` + `app.js` + `style.css` |
 
 ## Próximo Plano — Consolidação (1-2 dias) + 3D Backlog
 
