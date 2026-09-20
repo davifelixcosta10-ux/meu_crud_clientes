@@ -156,71 +156,71 @@ function getOrgQuery() { return currentOrgId ? `?org_id=${currentOrgId}` : ''; }
 
 // Mapa de tema por cor de plano — usado em badges, métricas e cards de seleção.
 // Cada entrada define: bg, text, border, dot, activeBorder, activeBg (Tailwind classes)
-// Cores disponíveis: indigo, cyan, emerald, amber, rose, purple, slate, orange
+// Cores disponíveis em escala monocromática (tons de cinza): indigo, cyan, emerald, amber, rose, purple, slate, orange
 const MAPA_CORES_PLANO = {
     indigo: {
-        bg: 'bg-indigo-50 dark:bg-indigo-950/40',
-        text: 'text-indigo-700 dark:text-indigo-300',
-        border: 'border-indigo-200 dark:border-indigo-800/50',
-        dot: 'bg-indigo-500',
-        activeBorder: 'border-indigo-500 dark:border-indigo-400',
-        activeBg: 'bg-indigo-50 dark:bg-indigo-950/30'
+        bg: 'bg-black dark:bg-white',
+        text: 'text-white dark:text-black',
+        border: 'border-black dark:border-white',
+        dot: 'bg-black dark:bg-white',
+        activeBorder: 'border-black dark:border-white',
+        activeBg: 'bg-zinc-200 dark:bg-zinc-800'
     },
     cyan: {
-        bg: 'bg-cyan-50 dark:bg-cyan-950/40',
-        text: 'text-cyan-700 dark:text-cyan-300',
-        border: 'border-cyan-200 dark:border-cyan-800/50',
-        dot: 'bg-cyan-500',
-        activeBorder: 'border-cyan-500 dark:border-cyan-400',
-        activeBg: 'bg-cyan-50 dark:bg-cyan-950/30'
+        bg: 'bg-zinc-700 dark:bg-zinc-300',
+        text: 'text-white dark:text-black',
+        border: 'border-zinc-700 dark:border-zinc-300',
+        dot: 'bg-zinc-700 dark:bg-zinc-300',
+        activeBorder: 'border-zinc-700 dark:border-zinc-300',
+        activeBg: 'bg-zinc-100 dark:bg-zinc-800'
     },
     emerald: {
-        bg: 'bg-emerald-50 dark:bg-emerald-950/40',
-        text: 'text-emerald-700 dark:text-emerald-300',
-        border: 'border-emerald-200 dark:border-emerald-800/50',
-        dot: 'bg-emerald-500',
-        activeBorder: 'border-emerald-500 dark:border-emerald-400',
-        activeBg: 'bg-emerald-50 dark:bg-emerald-950/30'
+        bg: 'bg-zinc-500',
+        text: 'text-white',
+        border: 'border-zinc-500',
+        dot: 'bg-zinc-500',
+        activeBorder: 'border-zinc-500',
+        activeBg: 'bg-zinc-100 dark:bg-zinc-800'
     },
     amber: {
-        bg: 'bg-amber-50 dark:bg-amber-950/40',
-        text: 'text-amber-700 dark:text-amber-300',
-        border: 'border-amber-200 dark:border-amber-800/50',
-        dot: 'bg-amber-500',
-        activeBorder: 'border-amber-500 dark:border-amber-400',
-        activeBg: 'bg-amber-50 dark:bg-amber-950/30'
+        bg: 'bg-zinc-300',
+        text: 'text-zinc-900',
+        border: 'border-zinc-400',
+        dot: 'bg-zinc-400',
+        activeBorder: 'border-zinc-400',
+        activeBg: 'bg-zinc-100 dark:bg-zinc-800'
     },
     rose: {
-        bg: 'bg-rose-50 dark:bg-rose-950/40',
-        text: 'text-rose-700 dark:text-rose-300',
-        border: 'border-rose-200 dark:border-rose-800/50',
-        dot: 'bg-rose-500',
-        activeBorder: 'border-rose-500 dark:border-rose-400',
-        activeBg: 'bg-rose-50 dark:bg-rose-950/30'
+        bg: 'bg-zinc-100 dark:bg-zinc-800',
+        text: 'text-zinc-700 dark:text-zinc-300',
+        border: 'border-zinc-300 dark:border-zinc-600',
+        dot: 'bg-zinc-600',
+        activeBorder: 'border-zinc-500',
+        activeBg: 'bg-zinc-100 dark:bg-zinc-800'
     },
     purple: {
-        bg: 'bg-purple-50 dark:bg-purple-950/40',
-        text: 'text-purple-700 dark:text-purple-300',
-        border: 'border-purple-200 dark:border-purple-800/50',
-        dot: 'bg-purple-500',
-        activeBorder: 'border-purple-500 dark:border-purple-400',
-        activeBg: 'bg-purple-50 dark:bg-purple-950/30'
+        bg: 'bg-zinc-200',
+        text: 'text-zinc-800',
+        border: 'border-zinc-300',
+        dot: 'bg-zinc-300',
+        activeBorder: 'border-zinc-400',
+        activeBg: 'bg-zinc-100 dark:bg-zinc-800'
     },
     slate: {
-        bg: 'bg-slate-100 dark:bg-slate-800/60',
-        text: 'text-slate-700 dark:text-slate-300',
-        border: 'border-slate-200 dark:border-slate-700/60',
-        dot: 'bg-slate-400',
-        activeBorder: 'border-slate-500 dark:border-slate-400',
-        activeBg: 'bg-slate-100 dark:bg-slate-800/40'
+        bg: 'bg-white',
+        text: 'text-zinc-700',
+        border: 'border-zinc-400',
+        dot: 'bg-zinc-200',
+        activeBorder: 'border-zinc-400',
+        activeBg: 'bg-zinc-100 dark:bg-zinc-800'
     },
     orange: {
-        bg: 'bg-orange-50 dark:bg-orange-950/40',
-        text: 'text-orange-700 dark:text-orange-300',
-        border: 'border-orange-200 dark:border-orange-800/50',
-        dot: 'bg-orange-500',
-        activeBorder: 'border-orange-500 dark:border-orange-400',
-        activeBg: 'bg-orange-50 dark:bg-orange-950/30'
+        bg: 'bg-zinc-900 dark:bg-zinc-100',
+        text: 'text-white dark:text-black',
+        border: 'border-zinc-900 dark:border-zinc-100',
+        dot: 'bg-zinc-900 dark:bg-zinc-100',
+        activeBorder: 'border-zinc-900 dark:border-zinc-100',
+        activeBg: 'bg-zinc-200 dark:bg-zinc-800'
     }
 };
 
@@ -514,13 +514,13 @@ async function criarOrg() {
 async function carregarMembros() {
     const container = document.getElementById('lista-membros');
     if (!container) return;
-    if (!currentOrgId) { container.innerHTML = '<p class="text-[11px] text-slate-400">Selecione uma organização</p>'; return; }
+    if (!currentOrgId) { container.innerHTML = '<p class="text-[11px] text-zinc-400">Selecione uma organização</p>'; return; }
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/membros`, { method: 'GET' });
-        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro ao carregar membros</p>'; return; }
+        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-zinc-500">Erro ao carregar membros</p>'; return; }
         const membros = await resp.json();
         if (!Array.isArray(membros) || membros.length === 0) {
-            container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhum membro</p>';
+            container.innerHTML = '<p class="text-[11px] text-zinc-400">Nenhum membro</p>';
             return;
         }
         const orgAtual = orgsCache.find(o => o.id === currentOrgId);
@@ -529,11 +529,11 @@ async function carregarMembros() {
         container.innerHTML = membros.map(m => {
             const isOwner = ownerId && m.user_id === ownerId;
             const canRemove = isAdmin && !isOwner;
-            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' (dono)' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover membro (apenas admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
+            return `<div class="flex items-center justify-between p-2 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' (dono)' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-none ${m.papel==='admin' ? 'bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-700/60 dark:text-zinc-300'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-none text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800" title="Remover membro (apenas admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
         }).join('');
         if (window.lucide) lucide.createIcons();
     } catch(e) {
-        container.innerHTML = '<p class="text-[11px] text-rose-400">Erro</p>';
+        container.innerHTML = '<p class="text-[11px] text-zinc-500">Erro</p>';
     }
 }
 async function removerMembro(targetUserId) {
@@ -666,8 +666,8 @@ function abrirModalGerenciarOrg() {
     const org = orgsCache.find(o => o.id === currentOrgId);
     const info = document.getElementById('gerenciar-org-info');
     if (info) {
-        if (org) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">${escaparHTML(org.papel || 'membro')}${org.owner_id ? ' • dono' : ''}</span></div><div class="text-[11px] text-slate-400 mt-1">${escaparHTML(org.id.slice(0,8))}... • ${orgsCache.length} org(s)</div>`;
-        else info.innerHTML = '<p class="text-[11px] text-slate-400">Nenhuma organização selecionada</p>';
+        if (org) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-none bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300">${escaparHTML(org.papel || 'membro')}${org.owner_id ? ' • dono' : ''}</span></div><div class="text-[11px] font-mono text-zinc-400 mt-1">${escaparHTML(org.id.slice(0,8))}... • ${orgsCache.length} org(s)</div>`;
+        else info.innerHTML = '<p class="text-[11px] text-zinc-400">Nenhuma organização selecionada</p>';
     }
     const renameInput = document.getElementById('gerenciar-rename-input');
     if (renameInput) renameInput.value = org ? org.nome : '';
@@ -697,11 +697,11 @@ function trocarAbaGerenciar(aba) {
         const conteudo = document.getElementById(`gerenciar-conteudo-${a}`);
         if (btn) {
             if (a === aba) {
-                btn.classList.add('border-indigo-600','text-indigo-600','dark:text-indigo-400');
-                btn.classList.remove('border-transparent','text-slate-500');
+                btn.classList.add('border-black','text-zinc-900','dark:text-zinc-300');
+                btn.classList.remove('border-transparent','text-zinc-500');
             } else {
-                btn.classList.remove('border-indigo-600','text-indigo-600','dark:text-indigo-400');
-                btn.classList.add('border-transparent','text-slate-500');
+                btn.classList.remove('border-black','text-zinc-900','dark:text-zinc-300');
+                btn.classList.add('border-transparent','text-zinc-500');
             }
         }
         if (conteudo) conteudo.classList.toggle('hidden', a !== aba);
@@ -715,23 +715,23 @@ async function carregarMembrosGerenciar() {
     // também atualiza lista antiga para compat
     carregarMembros();
     if (!container) return;
-    if (!currentOrgId) { container.innerHTML = '<p class="text-[11px] text-slate-400">Selecione uma organização</p>'; return; }
-    container.innerHTML = '<p class="text-[11px] text-slate-400">Carregando...</p>';
+    if (!currentOrgId) { container.innerHTML = '<p class="text-[11px] text-zinc-400">Selecione uma organização</p>'; return; }
+    container.innerHTML = '<p class="text-[11px] text-zinc-400">Carregando...</p>';
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/membros`, { method: 'GET' });
-        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro ao carregar membros</p>'; return; }
+        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-zinc-500">Erro ao carregar membros</p>'; return; }
         const membros = await resp.json();
         const orgAtual = orgsCache.find(o => o.id === currentOrgId);
         const isAdmin = orgAtual?.papel === 'admin';
         const ownerId = orgAtual?.owner_id || null;
-        if (!Array.isArray(membros) || membros.length === 0) { container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhum membro</p>'; return; }
+        if (!Array.isArray(membros) || membros.length === 0) { container.innerHTML = '<p class="text-[11px] text-zinc-400">Nenhum membro</p>'; return; }
         container.innerHTML = membros.map(m => {
             const isOwner = ownerId && m.user_id === ownerId;
             const canRemove = isAdmin && !isOwner;
-            return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' (dono)' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${m.papel==='admin' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'bg-slate-100 text-slate-600'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Remover (admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
+            return `<div class="flex items-center justify-between p-2 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' (dono)' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-none ${m.papel==='admin' ? 'bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300' : 'bg-zinc-100 text-zinc-600'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-none text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800" title="Remover (admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
         }).join('');
         if (window.lucide) lucide.createIcons();
-    } catch(e) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro</p>'; }
+    } catch(e) { container.innerHTML = '<p class="text-[11px] text-zinc-500">Erro</p>'; }
 }
 async function enviarConviteGerenciar() {
     const email = (document.getElementById('gerenciar-email-input')?.value || '').trim();
@@ -784,7 +784,7 @@ async function criarOrgGerenciar() {
         input.value = '';
         // atualiza info
         const info = document.getElementById('gerenciar-org-info');
-        if (info) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">admin</span></div>`;
+        if (info) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-none bg-zinc-200 text-zinc-900">admin</span></div>`;
         await Promise.all([carregarClientes(), carregarEtapas(), carregarTags()]);
     } catch(e) { exibirToast('Erro ao criar organização', 'erro'); }
 }
@@ -806,13 +806,13 @@ async function renomearOrgAtual() {
 async function carregarClientesGerenciar() {
     const container = document.getElementById('lista-clientes-gerenciar');
     if (!container) return;
-    if (!currentOrgId) { container.innerHTML = '<p class="text-[11px] text-slate-400">Selecione uma organização</p>'; return; }
+    if (!currentOrgId) { container.innerHTML = '<p class="text-[11px] text-zinc-400">Selecione uma organização</p>'; return; }
     // usa clientesCache já filtrado por org (carregarClientes já filtra)
     if (!clientesCache || clientesCache.length === 0) {
-        container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhum cliente nesta organização</p>';
+        container.innerHTML = '<p class="text-[11px] text-zinc-400">Nenhum cliente nesta organização</p>';
         return;
     }
-    container.innerHTML = clientesCache.map(c => `<div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="min-w-0"><div class="text-xs font-semibold truncate">${escaparHTML(c.nome)}</div><div class="text-[11px] text-slate-400 truncate">${escaparHTML(c.email || '')} • ${c.ativo ? 'ativo' : 'inativo'}</div></div><button onclick="removerClienteGerenciar('${c.id}')" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Excluir cliente (remove da org)"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`).join('');
+    container.innerHTML = clientesCache.map(c => `<div class="flex items-center justify-between p-2 rounded-none bg-white dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><div class="min-w-0"><div class="text-xs font-semibold truncate">${escaparHTML(c.nome)}</div><div class="text-[11px] text-zinc-400 truncate">${escaparHTML(c.email || '')} • ${c.ativo ? 'ativo' : 'inativo'}</div></div><button onclick="removerClienteGerenciar('${c.id}')" class="p-1.5 rounded-none text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800" title="Excluir cliente (remove da org)"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`).join('');
     if (window.lucide) lucide.createIcons();
 }
 async function removerClienteGerenciar(clienteId) {
@@ -844,13 +844,13 @@ function renderizarIntegracoes() {
     const container = document.getElementById('lista-integracoes');
     if (!container) return;
     if (integracoesCache.length === 0) {
-        container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhuma integração ativa. Crie um webhook Zapier.</p>';
+        container.innerHTML = '<p class="text-[11px] text-zinc-400">Nenhuma integração ativa. Crie um webhook Zapier.</p>';
         return;
     }
     container.innerHTML = integracoesCache.map(i => {
         const tipoIcon = i.tipo === 'zapier' ? 'zap' : i.tipo === 'calendar' ? 'calendar' : 'banknote';
         const tipoLabel = i.tipo;
-        return `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2"><i data-lucide="${tipoIcon}" class="w-3.5 h-3.5 text-slate-500"></i><span class="font-semibold">${escaparHTML(i.nome || tipoLabel)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-full ${i.ativo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${i.ativo ? 'ativa' : 'inativa'}</span><span class="text-[10px] text-slate-400">${escaparHTML(i.tipo)}</span></div><button onclick="deletarIntegracao('${i.id}')" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50" title="Remover (apenas admin)"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`;
+        return `<div class="flex items-center justify-between p-2 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><div class="flex items-center gap-2"><i data-lucide="${tipoIcon}" class="w-3.5 h-3.5 text-zinc-500"></i><span class="font-semibold">${escaparHTML(i.nome || tipoLabel)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-none ${i.ativo ? 'bg-black text-white' : 'bg-zinc-100 text-zinc-500'}">${i.ativo ? 'ativa' : 'inativa'}</span><span class="text-[10px] text-zinc-400">${escaparHTML(i.tipo)}</span></div><button onclick="deletarIntegracao('${i.id}')" class="p-1 rounded-none text-zinc-600 hover:bg-zinc-100" title="Remover (apenas admin)"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`;
     }).join('');
     // atualiza webhook url se tiver zapier
     const zap = integracoesCache.find(x => x.tipo === 'zapier' || x.tipo === 'webhook');
@@ -963,22 +963,22 @@ async function carregarAnexos(clienteId) {
     const container = document.getElementById('anexos-lista');
     if (!container) return;
     detalhesClienteIdAtual = clienteId;
-    container.innerHTML = '<p class="text-[11px] text-slate-400">Carregando...</p>';
+    container.innerHTML = '<p class="text-[11px] text-zinc-400">Carregando...</p>';
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/clientes/${clienteId}/anexos${getOrgQuery()}`, { method: 'GET' });
-        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro ao carregar anexos</p>'; return; }
+        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-zinc-500">Erro ao carregar anexos</p>'; return; }
         const data = await resp.json();
         anexosCache = Array.isArray(data) ? data : [];
         renderizarAnexos();
-    } catch(e) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro</p>'; }
+    } catch(e) { container.innerHTML = '<p class="text-[11px] text-zinc-500">Erro</p>'; }
 }
 function renderizarAnexos() {
     const container = document.getElementById('anexos-lista');
     if (!container) return;
-    if (anexosCache.length === 0) { container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhum anexo</p>'; return; }
+    if (anexosCache.length === 0) { container.innerHTML = '<p class="text-[11px] text-zinc-400">Nenhum anexo</p>'; return; }
     container.innerHTML = anexosCache.map(a => {
         const kb = (a.tamanho/1024).toFixed(1);
-        return `<div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><div class="flex items-center gap-2 min-w-0"><i data-lucide="file" class="w-3.5 h-3.5 text-slate-400"></i><span class="text-xs font-semibold truncate">${escaparHTML(a.nome)}</span><span class="text-[10px] text-slate-400">${escaparHTML(a.mime)} • ${kb}KB</span></div><button data-anexo-id="${escaparHTML(String(a.id))}" onclick="deletarAnexo(this.dataset.anexoId)" class="p-1 rounded-lg text-rose-500 hover:bg-rose-50" title="Remover"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`;
+        return `<div class="flex items-center justify-between p-2 rounded-none bg-white dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><div class="flex items-center gap-2 min-w-0"><i data-lucide="file" class="w-3.5 h-3.5 text-zinc-400"></i><span class="text-xs font-semibold truncate">${escaparHTML(a.nome)}</span><span class="text-[10px] text-zinc-400">${escaparHTML(a.mime)} • ${kb}KB</span></div><button data-anexo-id="${escaparHTML(String(a.id))}" onclick="deletarAnexo(this.dataset.anexoId)" class="p-1 rounded-none text-zinc-600 hover:bg-zinc-100" title="Remover"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`;
     }).join('');
     if (window.lucide) lucide.createIcons();
 }
@@ -1016,20 +1016,20 @@ async function deletarAnexo(id) {
 async function carregarApiKeys() {
     const container = document.getElementById('lista-apikeys');
     if (!container) return;
-    container.innerHTML = '<p class="text-[11px] text-slate-400">Carregando...</p>';
+    container.innerHTML = '<p class="text-[11px] text-zinc-400">Carregando...</p>';
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/api-keys${getOrgQuery()}`, { method: 'GET' });
-        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro ao carregar</p>'; return; }
+        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-[11px] text-zinc-500">Erro ao carregar</p>'; return; }
         const data = await resp.json();
         apiKeysCache = Array.isArray(data) ? data : [];
         renderizarApiKeys();
-    } catch(e) { container.innerHTML = '<p class="text-[11px] text-rose-400">Erro</p>'; }
+    } catch(e) { container.innerHTML = '<p class="text-[11px] text-zinc-500">Erro</p>'; }
 }
 function renderizarApiKeys() {
     const container = document.getElementById('lista-apikeys');
     if (!container) return;
-    if (apiKeysCache.length === 0) { container.innerHTML = '<p class="text-[11px] text-slate-400">Nenhuma chave. Gere a primeira.</p>'; return; }
-    container.innerHTML = apiKeysCache.map(k => `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border"><div><div class="text-xs font-bold">${escaparHTML(k.nome)}</div><div class="text-[10px] text-slate-400 font-mono">${escaparHTML(k.prefix)}•••• • ${k.created_at ? new Date(k.created_at).toLocaleDateString() : ''}</div></div><button onclick="deletarApiKey('${k.id}')" class="p-1 text-rose-500 hover:bg-rose-50 rounded-lg"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`).join('');
+    if (apiKeysCache.length === 0) { container.innerHTML = '<p class="text-[11px] text-zinc-400">Nenhuma chave. Gere a primeira.</p>'; return; }
+    container.innerHTML = apiKeysCache.map(k => `<div class="flex items-center justify-between p-2 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border"><div><div class="text-xs font-bold">${escaparHTML(k.nome)}</div><div class="text-[10px] text-zinc-400 font-mono">${escaparHTML(k.prefix)}•••• • ${k.created_at ? new Date(k.created_at).toLocaleDateString() : ''}</div></div><button onclick="deletarApiKey('${k.id}')" class="p-1 text-zinc-600 hover:bg-zinc-100 rounded-none"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`).join('');
     if (window.lucide) lucide.createIcons();
 }
 function abrirModalApiKeys() {
@@ -1172,7 +1172,7 @@ function aplicarVertical(slug) {
     document.querySelectorAll('label[for="criar-cargo"], label[for="editar-cargo"]').forEach(l => {
         const base = 'Cargo';
         l.textContent = ren.cargo || base;
-        if (ren.cargo) l.innerHTML = `${ren.cargo} <span class="text-[10px] text-slate-400">(vertical)</span>`;
+        if (ren.cargo) l.innerHTML = `${ren.cargo} <span class="text-[10px] text-zinc-400">(vertical)</span>`;
     });
     document.querySelectorAll('label[for="criar-empresa"], label[for="editar-empresa"]').forEach(l => {
         const base = 'Empresa';
@@ -1208,7 +1208,7 @@ function aplicarVertical(slug) {
         } else if (slug === 'lava_rapido_oficina') {
             html = `
                 <div id="${prefix}-carros-container" class="space-y-3"></div>
-                <button type="button" onclick="adicionarCarro('${prefix}')" class="w-full py-2 text-xs font-semibold rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 flex items-center justify-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Adicionar veículo</button>
+                <button type="button" onclick="adicionarCarro('${prefix}')" class="w-full py-2 text-xs font-semibold rounded-none border border-zinc-300 dark:border-zinc-600 bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300 flex items-center justify-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Adicionar veículo</button>
                 <div class="pt-2 border-t">
                     <label class="form-label">Serviço</label><select id="${prefix}-cc-servico" class="form-input"><option value="">Selecione</option><option value="lavagem">Lavagem</option><option value="troca_oleo">Troca de óleo</option><option value="revisao">Revisão</option><option value="outro">Outro</option></select>
                 </div>
@@ -1235,7 +1235,7 @@ function aplicarVertical(slug) {
             const vert = verticaisCache.find(v=> v.slug===slug);
             const campos = (vert && vert.config_json && vert.config_json.campos_extras) || [];
             if (campos.length===0) {
-                html = `<p class="text-xs text-slate-400">Sem campos extras. Edite o vertical para adicionar.</p>`;
+                html = `<p class="text-xs text-zinc-400">Sem campos extras. Edite o vertical para adicionar.</p>`;
             } else {
                 html = '<div class="grid grid-cols-2 gap-3">' + campos.map(campo=> `<div><label class="form-label">${escaparHTML(campo)}</label><input id="${prefix}-cc-${campo}" type="text" placeholder="${escaparHTML(campo)}" class="form-input"></div>`).join('') + '</div>';
             }
@@ -1254,9 +1254,9 @@ function adicionarCarro(prefix) {
     if (!cont) return;
     const idx = cont.children.length + 1;
     const div = document.createElement('div');
-    div.className = 'p-3 rounded-xl border border-amber-100 dark:border-amber-800/40 bg-white dark:bg-slate-800/40 space-y-2';
+    div.className = 'p-3 rounded-none border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800/40 space-y-2';
     div.innerHTML = `
-        <div class="flex items-center justify-between"><span class="text-xs font-bold text-amber-700 dark:text-amber-300">Veículo ${idx}</span><button type="button" onclick="this.closest('div').parentElement.removeChild(this.closest('div').parentElement.children[0] ? this.closest('div') : this.closest('div'))" class="text-[10px] text-rose-500 hover:underline">Remover</button></div>
+        <div class="flex items-center justify-between"><span class="text-xs font-bold text-zinc-800 dark:text-zinc-300">Veículo ${idx}</span><button type="button" onclick="this.closest('div').parentElement.removeChild(this.closest('div').parentElement.children[0] ? this.closest('div') : this.closest('div'))" class="text-[10px] text-zinc-600 hover:underline">Remover</button></div>
         <div class="grid grid-cols-3 gap-2">
             <input data-cc="placa" type="text" placeholder="Placa ABC1D23" maxlength="8" class="form-input text-xs" style="text-transform:uppercase">
             <input data-cc="modelo" type="text" placeholder="Modelo" class="form-input text-xs">
@@ -1401,13 +1401,13 @@ async function carregarTemplates() {
 function renderizarTemplates() {
     const cont = document.getElementById('lista-templates');
     if (!cont) return;
-    if (templatesCache.length===0) { cont.innerHTML='<p class="text-xs text-slate-400">Nenhum template. Crie um com {{nome}} {{placa}} etc.</p>'; return; }
+    if (templatesCache.length===0) { cont.innerHTML='<p class="text-xs text-zinc-400">Nenhum template. Crie um com {{nome}} {{placa}} etc.</p>'; return; }
     cont.innerHTML = templatesCache.map(tp=> {
-        const vert = tp.vertical ? `<span class="text-[10px] px-1 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border">${escaparHTML(tp.vertical)}</span>` : '';
-        return `<div class="p-3 rounded-xl border bg-white dark:bg-slate-800/40">
-            <div class="flex items-center justify-between gap-2"><span class="font-bold text-sm">${escaparHTML(tp.nome)}</span> ${vert} <div class="flex gap-1"><button onclick="editarTemplate('${tp.id}')" class="p-1 rounded hover:bg-slate-100"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button><button onclick="deletarTemplate('${tp.id}')" class="p-1 rounded hover:bg-rose-50 text-rose-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div></div>
-            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 whitespace-pre-wrap">${escaparHTML(tp.mensagem)}</p>
-            <button onclick="usarTemplate('${tp.id}', null)" class="mt-2 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> Usar (escolha cliente)</button>
+        const vert = tp.vertical ? `<span class="text-[10px] px-1 py-0.5 rounded-none bg-zinc-100 text-zinc-900 border">${escaparHTML(tp.vertical)}</span>` : '';
+        return `<div class="p-3 rounded-none border bg-white dark:bg-zinc-800/40">
+            <div class="flex items-center justify-between gap-2"><span class="font-bold text-sm">${escaparHTML(tp.nome)}</span> ${vert} <div class="flex gap-1"><button onclick="editarTemplate('${tp.id}')" class="p-1 rounded hover:bg-zinc-100"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button><button onclick="deletarTemplate('${tp.id}')" class="p-1 rounded hover:bg-zinc-100 text-zinc-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div></div>
+            <p class="text-xs text-zinc-600 dark:text-zinc-300 mt-1 whitespace-pre-wrap">${escaparHTML(tp.mensagem)}</p>
+            <button onclick="usarTemplate('${tp.id}', null)" class="mt-2 px-2.5 py-1 text-[11px] font-bold rounded-none bg-black text-white hover:bg-zinc-800 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> Usar (escolha cliente)</button>
         </div>`;
     }).join('');
     if (window.lucide) lucide.createIcons();
@@ -1517,8 +1517,8 @@ function trocarAbaConfig(aba) {
         const btn = document.getElementById('tab-config-'+a);
         const conteudo = document.getElementById('config-conteudo-'+a);
         if (btn) {
-            if (a === aba) { btn.classList.add('bg-indigo-600','text-white'); btn.classList.remove('bg-slate-100','dark:bg-slate-800','text-slate-600'); }
-            else { btn.classList.remove('bg-indigo-600','text-white'); btn.classList.add('bg-slate-100','dark:bg-slate-800','text-slate-600'); }
+            if (a === aba) { btn.classList.add('bg-black','text-white'); btn.classList.remove('bg-zinc-100','dark:bg-zinc-800','text-zinc-600'); }
+            else { btn.classList.remove('bg-black','text-white'); btn.classList.add('bg-zinc-100','dark:bg-zinc-800','text-zinc-600'); }
         }
         if (conteudo) conteudo.classList.toggle('hidden', a !== aba);
     });
@@ -1561,22 +1561,22 @@ async function carregarConfigOrg() {
     const org = orgsCache.find(o=>o.id===currentOrgId);
     const info = document.getElementById('config-org-info');
     if (info) {
-        if (org) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${escaparHTML(org.papel||'membro')}</span></div><div class="text-[11px] text-slate-400 mt-1">${escaparHTML(org.id.slice(0,8))}... • ${org.vertical||'geral'}</div>`;
-        else info.innerHTML = '<p class="text-xs text-slate-400">Nenhuma org selecionada</p>';
+        if (org) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-none bg-zinc-200 text-zinc-900">${escaparHTML(org.papel||'membro')}</span></div><div class="text-[11px] font-mono text-zinc-400 mt-1">${escaparHTML(org.id.slice(0,8))}... • ${org.vertical||'geral'}</div>`;
+        else info.innerHTML = '<p class="text-xs text-zinc-400">Nenhuma org selecionada</p>';
     }
     const input = document.getElementById('config-org-nome');
     if (input && org) input.value = org.nome;
     // membros
     const cont = document.getElementById('config-org-membros');
     if (cont) {
-        cont.innerHTML = '<p class="text-[11px] text-slate-400">Carregando...</p>';
+        cont.innerHTML = '<p class="text-[11px] text-zinc-400">Carregando...</p>';
         try {
             const resp = await fetchAuth(`${API_BASE_URL}/orgs/${currentOrgId}/membros`, { method: 'GET' });
-            if (!resp || !resp.ok) { cont.innerHTML = '<p class="text-rose-400">Erro</p>'; return; }
+            if (!resp || !resp.ok) { cont.innerHTML = '<p class="text-zinc-500">Erro</p>'; return; }
             const membros = await resp.json();
             const isAdmin = org?.papel === 'admin';
-            cont.innerHTML = membros.map(m=> `<div class="flex items-center justify-between p-1.5 rounded border"><span class="font-mono text-[10px]">${escaparHTML(m.user_id.slice(0,8))}... ${escaparHTML(m.papel)}</span>${isAdmin ? `<button onclick="removerMembro('${m.user_id}')" class="text-rose-500 text-[10px]">Remover</button>` : ''}</div>`).join('');
-        } catch(e) { cont.innerHTML = '<p class="text-rose-400">Erro</p>'; }
+            cont.innerHTML = membros.map(m=> `<div class="flex items-center justify-between p-1.5 rounded border"><span class="font-mono text-[10px]">${escaparHTML(m.user_id.slice(0,8))}... ${escaparHTML(m.papel)}</span>${isAdmin ? `<button onclick="removerMembro('${m.user_id}')" class="text-zinc-600 text-[10px]">Remover</button>` : ''}</div>`).join('');
+        } catch(e) { cont.innerHTML = '<p class="text-zinc-500">Erro</p>'; }
     }
 }
 async function renomearOrgConfig() {
@@ -1604,22 +1604,22 @@ async function convidarOrgConfig() {
 function renderizarConfigPlanos() {
     const cont = document.getElementById('config-planos-lista');
     if (!cont) return;
-    if (planosCache.length===0) { cont.innerHTML='<p class="text-slate-400">Nenhum plano</p>'; return; }
+    if (planosCache.length===0) { cont.innerHTML='<p class="text-zinc-400">Nenhum plano</p>'; return; }
     cont.innerHTML = planosCache.map(p=> {
         const estilo = (typeof MAPA_CORES_PLANO !== 'undefined' && MAPA_CORES_PLANO[p.cor]) ? MAPA_CORES_PLANO[p.cor] : MAPA_CORES_PLANO.slate;
-        return `<div class="flex items-center justify-between p-2 rounded border bg-white dark:bg-slate-800/40"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${estilo.dot} flex-shrink-0"></span><span class="font-bold text-xs">${escaparHTML(p.nome)}</span></div><span class="text-[10px] px-1.5 py-0.5 rounded-full ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(p.valor||'')}</span></div>`;
+        return `<div class="flex items-center justify-between p-2 rounded border bg-white dark:bg-zinc-800/40"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${estilo.dot} flex-shrink-0"></span><span class="font-bold text-xs">${escaparHTML(p.nome)}</span></div><span class="text-[10px] font-mono px-1.5 py-0.5 rounded-none ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(p.valor||'')}</span></div>`;
     }).join('');
 }
 function renderizarConfigEtapas() {
     const cont = document.getElementById('config-etapas-lista');
     if (!cont) return;
-    if (etapasCache.length===0) { cont.innerHTML='<p class="text-slate-400">Nenhuma etapa</p>'; return; }
+    if (etapasCache.length===0) { cont.innerHTML='<p class="text-zinc-400">Nenhuma etapa</p>'; return; }
     cont.innerHTML = etapasCache.map(e=> `<div class="flex items-center justify-between p-2 rounded border"><span class="text-xs">${escaparHTML(e.nome)} • ordem ${e.ordem}</span><span class="w-2 h-2 rounded-full" style="background:${e.cor}"></span></div>`).join('');
 }
 function renderizarConfigTags() {
     const cont = document.getElementById('config-tags-lista');
     if (!cont) return;
-    if (tagsCache.length===0) { cont.innerHTML='<p class="text-slate-400">Nenhuma tag</p>'; return; }
+    if (tagsCache.length===0) { cont.innerHTML='<p class="text-zinc-400">Nenhuma tag</p>'; return; }
     cont.innerHTML = tagsCache.map(t=> `<div class="flex items-center justify-between p-2 rounded border"><span class="text-xs">${escaparHTML(t.nome)}</span><span class="w-3 h-3 rounded-full" style="background:${t.cor}"></span></div>`).join('');
 }
 async function salvarNotificacoes() {
@@ -1725,25 +1725,25 @@ function setSecao(secao, pushState=true) {
     // Sidebar active states
     document.querySelectorAll('.sidebar-link').forEach(el => {
         const isActive = el.getAttribute('data-secao') === secao;
-        el.classList.toggle('bg-indigo-50', isActive);
-        el.classList.toggle('dark:bg-indigo-900/30', isActive);
-        el.classList.toggle('text-indigo-700', isActive);
-        el.classList.toggle('dark:text-indigo-300', isActive);
+        el.classList.toggle('bg-zinc-100', isActive);
+        el.classList.toggle('dark:bg-zinc-800', isActive);
+        el.classList.toggle('text-zinc-900', isActive);
+        el.classList.toggle('dark:text-zinc-300', isActive);
         el.classList.toggle('border', isActive);
-        el.classList.toggle('border-indigo-200', isActive);
-        el.classList.toggle('dark:border-indigo-800/40', isActive);
+        el.classList.toggle('border-black', isActive);
+        el.classList.toggle('dark:border-white', isActive);
         el.classList.toggle('font-semibold', isActive);
         if (!isActive) {
-            el.classList.remove('bg-indigo-50','dark:bg-indigo-900/30','text-indigo-700','dark:text-indigo-300','border','border-indigo-200','dark:border-indigo-800/40');
-            el.classList.add('text-slate-600','dark:text-slate-400');
+            el.classList.remove('bg-zinc-100','dark:bg-zinc-800','text-zinc-900','dark:text-zinc-300','border','border-black','dark:border-white');
+            el.classList.add('text-zinc-600','dark:text-zinc-400');
         } else {
-            el.classList.remove('text-slate-600','dark:text-slate-400');
+            el.classList.remove('text-zinc-600','dark:text-zinc-400');
         }
     });
     // Mobile links same
     document.querySelectorAll('.sidebar-link-mobile').forEach(el => {
         const isActive = el.textContent.toLowerCase().includes(secao);
-        el.classList.toggle('bg-indigo-50', isActive);
+        el.classList.toggle('bg-zinc-100', isActive);
     });
     // Secoes visibility
     const secoes = {
@@ -1795,15 +1795,15 @@ function setSecao(secao, pushState=true) {
     const btnKanban = document.getElementById('btn-view-kanban');
     if (btnTabela && btnKanban) {
         if (secao === 'kanban') {
-            btnTabela.classList.remove('bg-white','dark:bg-slate-700','shadow-sm','border','border-slate-200','dark:border-slate-600','font-bold','text-slate-900','dark:text-white');
-            btnTabela.classList.add('text-slate-500','dark:text-slate-400','font-semibold');
-            btnKanban.classList.add('bg-white','dark:bg-slate-700','shadow-sm','border','border-slate-200','dark:border-slate-600','font-bold','text-slate-900','dark:text-white');
-            btnKanban.classList.remove('text-slate-500','dark:text-slate-400','font-semibold');
+            btnTabela.classList.remove('bg-white','dark:bg-zinc-700','border','border-zinc-200','dark:border-zinc-600','font-bold','text-zinc-900','dark:text-white');
+            btnTabela.classList.add('text-zinc-500','dark:text-zinc-400','font-semibold');
+            btnKanban.classList.add('bg-white','dark:bg-zinc-700','border','border-zinc-200','dark:border-zinc-600','font-bold','text-zinc-900','dark:text-white');
+            btnKanban.classList.remove('text-zinc-500','dark:text-zinc-400','font-semibold');
         } else if (secao === 'clientes') {
-            btnKanban.classList.remove('bg-white','dark:bg-slate-700','shadow-sm','border','border-slate-200','dark:border-slate-600','font-bold','text-slate-900','dark:text-white');
-            btnKanban.classList.add('text-slate-500','dark:text-slate-400','font-semibold');
-            btnTabela.classList.add('bg-white','dark:bg-slate-700','shadow-sm','border','border-slate-200','dark:border-slate-600','font-bold','text-slate-900','dark:text-white');
-            btnTabela.classList.remove('text-slate-500','dark:text-slate-400','font-semibold');
+            btnKanban.classList.remove('bg-white','dark:bg-zinc-700','border','border-zinc-200','dark:border-zinc-600','font-bold','text-zinc-900','dark:text-white');
+            btnKanban.classList.add('text-zinc-500','dark:text-zinc-400','font-semibold');
+            btnTabela.classList.add('bg-white','dark:bg-zinc-700','border','border-zinc-200','dark:border-zinc-600','font-bold','text-zinc-900','dark:text-white');
+            btnTabela.classList.remove('text-zinc-500','dark:text-zinc-400','font-semibold');
         }
     }
     // Update sidebar org/vertical info
@@ -1847,30 +1847,30 @@ function getSecaoFromHash() {
 async function carregarAtividadesAgenda() {
     const container = document.getElementById('agenda-lista');
     if (!container) return;
-    container.innerHTML = '<p class="text-xs text-slate-400">Carregando agenda...</p>';
+    container.innerHTML = '<p class="text-xs text-zinc-400">Carregando agenda...</p>';
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/atividades${getOrgQuery()}`, { method: 'GET' });
-        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-xs text-rose-400">Erro ao carregar agenda</p>'; return; }
+        if (!resp || !resp.ok) { container.innerHTML = '<p class="text-xs text-zinc-500">Erro ao carregar agenda</p>'; return; }
         const atvs = await resp.json();
-        if (!Array.isArray(atvs) || atvs.length === 0) { container.innerHTML = '<p class="text-xs text-slate-400">Nenhuma atividade. Crie um follow-up em Clientes → Detalhes.</p>'; return; }
+        if (!Array.isArray(atvs) || atvs.length === 0) { container.innerHTML = '<p class="text-xs text-zinc-400">Nenhuma atividade. Crie um follow-up em Clientes → Detalhes.</p>'; return; }
         // Ordena por data
         atvs.sort((a,b)=> (a.data||'').localeCompare(b.data||''));
         container.innerHTML = atvs.map(a => {
             const isAtrasada = !a.concluida && a.data < new Date().toISOString().split('T')[0];
             const cliente = clientesCache.find(c=> String(c.id)===String(a.cliente_id));
             const nomeCli = cliente ? cliente.nome : 'Cliente '+a.cliente_id;
-            return `<div class="flex items-start gap-3 p-3 rounded-xl border ${isAtrasada ? 'border-amber-200 bg-amber-50' : a.concluida ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}">
-                <div class="w-8 h-8 rounded-lg ${a.concluida ? 'bg-emerald-100 text-emerald-600' : isAtrasada ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'} flex items-center justify-center flex-shrink-0"><i data-lucide="calendar" class="w-4 h-4"></i></div>
+            return `<div class="flex items-start gap-3 p-3 rounded-none border ${isAtrasada ? 'border-zinc-300 bg-zinc-200' : a.concluida ? 'border-zinc-300 bg-zinc-100' : 'border-zinc-200 bg-white'}">
+                <div class="w-8 h-8 rounded-none ${a.concluida ? 'bg-zinc-200 text-zinc-800' : isAtrasada ? 'bg-zinc-200 text-zinc-800' : 'bg-zinc-100 text-zinc-500'} flex items-center justify-center flex-shrink-0"><i data-lucide="calendar" class="w-4 h-4"></i></div>
                 <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2"><span class="text-xs font-bold capitalize">${escaparHTML(a.tipo)}</span><span class="text-[11px] text-slate-400">${formatarData(a.data)}</span>${a.concluida ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Concluída</span>' : isAtrasada ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 rounded-full">Atrasada</span>' : ''}</div>
-                    <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 mt-0.5">${escaparHTML(nomeCli)}</p>
-                    ${a.nota ? `<p class="text-xs text-slate-600 mt-1">${escaparHTML(a.nota)}</p>` : ''}
+                    <div class="flex items-center gap-2"><span class="text-xs font-bold capitalize">${escaparHTML(a.tipo)}</span><span class="text-[11px] font-mono text-zinc-400">${formatarData(a.data)}</span>${a.concluida ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-black text-white rounded-none">Concluída</span>' : isAtrasada ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-zinc-200 text-zinc-800 rounded-none">Atrasada</span>' : ''}</div>
+                    <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5">${escaparHTML(nomeCli)}</p>
+                    ${a.nota ? `<p class="text-xs text-zinc-600 mt-1">${escaparHTML(a.nota)}</p>` : ''}
                 </div>
-                <button onclick="abrirModalDetalhes(${a.cliente_id})" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 text-xs">Ver</button>
+                <button onclick="abrirModalDetalhes(${a.cliente_id})" class="p-1.5 rounded-none text-zinc-400 hover:text-black hover:bg-zinc-100 text-xs">Ver</button>
             </div>`;
         }).join('');
         if (window.lucide) lucide.createIcons();
-    } catch(e) { container.innerHTML = '<p class="text-xs text-rose-400">Erro</p>'; }
+    } catch(e) { container.innerHTML = '<p class="text-xs text-zinc-500">Erro</p>'; }
 }
 
 
@@ -1893,7 +1893,7 @@ function toggleTemaManual() {
 // ============================================================
 // 2. STATUS DA API — health check + detecção de modoDemo
 //    Tenta GET /health; se falhar tenta GET /clientes (auth); se exceção -> modoDemo
-//    Atualiza badge/dot/text com cores emerald/amber/rose
+//    Atualiza badge/dot/text (identidade monocromática neo-brutalista)
 // ============================================================
 async function verificarStatusAPI() {
     const badgeEl = document.getElementById('api-status-badge');
@@ -1937,16 +1937,16 @@ async function verificarStatusAPI() {
     if (!badgeEl || !dotEl || !textEl) return;
 
     if (isOnline && !modoDemo) {
-        dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0';
-        badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-all duration-300';
+        dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-white dark:bg-black animate-pulse flex-shrink-0';
+        badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-none text-[10px] sm:text-[11px] font-medium bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white transition-all duration-300';
         textEl.textContent = 'Conectado';
     } else if (modoDemo) {
-        dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0';
-        badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition-all duration-300';
+        dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-zinc-500 dark:bg-zinc-400 flex-shrink-0';
+        badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-none text-[10px] sm:text-[11px] font-medium bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border border-zinc-400 dark:border-zinc-600 transition-all duration-300';
         textEl.textContent = 'Modo Local (Demo)';
     } else {
-        dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0';
-        badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800 transition-all duration-300';
+        dotEl.className  = 'w-1.5 h-1.5 rounded-full bg-black dark:bg-white flex-shrink-0';
+        badgeEl.className = 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-none text-[10px] sm:text-[11px] font-medium bg-white text-black dark:bg-zinc-900 dark:text-white border-2 border-black dark:border-white transition-all duration-300';
         textEl.textContent = 'Desconectado';
     }
 
@@ -2070,15 +2070,15 @@ function setViewMode(mode, skipSave) {
         if (secaoAtiva === 'clientes') tabelaMain.style.display = 'none';
         kanbanBoard.classList.remove('hidden');
         kanbanBoard.style.display = 'flex';
-        btnTabela?.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border');
-        btnKanban?.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border', 'border-slate-200', 'dark:border-slate-600');
+        btnTabela?.classList.remove('bg-white', 'dark:bg-zinc-700', 'border');
+        btnKanban?.classList.add('bg-white', 'dark:bg-zinc-700', 'border', 'border-zinc-200', 'dark:border-zinc-600');
         renderizarKanban();
     } else {
         kanbanBoard.classList.add('hidden');
         kanbanBoard.style.display = 'none';
         if (secaoAtiva === 'clientes') tabelaMain.style.display = '';
-        btnKanban?.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border');
-        btnTabela?.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'border');
+        btnKanban?.classList.remove('bg-white', 'dark:bg-zinc-700', 'border');
+        btnTabela?.classList.add('bg-white', 'dark:bg-zinc-700', 'border');
     }
     if (window.lucide) lucide.createIcons();
 }
@@ -2087,7 +2087,7 @@ function renderizarKanban() {
     const countEl = document.getElementById('kanban-count');
     if (!container) return;
     if (etapasCache.length === 0 && clientesCache.length === 0) {
-        container.innerHTML = '<div class="w-full text-center py-16 text-sm text-slate-400">Crie etapas para usar o Kanban</div>';
+        container.innerHTML = '<div class="w-full text-center py-16 text-sm text-zinc-400">Crie etapas para usar o Kanban</div>';
         if (countEl) {
             countEl.textContent = '0 etapas • 0 clientes';
             countEl.classList.remove('hidden');
@@ -2121,9 +2121,9 @@ function renderizarKanban() {
     html += `<div class="kanban-column">
         <div class="kanban-column-header">
             <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-slate-400"></span>
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Sem etapa</span>
-                <span class="px-1.5 py-0.5 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-500 rounded-full">${semEtapa.length}</span>
+                <span class="w-2 h-2 rounded-full bg-zinc-400"></span>
+                <span class="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">Sem etapa</span>
+                <span class="px-1.5 py-0.5 text-[10px] font-bold font-mono bg-zinc-100 dark:bg-zinc-700 text-zinc-500 rounded-none">${semEtapa.length}</span>
             </div>
         </div>
         <div class="kanban-column-body" data-etapa-id="">
@@ -2137,8 +2137,8 @@ function renderizarKanban() {
             <div class="kanban-column-header">
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full ${estilo.dot}"></span>
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">${escaparHTML(etapa.nome)}</span>
-                    <span class="px-1.5 py-0.5 text-[10px] font-bold ${estilo.bg} ${estilo.text} rounded-full">${clientes.length}</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">${escaparHTML(etapa.nome)}</span>
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold font-mono ${estilo.bg} ${estilo.text} rounded-none">${clientes.length}</span>
                 </div>
             </div>
             <div class="kanban-column-body" data-etapa-id="${etapa.id}">
@@ -2200,26 +2200,26 @@ function renderizarKanban() {
 }
 function kanbanCardHTML(cliente) {
     const planoBadge = getPlanoBadgeHTML(cliente.plano);
-    const statusDot = cliente.ativo ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>' : '<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>';
-    const valor = cliente.valor_plano ? `<span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">${escaparHTML(cliente.valor_plano)}</span>` : '';
-    const venc = cliente.vencimento_dia ? `<span class="text-[10px] text-slate-400">Venc: ${cliente.vencimento_dia}</span>` : '';
+    const statusDot = cliente.ativo ? '<span class="w-1.5 h-1.5 rounded-full bg-black"></span>' : '<span class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>';
+    const valor = cliente.valor_plano ? `<span class="text-[10px] font-semibold font-mono text-zinc-800 dark:text-zinc-300">${escaparHTML(cliente.valor_plano)}</span>` : '';
+    const venc = cliente.vencimento_dia ? `<span class="text-[10px] font-mono text-zinc-400">Venc: ${cliente.vencimento_dia}</span>` : '';
     const tags = (cliente._tags || []).slice(0,2).map(tid => {
         const t = tagsCache.find(x => String(x.id)===String(tid));
         if (!t) return '';
         const estilo = MAPA_CORES_PLANO[t.cor] || MAPA_CORES_PLANO.slate;
-        return `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded-full ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(t.nome)}</span>`;
+        return `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded-none ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(t.nome)}</span>`;
     }).join(' ');
     return `<div class="kanban-card" data-cliente-id="${cliente.id}" onclick="abrirModalDetalhes(${cliente.id})">
         <div class="flex items-center gap-2 mb-1.5">
             <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white" style="background:${avatarGradient(cliente.nome)}">${avatarInitials(cliente.nome)}</div>
-            <span class="text-xs font-bold text-slate-900 dark:text-white truncate">${escaparHTML(cliente.nome)}</span>
+            <span class="text-xs font-bold text-zinc-900 dark:text-white truncate">${escaparHTML(cliente.nome)}</span>
             <span class="ml-auto flex items-center gap-1 text-[10px]">${statusDot}</span>
         </div>
-        <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${escaparHTML(cliente.email)}</p>
+        <p class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">${escaparHTML(cliente.email)}</p>
         <div class="flex items-center gap-1 mt-2 flex-wrap">${planoBadge} ${tags}</div>
-        <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-            <span class="text-[10px] text-slate-400">${valor} ${venc ? '· '+venc : ''}</span>
-            <i data-lucide="grip" class="w-3 h-3 text-slate-300"></i>
+        <div class="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-700/60">
+            <span class="text-[10px] text-zinc-400">${valor} ${venc ? '· '+venc : ''}</span>
+            <i data-lucide="grip" class="w-3 h-3 text-zinc-300"></i>
         </div>
     </div>`;
 }
@@ -2230,23 +2230,23 @@ function renderizarListaEtapasGerenciamento() {
     if (!container) return;
     container.innerHTML = '';
     if (etapasCache.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Nenhuma etapa. Crie a primeira!</p>';
+        container.innerHTML = '<p class="text-xs text-zinc-400 text-center py-4">Nenhuma etapa. Crie a primeira!</p>';
         return;
     }
     etapasCache.forEach(e => {
         const estilo = MAPA_CORES_PLANO[e.cor] || MAPA_CORES_PLANO.indigo;
         const div = document.createElement('div');
-        div.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 gap-3';
+        div.className = 'flex items-center justify-between p-3 rounded-none border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/40 gap-3';
         div.innerHTML = `<div class="flex items-center gap-3 min-w-0">
             <span class="w-3 h-3 rounded-full ${estilo.dot} flex-shrink-0"></span>
             <div class="min-w-0">
-                <span class="font-bold text-slate-900 dark:text-white text-sm">${escaparHTML(e.nome)}</span>
-                <span class="text-xs text-slate-400 ml-2">ordem ${e.ordem}</span>
+                <span class="font-bold text-zinc-900 dark:text-white text-sm">${escaparHTML(e.nome)}</span>
+                <span class="text-xs text-zinc-400 ml-2">ordem ${e.ordem}</span>
             </div>
         </div>
         <div class="flex items-center gap-1 flex-shrink-0">
-            <button onclick="editarEtapaForm('${e.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all" title="Editar"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-            <button onclick="deletarEtapa('${e.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-all" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            <button onclick="editarEtapaForm('${e.id}')" class="p-1.5 rounded-none text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700/60 transition-all" title="Editar"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deletarEtapa('${e.id}')" class="p-1.5 rounded-none text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
         </div>`;
         container.appendChild(div);
     });
@@ -2363,12 +2363,12 @@ function renderizarTagsSelects() {
         const container = document.getElementById(containerId);
         if (!container) return;
         if (tagsCache.length===0) {
-            container.innerHTML = '<span class="text-xs text-slate-400">Nenhuma tag cadastrada</span>';
+            container.innerHTML = '<span class="text-xs text-zinc-400">Nenhuma tag cadastrada</span>';
             return;
         }
         container.innerHTML = tagsCache.map(t => {
             const estilo = MAPA_CORES_PLANO[t.cor] || MAPA_CORES_PLANO.slate;
-            return `<label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${estilo.border} ${estilo.bg} cursor-pointer hover:opacity-80 transition-opacity">
+            return `<label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none border ${estilo.border} ${estilo.bg} cursor-pointer hover:opacity-80 transition-opacity">
                 <input type="checkbox" value="${t.id}" class="tag-checkbox sr-only" data-tag-id="${t.id}">
                 <span class="w-2 h-2 rounded-full ${estilo.dot}"></span>
                 <span class="text-xs font-semibold ${estilo.text}">${escaparHTML(t.nome)}</span>
@@ -2386,14 +2386,14 @@ function renderizarListaTagsGerenciamento() {
     tagsCache.forEach(t => {
         const estilo = MAPA_CORES_PLANO[t.cor] || MAPA_CORES_PLANO.slate;
         const div = document.createElement('div');
-        div.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 gap-3';
+        div.className = 'flex items-center justify-between p-3 rounded-none border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/40 gap-3';
         div.innerHTML = `<div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-full ${estilo.dot}"></span>
-            <span class="text-sm font-bold text-slate-900 dark:text-white">${escaparHTML(t.nome)}</span>
+            <span class="text-sm font-bold text-zinc-900 dark:text-white">${escaparHTML(t.nome)}</span>
         </div>
         <div class="flex items-center gap-1">
-            <button onclick="editarTagForm('${t.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-700/60"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-            <button onclick="deletarTag('${t.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            <button onclick="editarTagForm('${t.id}')" class="p-1.5 rounded-none text-zinc-400 hover:text-black hover:bg-zinc-100 dark:hover:bg-zinc-700/60"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deletarTag('${t.id}')" class="p-1.5 rounded-none text-zinc-400 hover:text-black hover:bg-zinc-100"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
         </div>`;
         container.appendChild(div);
     });
@@ -2488,7 +2488,7 @@ function renderizarFiltrosSalvos() {
     if (!container) return;
     container.innerHTML = '';
     if (filtrosCache.length===0) {
-        container.innerHTML = '<div class="text-center py-6"><p class="text-sm font-medium text-slate-600 dark:text-slate-300">Nenhum filtro salvo</p><p class="text-xs text-slate-400 mt-1">Dica: ajuste busca/plano/status/etapa/tag na toolbar e clique “Salvar atual”.</p></div>';
+        container.innerHTML = '<div class="text-center py-6"><p class="text-sm font-medium text-zinc-600 dark:text-zinc-300">Nenhum filtro salvo</p><p class="text-xs text-zinc-400 mt-1">Dica: ajuste busca/plano/status/etapa/tag na toolbar e clique “Salvar atual”.</p></div>';
         if (window.lucide) lucide.createIcons();
         return;
     }
@@ -2511,14 +2511,14 @@ function renderizarFiltrosSalvos() {
         }
         const resumo = parts.length ? parts.join(' · ') : 'Sem filtros (todos)';
         const div = document.createElement('div');
-        div.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 gap-3';
+        div.className = 'flex items-center justify-between p-3 rounded-none border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/40 gap-3';
         div.innerHTML = `<div class="min-w-0">
-            <p class="text-sm font-bold text-slate-900 dark:text-white truncate">${escaparHTML(f.nome)}</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${escaparHTML(resumo)}</p>
+            <p class="text-sm font-bold text-zinc-900 dark:text-white truncate">${escaparHTML(f.nome)}</p>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 truncate">${escaparHTML(resumo)}</p>
         </div>
         <div class="flex items-center gap-1 flex-shrink-0">
-            <button onclick="aplicarFiltroSalvo('${f.id}')" class="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" title="Aplicar filtro"><i data-lucide="play" class="w-3.5 h-3.5"></i></button>
-            <button onclick="deletarFiltroSalvo('${f.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            <button onclick="aplicarFiltroSalvo('${f.id}')" class="p-1.5 rounded-none text-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800" title="Aplicar filtro"><i data-lucide="play" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deletarFiltroSalvo('${f.id}')" class="p-1.5 rounded-none text-zinc-400 hover:text-black hover:bg-zinc-100 dark:hover:bg-zinc-800" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
         </div>`;
         container.appendChild(div);
     });
@@ -2845,18 +2845,18 @@ function renderImportPreview() {
     const countEl = document.getElementById('import-count');
     const btn = document.getElementById('btn-import-confirm');
     if (importPreviewData.length === 0) {
-        tableDiv.innerHTML = '<p class="text-xs text-rose-500 p-3">Nenhum cliente válido (precisa nome e email)</p>';
+        tableDiv.innerHTML = '<p class="text-xs text-zinc-600 p-3">Nenhum cliente válido (precisa nome e email)</p>';
         countEl.textContent = '';
         btn.classList.add('hidden');
         preview.classList.remove('hidden');
         return;
     }
     const headers = Object.keys(importPreviewData[0]);
-    let html = '<table class="w-full text-left border-collapse"><thead><tr class="bg-slate-50 dark:bg-slate-800">';
-    headers.forEach(h => html += `<th class="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b">${escaparHTML(h)}</th>`);
+    let html = '<table class="w-full text-left border-collapse"><thead><tr class="bg-zinc-50 dark:bg-zinc-800">';
+    headers.forEach(h => html += `<th class="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 border-b">${escaparHTML(h)}</th>`);
     html += '</tr></thead><tbody>';
     importPreviewData.slice(0,5).forEach(row => {
-        html += '<tr class="border-b border-slate-100 dark:border-slate-700/40">';
+        html += '<tr class="border-b border-zinc-100 dark:border-zinc-700/40">';
         headers.forEach(h => html += `<td class="px-2 py-1.5 text-xs truncate max-w-[120px]">${escaparHTML(String(row[h]||''))}</td>`);
         html += '</tr>';
     });
@@ -2890,13 +2890,13 @@ async function confirmarImport() {
                     const detalhes = data.erros.slice(0,3).map(e => `Linha ${e.linha}: ${e.erro.slice(0,120)}`).join('<br>');
                     const mais = data.erros.length > 3 ? `<br><span class="text-xs">+${data.erros.length-3} erros (ver console F12)</span>` : '';
                     const isDup = data.erros.some(e => String(e.erro).includes('23505') || String(e.erro).toLowerCase().includes('duplicate'));
-                    const hintDup = isDup ? '<br><span class="text-xs font-bold text-amber-700 dark:text-amber-300">Dica: e-mail já existe. Rode supabase_fix_email_unique.sql se ainda não rodou.</span>' : '';
-                    const planosInfo = data.planos_criados?.length ? `<br><span class="text-xs font-semibold text-emerald-700">Planos criados: ${data.planos_criados.join(', ')}</span>` : '';
-                    resultDiv.className = data.sucessos > 0 ? 'p-3 rounded-xl border text-sm bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300' : 'p-3 rounded-xl border text-sm bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300';
+                    const hintDup = isDup ? '<br><span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">Dica: e-mail já existe. Rode supabase_fix_email_unique.sql se ainda não rodou.</span>' : '';
+                    const planosInfo = data.planos_criados?.length ? `<br><span class="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Planos criados: ${data.planos_criados.join(', ')}</span>` : '';
+                    resultDiv.className = data.sucessos > 0 ? 'p-3 rounded-none border text-sm bg-zinc-200 dark:bg-zinc-800 border-zinc-400 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200' : 'p-3 rounded-none border text-sm bg-white dark:bg-zinc-900 border-black dark:border-white text-black dark:text-white';
                     resultDiv.innerHTML = `${data.sucessos > 0 ? 'Atenção:' : 'Erro:'} ${data.sucessos}/${data.total} importados. ${data.erros.length} erro(s):<br><span class="text-xs">${detalhes}${mais}${hintDup}${planosInfo}</span>`;
                 } else {
                     const planosInfo = data.planos_criados?.length ? `<br><span class="text-xs">Planos criados: ${data.planos_criados.join(', ')}</span>` : '';
-                    resultDiv.className = 'p-3 rounded-xl border text-sm bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300';
+                    resultDiv.className = 'p-3 rounded-none border text-sm bg-black border-black text-white dark:bg-white dark:border-white dark:text-black';
                     resultDiv.innerHTML = `${data.sucessos}/${data.total} importados.${planosInfo}`;
                 }
                 resultDiv.classList.remove('hidden');
@@ -2910,7 +2910,7 @@ async function confirmarImport() {
         }
     } catch(e) {
         console.warn(e);
-        resultDiv.className = 'p-3 rounded-xl border text-sm bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300';
+        resultDiv.className = 'p-3 rounded-none border text-sm bg-white dark:bg-zinc-900 border-black dark:border-white text-black dark:text-white';
         resultDiv.textContent = 'Erro: '+(e.message||'Falha na importação');
         resultDiv.classList.remove('hidden');
         setButtonLoading(btn,false,'Importar');
@@ -2929,7 +2929,7 @@ async function confirmarImport() {
             sucessos++;
         } catch(e) {}
     });
-    resultDiv.className = 'p-3 rounded-xl border text-sm bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300';
+    resultDiv.className = 'p-3 rounded-none border text-sm bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-300';
     resultDiv.textContent = `${sucessos}/${importPreviewData.length} importados (Local)`;
     resultDiv.classList.remove('hidden');
     atualizarMetricas(clientesCache);
@@ -3089,22 +3089,22 @@ function atualizarMetricas(clientes) {
 
         planosCache.forEach(plano => {
             const count = counts[plano.id] || 0;
-            const theme = (MAPA_CORES_PLANO && MAPA_CORES_PLANO[plano.cor]) ? MAPA_CORES_PLANO[plano.cor] : (MAPA_CORES_PLANO ? MAPA_CORES_PLANO.indigo : { bg: 'bg-indigo-50 dark:bg-indigo-950/40', text: 'text-indigo-700 dark:text-indigo-300', border: 'border-indigo-200 dark:border-indigo-800/50' });
+            const theme = (MAPA_CORES_PLANO && MAPA_CORES_PLANO[plano.cor]) ? MAPA_CORES_PLANO[plano.cor] : (MAPA_CORES_PLANO ? MAPA_CORES_PLANO.indigo : { bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-900 dark:text-zinc-300', border: 'border-black dark:border-white' });
             const div = document.createElement('div');
-            div.className = `rounded-xl ${theme.bg} border ${theme.border} px-1.5 py-1 text-center flex-1 min-w-[55px]`;
+            div.className = `rounded-none ${theme.bg} border ${theme.border} px-1.5 py-1 text-center flex-1 min-w-[55px]`;
             div.innerHTML = `
                 <div class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide leading-none ${theme.text} mb-1 truncate">${escaparHTML(plano.nome ? plano.nome.slice(0, 8) : '')}</div>
-                <div class="text-sm font-black ${theme.text} tabular-nums leading-none">${count}</div>
+                <div class="text-sm font-black font-mono ${theme.text} tabular-nums leading-none">${count}</div>
             `;
             container.appendChild(div);
         });
 
         if (semPlanoCount > 0 || planosCache.length === 0) {
             const div = document.createElement('div');
-            div.className = 'rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 px-1.5 py-1 text-center flex-1 min-w-[55px]';
+            div.className = 'rounded-none bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 px-1.5 py-1 text-center flex-1 min-w-[55px]';
             div.innerHTML = `
-                <div class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide leading-none text-slate-500 dark:text-slate-400 mb-1 truncate">Livre</div>
-                <div class="text-sm font-black text-slate-600 dark:text-slate-300 tabular-nums leading-none">${semPlanoCount}</div>
+                <div class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide leading-none text-zinc-500 dark:text-zinc-400 mb-1 truncate">Livre</div>
+                <div class="text-sm font-black font-mono text-zinc-600 dark:text-zinc-300 tabular-nums leading-none">${semPlanoCount}</div>
             `;
             container.appendChild(div);
         }
@@ -3131,7 +3131,7 @@ async function carregarRelatorioConversao() {
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/relatorios/conversao${qs}`, { method: 'GET' });
         if (!resp || !resp.ok) {
-            if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-slate-400 text-center col-span-3">Sem dados para o período</p>';
+            if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-zinc-400 text-center col-span-3">Sem dados para o período</p>';
             if (totalEl) totalEl.textContent = '';
             return;
         }
@@ -3139,7 +3139,7 @@ async function carregarRelatorioConversao() {
         renderizarRelatorioConversao(data);
     } catch (e) {
         console.warn('Erro ao carregar relatório conversão', e);
-        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-rose-400 text-center col-span-3">Erro ao carregar</p>';
+        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-zinc-500 text-center col-span-3">Erro ao carregar</p>';
     }
 }
 function renderizarRelatorioConversao(data) {
@@ -3158,14 +3158,14 @@ function renderizarRelatorioConversao(data) {
     const bgColors = data.itens.map(i => {
         const cor = i.etapa_cor || 'slate';
         const mapa = MAPA_CORES_PLANO[cor] || MAPA_CORES_PLANO.slate;
-        // Extrai cor do dot (bg-indigo-500 -> #6366f1 aproximado)
-        const corMap = { indigo: '#6366f1', cyan: '#06b6d4', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e', purple: '#a855f7', slate: '#64748b', orange: '#f97316' };
-        return corMap[cor] || '#64748b';
+        // Extrai cor do dot (rampa monocromática de cinza)
+        const corMap = { indigo: '#000000', cyan: '#3f3f46', emerald: '#52525b', amber: '#71717a', rose: '#a1a1aa', purple: '#d4d4d8', slate: '#e4e4e7', orange: '#27272a' };
+        return corMap[cor] || '#71717a';
     });
     const borderColors = bgColors;
     // Verifica Chart.js carregado (CDN)
     if (typeof Chart === 'undefined') {
-        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-amber-600 text-center col-span-3">Chart.js não carregado</p>';
+        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-zinc-800 text-center col-span-3">Chart.js não carregado</p>';
         return;
     }
     const ctx = canvas.getContext('2d');
@@ -3201,11 +3201,11 @@ function renderizarRelatorioConversao(data) {
             scales: {
                 x: {
                     beginAtZero: true,
-                    ticks: { precision: 0, color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', font: { size: 10 } },
-                    grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' }
+                    ticks: { precision: 0, color: document.documentElement.classList.contains('dark') ? '#a1a1aa' : '#71717a', font: { size: 10 } },
+                    grid: { color: document.documentElement.classList.contains('dark') ? '#27272a' : '#f4f4f5' }
                 },
                 y: {
-                    ticks: { color: document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#334155', font: { size: 11, weight: '600' } },
+                    ticks: { color: document.documentElement.classList.contains('dark') ? '#e4e4e7' : '#3f3f46', font: { size: 11, weight: '600' } },
                     grid: { display: false }
                 }
             }
@@ -3215,14 +3215,14 @@ function renderizarRelatorioConversao(data) {
     if (tabelaEl) {
         tabelaEl.innerHTML = data.itens.map(i => {
             const estilo = MAPA_CORES_PLANO[i.etapa_cor] || MAPA_CORES_PLANO.slate;
-            return `<div class="flex items-center justify-between p-2.5 rounded-xl border ${estilo.border} ${estilo.bg}">
+            return `<div class="flex items-center justify-between p-2.5 rounded-none border ${estilo.border} ${estilo.bg}">
                 <div class="flex items-center gap-2 min-w-0">
                     <span class="w-2.5 h-2.5 rounded-full ${estilo.dot} flex-shrink-0"></span>
-                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">${escaparHTML(i.etapa_nome)}</span>
+                    <span class="text-xs font-bold text-zinc-700 dark:text-zinc-200 truncate">${escaparHTML(i.etapa_nome)}</span>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
-                    <span class="text-xs font-black tabular-nums ${estilo.text}">${i.count}</span>
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/70 dark:bg-slate-900/30 ${estilo.text}">${i.percent}%</span>
+                    <span class="text-xs font-black font-mono tabular-nums ${estilo.text}">${i.count}</span>
+                    <span class="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-none bg-white/70 dark:bg-zinc-900/30 ${estilo.text}">${i.percent}%</span>
                 </div>
             </div>`;
         }).join('');
@@ -3270,23 +3270,23 @@ function renderizarRelatorioReceita(data) {
         if (chartReceitaPlano) { try { chartReceitaPlano.destroy(); } catch(e) {} chartReceitaPlano = null; }
         const labels = data.por_plano.map(p => p.plano_nome);
         const vals = data.por_plano.map(p => p.total);
-        const corMap = { indigo: '#6366f1', cyan: '#06b6d4', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e', purple: '#a855f7', slate: '#64748b', orange: '#f97316' };
-        const bg = data.por_plano.map(p => (corMap[p.plano_cor] || '#64748b') + 'CC');
+        const corMap = { indigo: '#000000', cyan: '#3f3f46', emerald: '#52525b', amber: '#71717a', rose: '#a1a1aa', purple: '#d4d4d8', slate: '#e4e4e7', orange: '#27272a' };
+        const bg = data.por_plano.map(p => (corMap[p.plano_cor] || '#71717a') + 'CC');
         if (labels.length === 0) {
             const ctx = canvasPlano.getContext('2d');
             ctx.clearRect(0,0,canvasPlano.width, canvasPlano.height);
-            if (tabelaPlanoEl) tabelaPlanoEl.innerHTML = '<p class="text-xs text-slate-400 text-center">Sem receita em dia</p>';
+            if (tabelaPlanoEl) tabelaPlanoEl.innerHTML = '<p class="text-xs text-zinc-400 text-center">Sem receita em dia</p>';
         } else {
             const ctx = canvasPlano.getContext('2d');
             chartReceitaPlano = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels, datasets: [{ data: vals, backgroundColor: bg, borderWidth: 2, borderColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff' }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155', font: { size: 10 }, padding: 12 } }, tooltip: { callbacks: { label: (c) => ` ${c.label}: R$ ${Number(c.parsed).toLocaleString('pt-BR', {minimumFractionDigits:2})}` } } } }
+                data: { labels, datasets: [{ data: vals, backgroundColor: bg, borderWidth: 2, borderColor: document.documentElement.classList.contains('dark') ? '#18181b' : '#fff' }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#d4d4d8' : '#3f3f46', font: { size: 10 }, padding: 12 } }, tooltip: { callbacks: { label: (c) => ` ${c.label}: R$ ${Number(c.parsed).toLocaleString('pt-BR', {minimumFractionDigits:2})}` } } } }
             });
             if (tabelaPlanoEl) {
                 tabelaPlanoEl.innerHTML = data.por_plano.map(p => {
                     const estilo = MAPA_CORES_PLANO[p.plano_cor] || MAPA_CORES_PLANO.slate;
-                    return `<div class="flex items-center justify-between p-2 rounded-lg border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text}">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] text-slate-500">${p.count} cli • ${p.percent}%</span></div><span class="text-xs font-black ${estilo.text}">R$ ${Number(p.total).toLocaleString('pt-BR', {minimumFractionDigits:2})}</span></div>`;
+                    return `<div class="flex items-center justify-between p-2 rounded-none border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text}">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] font-mono text-zinc-500">${p.count} cli • ${p.percent}%</span></div><span class="text-xs font-black font-mono ${estilo.text}">R$ ${Number(p.total).toLocaleString('pt-BR', {minimumFractionDigits:2})}</span></div>`;
                 }).join('');
             }
         }
@@ -3299,16 +3299,16 @@ function renderizarRelatorioReceita(data) {
         if (labels.length === 0) {
             const ctx = canvasMes.getContext('2d');
             ctx.clearRect(0,0,canvasMes.width, canvasMes.height);
-            if (tabelaMesEl) tabelaMesEl.innerHTML = '<p class="text-xs text-slate-400 text-center">Sem dados por mês</p>';
+            if (tabelaMesEl) tabelaMesEl.innerHTML = '<p class="text-xs text-zinc-400 text-center">Sem dados por mês</p>';
         } else {
             const ctx = canvasMes.getContext('2d');
             chartReceitaMes = new Chart(ctx, {
                 type: 'bar',
-                data: { labels, datasets: [{ label: 'Receita', data: vals, backgroundColor: '#10b981CC', borderColor: '#10b981', borderWidth: 1.5, borderRadius: 6 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` R$ ${Number(c.parsed.y).toLocaleString('pt-BR', {minimumFractionDigits:2})}` } } }, scales: { x: { ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', font: { size: 9 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', callback: (v) => `R$ ${v}` }, grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' } } } }
+                data: { labels, datasets: [{ label: 'Receita', data: vals, backgroundColor: '#000000CC', borderColor: '#000000', borderWidth: 1.5, borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` R$ ${Number(c.parsed.y).toLocaleString('pt-BR', {minimumFractionDigits:2})}` } } }, scales: { x: { ticks: { color: document.documentElement.classList.contains('dark') ? '#a1a1aa' : '#71717a', font: { size: 9 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: document.documentElement.classList.contains('dark') ? '#a1a1aa' : '#71717a', callback: (v) => `R$ ${v}` }, grid: { color: document.documentElement.classList.contains('dark') ? '#27272a' : '#f4f4f5' } } } }
             });
             if (tabelaMesEl) {
-                tabelaMesEl.innerHTML = data.por_mes.map(m => `<div class="flex items-center justify-between p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><span class="text-xs font-medium text-slate-600 dark:text-slate-300">${escaparHTML(m.mes)}</span><span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">R$ ${Number(m.total).toLocaleString('pt-BR', {minimumFractionDigits:2})} <span class="text-[10px] font-normal text-slate-400">(${m.count})</span></span></div>`).join('');
+                tabelaMesEl.innerHTML = data.por_mes.map(m => `<div class="flex items-center justify-between p-1.5 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><span class="text-xs font-medium text-zinc-600 dark:text-zinc-300">${escaparHTML(m.mes)}</span><span class="text-xs font-bold font-mono text-zinc-800 dark:text-zinc-300">R$ ${Number(m.total).toLocaleString('pt-BR', {minimumFractionDigits:2})} <span class="text-[10px] font-normal font-mono text-zinc-400">(${m.count})</span></span></div>`).join('');
             }
         }
     }
@@ -3356,16 +3356,16 @@ function renderizarRelatorioChurn(data) {
     if (labels.length === 0) {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0,0,canvas.width, canvas.height);
-        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-slate-400 text-center">Sem dados por mês</p>';
+        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-zinc-400 text-center">Sem dados por mês</p>';
     } else {
         const ctx = canvas.getContext('2d');
         chartChurn = new Chart(ctx, {
             type: 'line',
-            data: { labels, datasets: [{ label: 'Churn %', data: vals, borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.12)', fill: true, tension: 0.35, pointRadius: 4, pointBackgroundColor: '#f43f5e', pointBorderColor: '#fff', pointBorderWidth: 1.5 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.parsed.y}% (${data.itens[c.dataIndex].inativos} de ${data.itens[c.dataIndex].total} cancelaram)` } } }, scales: { x: { ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', callback: (v) => `${v}%` }, grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' } } } }
+            data: { labels, datasets: [{ label: 'Churn %', data: vals, borderColor: '#000000', backgroundColor: 'rgba(0,0,0,0.08)', fill: true, tension: 0.35, pointRadius: 4, pointBackgroundColor: '#000000', pointBorderColor: '#fff', pointBorderWidth: 1.5 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.parsed.y}% (${data.itens[c.dataIndex].inativos} de ${data.itens[c.dataIndex].total} cancelaram)` } } }, scales: { x: { ticks: { color: document.documentElement.classList.contains('dark') ? '#a1a1aa' : '#71717a', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, max: 100, ticks: { color: document.documentElement.classList.contains('dark') ? '#a1a1aa' : '#71717a', callback: (v) => `${v}%` }, grid: { color: document.documentElement.classList.contains('dark') ? '#27272a' : '#f4f4f5' } } } }
         });
         if (tabelaEl) {
-            tabelaEl.innerHTML = data.itens.map(i => `<div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40"><span class="text-xs font-medium text-slate-600 dark:text-slate-300">${escaparHTML(i.mes)}</span><span class="text-xs font-bold ${i.churn_percent > 20 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}">${i.churn_percent}% <span class="text-[10px] font-normal text-slate-400">(${i.inativos} de ${i.total} cancelaram)</span></span></div>`).join('');
+            tabelaEl.innerHTML = data.itens.map(i => `<div class="flex items-center justify-between p-2 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><span class="text-xs font-medium text-zinc-600 dark:text-zinc-300">${escaparHTML(i.mes)}</span><span class="text-xs font-bold font-mono ${i.churn_percent > 20 ? 'text-zinc-800 dark:text-zinc-300' : 'text-zinc-600 dark:text-zinc-300'}">${i.churn_percent}% <span class="text-[10px] font-normal font-mono text-zinc-400">(${i.inativos} de ${i.total} cancelaram)</span></span></div>`).join('');
         }
     }
     // Por plano - doughnut churn%
@@ -3374,22 +3374,22 @@ function renderizarRelatorioChurn(data) {
         if (porPlano.length === 0) {
             const ctx = canvasPlano.getContext('2d');
             ctx.clearRect(0,0,canvasPlano.width, canvasPlano.height);
-            if (tabelaPlanoEl) tabelaPlanoEl.innerHTML = '<p class="text-xs text-slate-400 text-center">Sem dados por plano</p>';
+            if (tabelaPlanoEl) tabelaPlanoEl.innerHTML = '<p class="text-xs text-zinc-400 text-center">Sem dados por plano</p>';
         } else {
-            const corMap = { indigo: '#6366f1', cyan: '#06b6d4', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e', purple: '#a855f7', slate: '#64748b', orange: '#f97316' };
+            const corMap = { indigo: '#000000', cyan: '#3f3f46', emerald: '#52525b', amber: '#71717a', rose: '#a1a1aa', purple: '#d4d4d8', slate: '#e4e4e7', orange: '#27272a' };
             const labelsPlano = porPlano.map(p => p.plano_nome);
             const valsPlano = porPlano.map(p => p.churn_percent);
-            const bg = porPlano.map(p => (corMap[p.plano_cor] || '#64748b') + 'CC');
+            const bg = porPlano.map(p => (corMap[p.plano_cor] || '#71717a') + 'CC');
             const ctx = canvasPlano.getContext('2d');
             chartChurnPlano = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: labelsPlano, datasets: [{ data: valsPlano, backgroundColor: bg, borderWidth: 2, borderColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff' }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155', font: { size: 10 }, padding: 12 } }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${porPlano[c.dataIndex].inativos} de ${porPlano[c.dataIndex].total} cancelaram (${c.parsed}%)` } } } }
+                data: { labels: labelsPlano, datasets: [{ data: valsPlano, backgroundColor: bg, borderWidth: 2, borderColor: document.documentElement.classList.contains('dark') ? '#18181b' : '#fff' }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#d4d4d8' : '#3f3f46', font: { size: 10 }, padding: 12 } }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${porPlano[c.dataIndex].inativos} de ${porPlano[c.dataIndex].total} cancelaram (${c.parsed}%)` } } } }
             });
             if (tabelaPlanoEl) {
                 tabelaPlanoEl.innerHTML = porPlano.map(p => {
                     const estilo = MAPA_CORES_PLANO[p.plano_cor] || MAPA_CORES_PLANO.slate;
-                    return `<div class="flex items-center justify-between p-2 rounded-lg border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text}">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] text-slate-500">${p.inativos} de ${p.total} cancelaram</span></div><span class="text-xs font-black ${p.churn_percent > 30 ? 'text-rose-600 dark:text-rose-400' : estilo.text}">${p.churn_percent}%</span></div>`;
+                    return `<div class="flex items-center justify-between p-2 rounded-none border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text}">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] font-mono text-zinc-500">${p.inativos} de ${p.total} cancelaram</span></div><span class="text-xs font-black font-mono ${p.churn_percent > 30 ? 'text-zinc-800 dark:text-zinc-300' : estilo.text}">${p.churn_percent}%</span></div>`;
                 }).join('');
             }
         }
@@ -3436,28 +3436,28 @@ function renderizarRelatorioLtv(data) {
     if (porPlano.length === 0) {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0,0,canvas.width, canvas.height);
-        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-slate-400 text-center">Sem dados por plano</p>';
+        if (tabelaEl) tabelaEl.innerHTML = '<p class="text-xs text-zinc-400 text-center">Sem dados por plano</p>';
         if (detalheEl) detalheEl.innerHTML = '';
         return;
     }
-    const corMap = { indigo: '#6366f1', cyan: '#06b6d4', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e', purple: '#a855f7', slate: '#64748b', orange: '#f97316', violet: '#8b5cf6' };
+    const corMap = { indigo: '#000000', cyan: '#3f3f46', emerald: '#52525b', amber: '#71717a', rose: '#a1a1aa', purple: '#d4d4d8', slate: '#e4e4e7', orange: '#27272a', violet: '#71717a' };
     const labels = porPlano.map(p => p.plano_nome);
     const vals = porPlano.map(p => p.ltv_medio);
-    const bg = porPlano.map(p => (corMap[p.plano_cor] || '#8b5cf6') + 'CC');
+    const bg = porPlano.map(p => (corMap[p.plano_cor] || '#71717a') + 'CC');
     const ctx = canvas.getContext('2d');
     chartLtvPlano = new Chart(ctx, {
         type: 'bar',
-        data: { labels, datasets: [{ label: 'LTV médio', data: vals, backgroundColor: bg, borderColor: porPlano.map(p => corMap[p.plano_cor] || '#8b5cf6'), borderWidth: 1.5, borderRadius: 6 }] },
-        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${fmt(c.parsed.x)} (${porPlano[c.dataIndex].meses_medio}m × ${fmt(porPlano[c.dataIndex].valor_medio_mensal)}/mês)` } } }, scales: { x: { beginAtZero: true, ticks: { color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#64748b', callback: (v) => `R$ ${v}` }, grid: { color: document.documentElement.classList.contains('dark') ? '#1e293b' : '#f1f5f9' } }, y: { ticks: { color: document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#334155', font: { size: 11, weight: '600' } }, grid: { display: false } } } }
+        data: { labels, datasets: [{ label: 'LTV médio', data: vals, backgroundColor: bg, borderColor: porPlano.map(p => corMap[p.plano_cor] || '#71717a'), borderWidth: 1.5, borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${fmt(c.parsed.x)} (${porPlano[c.dataIndex].meses_medio}m × ${fmt(porPlano[c.dataIndex].valor_medio_mensal)}/mês)` } } }, scales: { x: { beginAtZero: true, ticks: { color: document.documentElement.classList.contains('dark') ? '#a1a1aa' : '#71717a', callback: (v) => `R$ ${v}` }, grid: { color: document.documentElement.classList.contains('dark') ? '#27272a' : '#f4f4f5' } }, y: { ticks: { color: document.documentElement.classList.contains('dark') ? '#e4e4e7' : '#3f3f46', font: { size: 11, weight: '600' } }, grid: { display: false } } } }
     });
     if (tabelaEl) {
         tabelaEl.innerHTML = porPlano.map(p => {
             const estilo = MAPA_CORES_PLANO[p.plano_cor] || MAPA_CORES_PLANO.slate;
-            return `<div class="flex items-center justify-between p-2 rounded-lg border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text} truncate">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] text-slate-500">${p.count} cli</span></div><div class="text-right"><div class="text-xs font-black ${estilo.text}">${fmt(p.ltv_medio)}</div><div class="text-[10px] text-slate-400">${p.meses_medio}m × ${fmt(p.valor_medio_mensal)}</div></div></div>`;
+            return `<div class="flex items-center justify-between p-2 rounded-none border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text} truncate">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] font-mono text-zinc-500">${p.count} cli</span></div><div class="text-right"><div class="text-xs font-black font-mono ${estilo.text}">${fmt(p.ltv_medio)}</div><div class="text-[10px] font-mono text-zinc-400">${p.meses_medio}m × ${fmt(p.valor_medio_mensal)}</div></div></div>`;
         }).join('');
     }
     if (detalheEl) {
-        detalheEl.innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="p-3 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 text-center"><div class="text-[10px] font-bold uppercase tracking-widest text-violet-700 dark:text-violet-300">LTV médio</div><div class="text-lg font-black text-violet-600 dark:text-violet-400">${fmt(data.ltv_medio_geral)}</div><div class="text-[10px] text-slate-500">${data.meses_medio_geral}m × ${fmt(data.valor_medio_mensal_geral)}</div></div><div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/40 text-center"><div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Receita estimada</div><div class="text-lg font-black text-slate-700 dark:text-slate-200">${fmt(data.receita_estimada_total)}</div><div class="text-[10px] text-slate-500">${data.total_clientes} clientes</div></div></div><div class="mt-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-200"><i data-lucide="info" class="w-3 h-3 inline mr-1"></i> LTV = valor × meses desde cadastro (coorte). Valor com vírgula BR parseado.</div>`;
+        detalheEl.innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="p-3 rounded-none bg-zinc-100 dark:bg-zinc-500/10 border border-zinc-200 dark:border-zinc-500/20 text-center"><div class="text-[10px] font-bold uppercase tracking-widest text-zinc-800 dark:text-zinc-300">LTV médio</div><div class="text-lg font-black font-mono text-zinc-600 dark:text-zinc-400">${fmt(data.ltv_medio_geral)}</div><div class="text-[10px] font-mono text-zinc-500">${data.meses_medio_geral}m × ${fmt(data.valor_medio_mensal_geral)}</div></div><div class="p-3 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40 text-center"><div class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Receita estimada</div><div class="text-lg font-black font-mono text-zinc-700 dark:text-zinc-200">${fmt(data.receita_estimada_total)}</div><div class="text-[10px] font-mono text-zinc-500">${data.total_clientes} clientes</div></div></div><div class="mt-2 p-2 rounded-none bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 text-[11px] text-zinc-800 dark:text-zinc-300"><i data-lucide="info" class="w-3 h-3 inline mr-1"></i> LTV = valor × meses desde cadastro (coorte). Valor com vírgula BR parseado.</div>`;
     }
     if (window.lucide) lucide.createIcons();
 }
@@ -3595,38 +3595,38 @@ function renderizarClientes(clientes) {
 
         // Desktop row
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors duration-150 group';
+        tr.className = 'hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 transition-colors duration-150 group';
         tr.innerHTML = `
-            <td class="py-3 px-5 font-mono text-xs font-semibold text-slate-400 dark:text-slate-500">${ordinal}</td>
+            <td class="py-3 px-5 font-mono text-xs font-semibold text-zinc-400 dark:text-zinc-500">${ordinal}</td>
             <td class="py-3 px-5">
                 <div class="flex items-center gap-2.5 cursor-pointer" onclick="abrirModalDetalhes(${cliente.id})" title="Ver detalhes completos">
-                    <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-black text-white shadow-sm"
+                    <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-black text-white"
                          style="background: ${avatarGradient(cliente.nome)};">${avatarInitials(cliente.nome)}</div>
                     <div class="min-w-0">
-                        <span class="font-bold text-slate-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate max-w-[200px] block" title="${escaparHTML(cliente.nome)}">${escaparHTML(cliente.nome)}</span>
-                        ${cliente.empresa ? `<p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate max-w-[200px]">${escaparHTML(cliente.empresa)}</p>` : ''}
+                        <span class="font-bold text-zinc-900 dark:text-white text-sm group-hover:text-black dark:group-hover:text-white transition-colors truncate max-w-[200px] block" title="${escaparHTML(cliente.nome)}">${escaparHTML(cliente.nome)}</span>
+                        ${cliente.empresa ? `<p class="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium truncate max-w-[200px]">${escaparHTML(cliente.empresa)}</p>` : ''}
                     </div>
                 </div>
             </td>
-            <td class="py-3 px-5 text-sm text-slate-600 dark:text-slate-300 truncate max-w-[200px]" title="${escaparHTML(cliente.email)}">${escaparHTML(cliente.email)}</td>
-            <td class="py-3 px-5 hidden xl:table-cell text-xs text-slate-500 dark:text-slate-400 font-mono truncate max-w-[160px]">${escaparHTML(cliente.telefone || '—')}</td>
+            <td class="py-3 px-5 text-sm text-zinc-600 dark:text-zinc-300 truncate max-w-[200px]" title="${escaparHTML(cliente.email)}">${escaparHTML(cliente.email)}</td>
+            <td class="py-3 px-5 hidden xl:table-cell text-xs text-zinc-500 dark:text-zinc-400 font-mono truncate max-w-[160px]">${escaparHTML(cliente.telefone || '—')}</td>
             <td class="py-3 px-5">${planoBadgeHTML}</td>
             <td class="py-3 px-5">${statusBadgeHTML}</td>
-            <td class="py-3 px-5 hidden lg:table-cell text-xs text-slate-400 dark:text-slate-500">${dataFormatada}</td>
+            <td class="py-3 px-5 hidden lg:table-cell text-xs font-mono text-zinc-400 dark:text-zinc-500">${dataFormatada}</td>
             <td class="py-3 px-5 text-right">
                 <div class="inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                     <button onclick="abrirModalDetalhes(${cliente.id})"
-                        class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all"
+                        class="p-1.5 rounded-none text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                         title="Ver Detalhes">
                         <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                     </button>
                     <button onclick="abrirModalEditar(${cliente.id})"
-                        class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-all"
+                        class="p-1.5 rounded-none text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                         title="Editar">
                         <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                     </button>
                     <button onclick="abrirModalDeletar(${cliente.id})"
-                        class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-all"
+                        class="p-1.5 rounded-none text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                         title="Excluir">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     </button>
@@ -3644,27 +3644,27 @@ function renderizarClientes(clientes) {
                     <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-black text-white"
                          style="background: ${avatarGradient(cliente.nome)};">${avatarInitials(cliente.nome)}</div>
                     <div class="min-w-0">
-                        <h4 class="font-bold text-slate-900 dark:text-white text-sm leading-snug truncate">${escaparHTML(cliente.nome)}</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 truncate">${escaparHTML(cliente.email)}</p>
+                        <h4 class="font-bold text-zinc-900 dark:text-white text-sm leading-snug truncate">${escaparHTML(cliente.nome)}</h4>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400 truncate">${escaparHTML(cliente.email)}</p>
                     </div>
                 </div>
                 <div class="flex-shrink-0">${statusBadgeHTML}</div>
             </div>
-            <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60">
+            <div class="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-700/60">
                 <div>${planoBadgeHTML}</div>
-                <span class="text-[11px] text-slate-400 dark:text-slate-500 font-mono font-semibold">${ordinal}</span>
+                <span class="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono font-semibold">${ordinal}</span>
             </div>
             <div class="grid grid-cols-3 gap-1.5 pt-1">
                 <button onclick="abrirModalDetalhes(${cliente.id})"
-                    class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium active:scale-[0.97]">
-                    <i data-lucide="eye" class="w-3.5 h-3.5 text-indigo-500"></i> Ver
+                    class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-none border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs font-medium active:scale-[0.97]">
+                    <i data-lucide="eye" class="w-3.5 h-3.5 text-zinc-900"></i> Ver
                 </button>
                 <button onclick="abrirModalEditar(${cliente.id})"
-                    class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/30 text-xs font-semibold active:scale-[0.97]">
+                    class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-none border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-300 bg-zinc-200 dark:bg-zinc-800 text-xs font-semibold active:scale-[0.97]">
                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Editar
                 </button>
                 <button onclick="abrirModalDeletar(${cliente.id})"
-                    class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/30 text-xs font-semibold active:scale-[0.97]">
+                    class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-none border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold active:scale-[0.97]">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Excluir
                 </button>
             </div>
@@ -3684,14 +3684,14 @@ function renderizarClientes(clientes) {
 // ============================================================
 function getPlanoBadgeHTML(planoId) {
     if (!planoId) {
-        return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-400 border border-slate-200 dark:border-slate-600/60">Sem plano</span>`;
+        return `<span class="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-medium bg-zinc-100 text-zinc-500 dark:bg-zinc-700/60 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-600/60">Sem plano</span>`;
     }
     const p = planosCache.find(x => String(x.id) === String(planoId));
     if (!p) {
-        return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:text-slate-300 capitalize">${escaparHTML(planoId)}</span>`;
+        return `<span class="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-medium bg-zinc-100 text-zinc-600 dark:text-zinc-300 capitalize">${escaparHTML(planoId)}</span>`;
     }
     const estilo = MAPA_CORES_PLANO[p.cor] || MAPA_CORES_PLANO.slate;
-    return `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${estilo.bg} ${estilo.text} border ${estilo.border}">
+    return `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none text-xs font-semibold ${estilo.bg} ${estilo.text} border ${estilo.border}">
                 <span class="w-1.5 h-1.5 rounded-full ${estilo.dot}"></span>${escaparHTML(p.nome)}
             </span>`;
 }
@@ -3699,13 +3699,13 @@ function getPlanoBadgeHTML(planoId) {
 function getStatusBadgeHTML(ativo, clienteId) {
     return ativo
         ? `<button onclick="toggleStatusCliente(${clienteId}, false)" title="Clique para desativar"
-               class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 hover:bg-emerald-100 transition-colors">
-               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Ativo
-           </button>`
+               class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-none text-xs font-semibold bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors">
+               <span class="w-1.5 h-1.5 rounded-full bg-white dark:bg-black animate-pulse"></span>Ativo
+            </button>`
         : `<button onclick="toggleStatusCliente(${clienteId}, true)" title="Clique para ativar"
-               class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/60 hover:bg-rose-100 transition-colors">
-               <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>Inativo
-           </button>`;
+               class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-none text-xs font-semibold bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-400 dark:border-zinc-600 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">
+               <span class="w-1.5 h-1.5 rounded-full bg-zinc-500 dark:bg-zinc-400"></span>Inativo
+            </button>`;
 }
 
 function avatarInitials(nome) {
@@ -3717,12 +3717,12 @@ function avatarInitials(nome) {
 
 function avatarGradient(nome) {
     const colors = [
-        '#4f46e5',
-        '#059669',
-        '#b45309',
-        '#334155',
-        '#2563eb',
-        '#be123c',
+        '#000000',
+        '#27272a',
+        '#3f3f46',
+        '#52525b',
+        '#18181b',
+        '#71717a',
     ];
     const idx = (nome || '').charCodeAt(0) % colors.length;
     return colors[idx];
@@ -3766,7 +3766,7 @@ async function buscarCEP(cep, ctx) {
     if (cepLimpo.length !== 8) return;
 
     const icon = document.getElementById(`${ctx}-cep-icon`);
-    if (icon) icon.className = 'w-4 h-4 text-indigo-500 animate-spin';
+    if (icon) icon.className = 'w-4 h-4 text-zinc-900 animate-spin';
 
     try {
         const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
@@ -3802,7 +3802,7 @@ async function buscarCEP(cep, ctx) {
     } catch (e) {
         console.warn('Erro ao consultar ViaCEP:', e);
     } finally {
-        if (icon) icon.className = 'w-4 h-4 text-slate-400';
+        if (icon) icon.className = 'w-4 h-4 text-zinc-400';
     }
 }
 
@@ -4148,45 +4148,45 @@ function abrirModalDetalhes(id) {
     const body = document.getElementById('detalhes-body');
     const planoHTML = getPlanoBadgeHTML(cliente.plano);
     const statusHTML = cliente.ativo
-        ? `<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">Ativo</span>`
-        : `<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">Inativo</span>`;
+        ? `<span class="px-2 py-0.5 rounded-none text-xs font-semibold bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white">Ativo</span>`
+        : `<span class="px-2 py-0.5 rounded-none text-xs font-semibold bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-400 dark:border-zinc-600">Inativo</span>`;
     const etapaObj = etapasCache.find(e => String(e.id)===String(cliente.etapa_id));
-    const etapaHTML2 = etapaObj ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).bg} ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).text} border ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).border}"><span class="w-1.5 h-1.5 rounded-full ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).dot}"></span>${escaparHTML(etapaObj.nome)}</span>` : '<span class="text-xs text-slate-400">Sem etapa</span>';
+    const etapaHTML2 = etapaObj ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none text-xs font-semibold ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).bg} ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).text} border ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).border}"><span class="w-1.5 h-1.5 rounded-full ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).dot}"></span>${escaparHTML(etapaObj.nome)}</span>` : '<span class="text-xs text-zinc-400">Sem etapa</span>';
     const financeiroHTML2 = (cliente.valor_plano || cliente.vencimento_dia || cliente.status_pagamento) ? `
-        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Financeiro</h4>
+        <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-700/60">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">Financeiro</h4>
             <div class="grid grid-cols-3 gap-2 text-xs">
-                ${cliente.valor_plano ? `<div><span class="text-slate-400">Valor:</span> <strong class="text-slate-800 dark:text-slate-200">${escaparHTML(cliente.valor_plano)}</strong></div>` : ''}
-                ${cliente.vencimento_dia ? `<div><span class="text-slate-400">Vencimento:</span> <strong class="text-slate-800 dark:text-slate-200">Dia ${cliente.vencimento_dia}</strong></div>` : ''}
-                ${cliente.status_pagamento ? `<div><span class="text-slate-400">Status:</span> <strong class="${cliente.status_pagamento==='atrasado'?'text-rose-600':cliente.status_pagamento==='em_dia'?'text-emerald-600':'text-slate-600'}">${escaparHTML(cliente.status_pagamento)}</strong></div>` : ''}
+                ${cliente.valor_plano ? `<div><span class="text-zinc-400">Valor:</span> <strong class="text-zinc-800 dark:text-zinc-200 font-mono">${escaparHTML(cliente.valor_plano)}</strong></div>` : ''}
+                ${cliente.vencimento_dia ? `<div><span class="text-zinc-400">Vencimento:</span> <strong class="text-zinc-800 dark:text-zinc-200 font-mono">Dia ${cliente.vencimento_dia}</strong></div>` : ''}
+                ${cliente.status_pagamento ? `<div><span class="text-zinc-400">Status:</span> <strong class="${cliente.status_pagamento==='atrasado'?'text-zinc-800':cliente.status_pagamento==='em_dia'?'text-zinc-800':'text-zinc-600'}">${escaparHTML(cliente.status_pagamento)}</strong></div>` : ''}
             </div>
         </div>` : '';
     const tagsCliente2 = cliente._tags || [];
     const tagsHTML2 = tagsCliente2.length ? `
-        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Tags</h4>
+        <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-700/60">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">Tags</h4>
             <div class="flex flex-wrap gap-1.5">
                 ${tagsCliente2.map(tid => {
                     const t = tagsCache.find(x => String(x.id)===String(tid));
                     if (!t) return '';
                     const estilo = MAPA_CORES_PLANO[t.cor] || MAPA_CORES_PLANO.slate;
-                    return `<span class="px-2 py-0.5 text-xs font-bold rounded-full ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(t.nome)}</span>`;
+                    return `<span class="px-2 py-0.5 text-xs font-bold rounded-none ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(t.nome)}</span>`;
                 }).join('')}
             </div>
         </div>` : '';
 
     body.innerHTML = `
-        <div class="grid grid-cols-3 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60">
+        <div class="grid grid-cols-3 gap-3 p-3 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/60">
             <div>
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Status</span>
                 <div class="mt-0.5">${statusHTML}</div>
             </div>
             <div>
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Plano</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Plano</span>
                 <div class="mt-0.5">${planoHTML}</div>
             </div>
             <div>
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Etapa</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Etapa</span>
                 <div class="mt-0.5">${etapaHTML2}</div>
             </div>
         </div>
@@ -4194,62 +4194,62 @@ function abrirModalDetalhes(id) {
         ${tagsHTML2}
 
         <div class="space-y-2">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Contato & Documentos</h4>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">Contato & Documentos</h4>
             <div class="grid grid-cols-2 gap-2 text-xs">
-                <div><span class="text-slate-400">Telefone:</span> <strong class="text-slate-800 dark:text-slate-200">${escaparHTML(cliente.telefone || '—')}</strong></div>
-                <div><span class="text-slate-400">CPF:</span> <strong class="text-slate-800 dark:text-slate-200 font-mono">${escaparHTML(cliente.cpf || '—')}</strong></div>
-                <div><span class="text-slate-400">RG:</span> <strong class="text-slate-800 dark:text-slate-200 font-mono">${escaparHTML(cliente.rg || '—')}</strong></div>
-                <div><span class="text-slate-400">Cadastro:</span> <strong class="text-slate-800 dark:text-slate-200">${formatarData(cliente.data_cadastro)}</strong></div>
+                <div><span class="text-zinc-400">Telefone:</span> <strong class="text-zinc-800 dark:text-zinc-200 font-mono">${escaparHTML(cliente.telefone || '—')}</strong></div>
+                <div><span class="text-zinc-400">CPF:</span> <strong class="text-zinc-800 dark:text-zinc-200 font-mono">${escaparHTML(cliente.cpf || '—')}</strong></div>
+                <div><span class="text-zinc-400">RG:</span> <strong class="text-zinc-800 dark:text-zinc-200 font-mono">${escaparHTML(cliente.rg || '—')}</strong></div>
+                <div><span class="text-zinc-400">Cadastro:</span> <strong class="text-zinc-800 dark:text-zinc-200 font-mono">${formatarData(cliente.data_cadastro)}</strong></div>
             </div>
         </div>
 
         ${(cliente.empresa || cliente.cargo || cliente.data_nascimento || cliente.genero) ? `
-        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Dados Pessoais & Empresa</h4>
+        <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-700/60">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">Dados Pessoais & Empresa</h4>
             <div class="grid grid-cols-2 gap-2 text-xs">
-                ${cliente.empresa ? `<div><span class="text-slate-400">Empresa:</span> <strong class="text-slate-800 dark:text-slate-200">${escaparHTML(cliente.empresa)}</strong></div>` : ''}
-                ${cliente.cargo ? `<div><span class="text-slate-400">Cargo:</span> <strong class="text-slate-800 dark:text-slate-200">${escaparHTML(cliente.cargo)}</strong></div>` : ''}
-                ${cliente.data_nascimento ? `<div><span class="text-slate-400">Nascimento:</span> <strong class="text-slate-800 dark:text-slate-200">${formatarData(cliente.data_nascimento)}</strong></div>` : ''}
-                ${cliente.genero ? `<div><span class="text-slate-400">Gênero:</span> <strong class="text-slate-800 dark:text-slate-200">${escaparHTML(cliente.genero)}</strong></div>` : ''}
+                ${cliente.empresa ? `<div><span class="text-zinc-400">Empresa:</span> <strong class="text-zinc-800 dark:text-zinc-200">${escaparHTML(cliente.empresa)}</strong></div>` : ''}
+                ${cliente.cargo ? `<div><span class="text-zinc-400">Cargo:</span> <strong class="text-zinc-800 dark:text-zinc-200">${escaparHTML(cliente.cargo)}</strong></div>` : ''}
+                ${cliente.data_nascimento ? `<div><span class="text-zinc-400">Nascimento:</span> <strong class="text-zinc-800 dark:text-zinc-200 font-mono">${formatarData(cliente.data_nascimento)}</strong></div>` : ''}
+                ${cliente.genero ? `<div><span class="text-zinc-400">Gênero:</span> <strong class="text-zinc-800 dark:text-zinc-200">${escaparHTML(cliente.genero)}</strong></div>` : ''}
             </div>
         </div>
         ` : ''}
 
         ${(cliente.logradouro || cliente.cidade || cliente.cep) ? `
-        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Endereço</h4>
-            <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+        <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-700/60">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">Endereço</h4>
+            <p class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
                 ${escaparHTML(cliente.logradouro || '')} ${escaparHTML(cliente.numero ? ', ' + cliente.numero : '')} ${escaparHTML(cliente.complemento ? ' (' + cliente.complemento + ')' : '')}<br>
                 ${escaparHTML(cliente.bairro ? cliente.bairro + ', ' : '')}${escaparHTML(cliente.cidade || '')} ${escaparHTML(cliente.estado ? '/ ' + cliente.estado : '')}<br>
-                ${cliente.cep ? `<span class="font-mono text-slate-400">CEP: ${escaparHTML(cliente.cep)}</span>` : ''}
+                ${cliente.cep ? `<span class="font-mono text-zinc-400">CEP: ${escaparHTML(cliente.cep)}</span>` : ''}
             </p>
         </div>
         ` : ''}
 
         ${cliente.observacoes ? `
-        <div class="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Observações</h4>
-            <p class="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg italic">
+        <div class="space-y-1.5 pt-2 border-t border-zinc-100 dark:border-zinc-700/60">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">Observações</h4>
+            <p class="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/40 p-2.5 rounded-none italic">
                 "${escaparHTML(cliente.observacoes)}"
             </p>
         </div>
         ` : ''}
-        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+        <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-700/60">
             <div class="flex items-center justify-between">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Atividades</h4>
-                <button data-cliente-id="${escaparHTML(String(cliente.id))}" data-cliente-nome="${escaparHTML(cliente.nome)}" onclick="abrirModalAtividade(this.dataset.clienteId, this.dataset.clienteNome)" class="px-2.5 py-1 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Nova</button>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">Atividades</h4>
+                <button data-cliente-id="${escaparHTML(String(cliente.id))}" data-cliente-nome="${escaparHTML(cliente.nome)}" onclick="abrirModalAtividade(this.dataset.clienteId, this.dataset.clienteNome)" class="px-2.5 py-1 text-xs font-semibold text-white bg-black hover:bg-black rounded-none flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Nova</button>
             </div>
             <div id="detalhes-atividades" class="space-y-2">
-                <p class="text-xs text-slate-400">Carregando atividades...</p>
+                <p class="text-xs text-zinc-400">Carregando atividades...</p>
             </div>
         </div>
-        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp Templates</h4>
+        <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-700/60">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-800 flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp Templates</h4>
             <div class="flex gap-2">
                 <select id="detalhes-template-select" class="form-input flex-1 text-xs"><option value="">Selecione um template</option></select>
-                <button onclick="const sel=document.getElementById('detalhes-template-select'); if(sel && sel.value) enviarWhatsApp(clientesCache.find(c=>String(c.id)==='${cliente.id}'), templatesCache.find(tp=>String(tp.id)===sel.value)); else exibirToast('Selecione um template','info')" class="px-3 py-2 text-xs font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-1"><i data-lucide="send" class="w-3.5 h-3.5"></i> Zap</button>
+                <button onclick="const sel=document.getElementById('detalhes-template-select'); if(sel && sel.value) enviarWhatsApp(clientesCache.find(c=>String(c.id)==='${cliente.id}'), templatesCache.find(tp=>String(tp.id)===sel.value)); else exibirToast('Selecione um template','info')" class="px-3 py-2 text-xs font-bold rounded-none bg-black text-white hover:bg-zinc-800 flex items-center gap-1"><i data-lucide="send" class="w-3.5 h-3.5"></i> Zap</button>
             </div>
-            <button onclick="abrirModalTemplates()" class="text-[11px] text-emerald-600 hover:underline">Gerenciar templates</button>
+            <button onclick="abrirModalTemplates()" class="text-[11px] text-zinc-800 hover:underline">Gerenciar templates</button>
         </div>
     `;
 
@@ -4274,25 +4274,25 @@ function abrirModalDetalhes(id) {
         const atvContainer = document.getElementById('detalhes-atividades');
         if (!atvContainer) return;
         if (atividades.length === 0) {
-            atvContainer.innerHTML = '<p class="text-xs text-slate-400">Nenhuma atividade. Crie a primeira!</p>';
+            atvContainer.innerHTML = '<p class="text-xs text-zinc-400">Nenhuma atividade. Crie a primeira!</p>';
             return;
         }
         atvContainer.innerHTML = atividades.map(a => {
             const isAtrasada = !a.concluida && a.data < new Date().toISOString().split('T')[0];
             const tipoIcon = {ligacao:'phone', reuniao:'users', nota:'file-text', whatsapp:'message-circle', email:'mail', tarefa:'check-square'}[a.tipo]||'file-text';
-            return `<div class="flex items-start gap-2 p-2.5 rounded-xl border ${isAtrasada ? 'border-amber-200 bg-amber-50 dark:border-amber-800/40 dark:bg-amber-950/20' : 'border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/40'}">
-                <div class="w-7 h-7 rounded-lg ${a.concluida ? 'bg-emerald-100 text-emerald-600' : isAtrasada ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'} flex items-center justify-center flex-shrink-0"><i data-lucide="${tipoIcon}" class="w-3.5 h-3.5"></i></div>
+            return `<div class="flex items-start gap-2 p-2.5 rounded-none border ${isAtrasada ? 'border-zinc-300 bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800' : 'border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/40'}">
+                <div class="w-7 h-7 rounded-none ${a.concluida ? 'bg-zinc-200 text-zinc-800' : isAtrasada ? 'bg-zinc-200 text-zinc-800' : 'bg-zinc-100 text-zinc-500'} flex items-center justify-center flex-shrink-0"><i data-lucide="${tipoIcon}" class="w-3.5 h-3.5"></i></div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-900 dark:text-white capitalize">${escaparHTML(a.tipo)}</span>
-                        <span class="text-[11px] text-slate-400">${formatarData(a.data)}</span>
-                        ${a.concluida ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Concluída</span>' : isAtrasada ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 rounded-full">Atrasada</span>' : ''}
+                        <span class="text-xs font-bold text-zinc-900 dark:text-white capitalize">${escaparHTML(a.tipo)}</span>
+                        <span class="text-[11px] font-mono text-zinc-400">${formatarData(a.data)}</span>
+                        ${a.concluida ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-black text-white rounded-none">Concluída</span>' : isAtrasada ? '<span class="px-1.5 py-0.5 text-[9px] font-bold bg-zinc-200 text-zinc-800 rounded-none">Atrasada</span>' : ''}
                     </div>
-                    ${a.nota ? `<p class="text-xs text-slate-600 dark:text-slate-300 mt-1">${escaparHTML(a.nota)}</p>` : ''}
+                    ${a.nota ? `<p class="text-xs text-zinc-600 dark:text-zinc-300 mt-1">${escaparHTML(a.nota)}</p>` : ''}
                 </div>
                 <div class="flex items-center gap-1 flex-shrink-0">
-                    <button onclick="toggleAtividadeConcluida('${a.id}', ${cliente.id})" class="p-1.5 rounded-lg ${a.concluida ? 'text-slate-400 hover:text-amber-600' : 'text-emerald-600 hover:bg-emerald-50'}"><i data-lucide="${a.concluida ? 'rotate-ccw' : 'check'}" class="w-3.5 h-3.5"></i></button>
-                    <button onclick="deletarAtividade('${a.id}', ${cliente.id})" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                    <button onclick="toggleAtividadeConcluida('${a.id}', ${cliente.id})" class="p-1.5 rounded-none ${a.concluida ? 'text-zinc-400 hover:text-zinc-800' : 'text-zinc-800 hover:bg-zinc-100'}"><i data-lucide="${a.concluida ? 'rotate-ccw' : 'check'}" class="w-3.5 h-3.5"></i></button>
+                    <button onclick="deletarAtividade('${a.id}', ${cliente.id})" class="p-1.5 rounded-none text-zinc-400 hover:text-black hover:bg-zinc-100"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                 </div>
             </div>`;
         }).join('');
@@ -4302,12 +4302,12 @@ function abrirModalDetalhes(id) {
     // 4A: mostra campos_custom no detalhes
     if (cliente.campos_custom && Object.keys(cliente.campos_custom).length) {
         const cc = cliente.campos_custom;
-        let ccHtml = '<div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60"><h4 class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Vertical: ' + escaparHTML(currentVertical) + '</h4><div class="grid grid-cols-2 gap-2 text-xs">';
+        let ccHtml = '<div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-700/60"><h4 class="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-zinc-300">Vertical: ' + escaparHTML(currentVertical) + '</h4><div class="grid grid-cols-2 gap-2 text-xs">';
         for (const [k,v] of Object.entries(cc)) {
             if (Array.isArray(v)) {
-                ccHtml += `<div class="col-span-2"><span class="text-slate-400">${escaparHTML(k)}:</span> <strong class="text-slate-800 dark:text-slate-200">${v.map(x=> escaparHTML((x.placa||'')+' '+(x.modelo||'')+(x.km?' ('+x.km+'km)':''))).join(' • ')}</strong></div>`;
+                ccHtml += `<div class="col-span-2"><span class="text-zinc-400">${escaparHTML(k)}:</span> <strong class="text-zinc-800 dark:text-zinc-200">${v.map(x=> escaparHTML((x.placa||'')+' '+(x.modelo||'')+(x.km?' ('+x.km+'km)':''))).join(' • ')}</strong></div>`;
             } else {
-                ccHtml += `<div><span class="text-slate-400">${escaparHTML(k)}:</span> <strong class="text-slate-800 dark:text-slate-200">${escaparHTML(String(v))}</strong></div>`;
+                ccHtml += `<div><span class="text-zinc-400">${escaparHTML(k)}:</span> <strong class="text-zinc-800 dark:text-zinc-200">${escaparHTML(String(v))}</strong></div>`;
             }
         }
         ccHtml += '</div></div>';
@@ -4355,26 +4355,26 @@ function renderizarListaPlanosGerenciamento() {
     planosCache.forEach(p => {
         const estilo = MAPA_CORES_PLANO[p.cor] || MAPA_CORES_PLANO.slate;
         const item = document.createElement('div');
-        item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/40 gap-3';
+        item.className = 'flex items-center justify-between p-3 rounded-none border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/40 gap-3';
         item.innerHTML = `
             <div class="flex items-center gap-3 min-w-0">
                 <span class="w-3 h-3 rounded-full ${estilo.dot} flex-shrink-0"></span>
                 <div class="min-w-0">
                     <div class="flex items-center gap-2">
-                        <span class="font-bold text-slate-900 dark:text-white text-sm truncate">${escaparHTML(p.nome)}</span>
-                        ${p.valor ? `<span class="text-xs font-semibold text-slate-500 dark:text-slate-400">${escaparHTML(p.valor)}</span>` : ''}
+                        <span class="font-bold text-zinc-900 dark:text-white text-sm truncate">${escaparHTML(p.nome)}</span>
+                        ${p.valor ? `<span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">${escaparHTML(p.valor)}</span>` : ''}
                     </div>
-                    ${p.descricao ? `<p class="text-xs text-slate-400 dark:text-slate-500 truncate">${escaparHTML(p.descricao)}</p>` : ''}
+                    ${p.descricao ? `<p class="text-xs text-zinc-400 dark:text-zinc-500 truncate">${escaparHTML(p.descricao)}</p>` : ''}
                 </div>
             </div>
             <div class="flex items-center gap-1 flex-shrink-0">
                 <button type="button" onclick="editarPlanoCustom('${p.id}')"
-                    class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all"
+                    class="p-1.5 rounded-none text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700/60 transition-all"
                     title="Editar Plano">
                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                 </button>
                 <button type="button" onclick="deletarPlanoCustom('${p.id}')"
-                    class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-all"
+                    class="p-1.5 rounded-none text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                     title="Excluir Plano">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 </button>
@@ -4581,7 +4581,7 @@ function renderizarCardsPlanoModal(ctx) {
         card.type = 'button';
         card.id = `${ctx}-plano-card-${p.id}`;
         card.dataset.plano = p.id;
-        card.className = `plan-card relative w-full text-left p-3 rounded-xl border transition-all focus:outline-none border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900/40`;
+        card.className = `plan-card relative w-full text-left p-3 rounded-none border transition-all focus:outline-none border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900/40`;
         card.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -4592,12 +4592,12 @@ function renderizarCardsPlanoModal(ctx) {
                 <span class="w-3 h-3 rounded-full ${estilo.dot} flex-shrink-0 mt-1"></span>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-1">
-                        <span class="text-sm font-bold text-slate-800 dark:text-white">${escaparHTML(p.nome)}</span>
-                        ${p.valor ? `<span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">${escaparHTML(p.valor)}</span>` : ''}
+                        <span class="text-sm font-bold text-zinc-800 dark:text-white">${escaparHTML(p.nome)}</span>
+                        ${p.valor ? `<span class="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 whitespace-nowrap">${escaparHTML(p.valor)}</span>` : ''}
                     </div>
-                    ${p.descricao ? `<p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">${escaparHTML(p.descricao)}</p>` : ''}
+                    ${p.descricao ? `<p class="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5 truncate">${escaparHTML(p.descricao)}</p>` : ''}
                 </div>
-                <div id="${ctx}-plano-check-${p.id}" class="plan-check-icon w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-600 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all">
+                <div id="${ctx}-plano-check-${p.id}" class="plan-check-icon box-border w-4 h-4 rounded-none border-2 border-zinc-300 dark:border-zinc-600 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all">
                 </div>
             </div>
         `;
@@ -4612,11 +4612,11 @@ function selecionarPlanoCard(ctx, planoId) {
         const card  = document.getElementById(`${ctx}-plano-card-${p.id}`);
         const check = document.getElementById(`${ctx}-plano-check-${p.id}`);
         if (card) {
-            card.className = `plan-card relative w-full text-left p-3 rounded-xl border transition-all focus:outline-none border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900/40`;
+            card.className = `plan-card relative w-full text-left p-3 rounded-none border transition-all focus:outline-none border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900/40`;
             card.setAttribute('aria-checked', 'false');
         }
         if (check) {
-            check.className = 'plan-check-icon w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-600 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all';
+            check.className = 'plan-check-icon box-border w-4 h-4 rounded-none border-2 border-zinc-300 dark:border-zinc-600 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all';
             check.innerHTML = '';
         }
     });
@@ -4627,13 +4627,13 @@ function selecionarPlanoCard(ctx, planoId) {
 
     if (activeCard && p) {
         const estilo = MAPA_CORES_PLANO[p.cor] || MAPA_CORES_PLANO.slate;
-        activeCard.className = `plan-card relative w-full text-left p-3 rounded-xl border-2 transition-all focus:outline-none ${estilo.activeBorder} ${estilo.activeBg}`;
+        activeCard.className = `plan-card box-border relative w-full text-left p-3 rounded-none border-2 transition-all focus:outline-none ${estilo.activeBorder} ${estilo.activeBg}`;
         activeCard.setAttribute('aria-checked', 'true');
     }
 
     if (activeCheck && p) {
         const estilo = MAPA_CORES_PLANO[p.cor] || MAPA_CORES_PLANO.slate;
-        activeCheck.className = `plan-check-icon w-4 h-4 rounded-full border-2 ${estilo.dot} border-transparent flex-shrink-0 mt-0.5 flex items-center justify-center transition-all`;
+        activeCheck.className = `plan-check-icon box-border w-4 h-4 rounded-none border-2 ${estilo.dot} border-transparent flex-shrink-0 mt-0.5 flex items-center justify-center transition-all`;
         activeCheck.innerHTML = `<svg class="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     }
 
@@ -4670,8 +4670,8 @@ function setPlanoToggle(ctx, ativo) {
     if (label) {
         label.textContent = ativo ? 'Com plano vinculado' : 'Sem plano vinculado';
         label.className = ativo
-            ? 'text-sm font-semibold text-slate-700 dark:text-slate-200'
-            : 'text-sm font-semibold text-slate-500 dark:text-slate-400';
+            ? 'text-sm font-semibold text-zinc-700 dark:text-zinc-200'
+            : 'text-sm font-semibold text-zinc-500 dark:text-zinc-400';
     }
 }
 
@@ -4683,7 +4683,7 @@ function togglePlanoSection(ctx) {
 
 // ============================================================
 // 16. VALIDAÇÕES — nome, email (regex), CPF (módulo 11), telefone
-//     Exibe erro inline com shake + borda rose; scrolla para primeiro erro
+//     Exibe erro inline com shake + borda destacada; scrolla para primeiro erro
 // ============================================================
 function validarFormulario(ctx) {
     let valido = true;
@@ -4737,11 +4737,11 @@ function validarFormulario(ctx) {
         for (const inp of placas) {
             const placa = inp.value.trim().toUpperCase();
             if (placa && !/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(placa)) {
-                inp.classList.add('input-error-shake', 'border-rose-500');
+                inp.classList.add('input-error-shake', 'border-zinc-500');
                 exibirToast('Placa inválida: use ABC1234 ou ABC1D23', 'erro');
                 valido = false;
             } else {
-                inp.classList.remove('input-error-shake', 'border-rose-500');
+                inp.classList.remove('input-error-shake', 'border-zinc-500');
             }
             // modelo obrigatório se placa preenchida
             const row = inp.closest('div').parentElement;
@@ -4819,7 +4819,7 @@ function exibirErroField(errorId, msg) {
 
     const inputEl = document.getElementById(errorId.replace('-error', ''));
     if (inputEl) {
-        inputEl.classList.add('input-error-shake', 'border-rose-400');
+        inputEl.classList.add('input-error-shake', 'border-zinc-400');
         setTimeout(() => inputEl.classList.remove('input-error-shake'), 400);
     }
 }
@@ -4834,7 +4834,7 @@ function ocultarErroField(errorId) {
 function marcarFieldSucesso(fieldId) {
     const el = document.getElementById(fieldId);
     if (!el) return;
-    el.classList.remove('border-rose-400');
+    el.classList.remove('border-zinc-400');
 }
 
 function limparErrosForm(formId) {
@@ -4845,7 +4845,7 @@ function limparErrosForm(formId) {
         el.classList.add('hidden');
     });
     form.querySelectorAll('.form-input, input, select, textarea').forEach(el => {
-        el.classList.remove('border-rose-400');
+        el.classList.remove('border-zinc-400');
     });
 }
 
@@ -5034,7 +5034,7 @@ function escaparHTML(str) {
 
 // ============================================================
 // 19. TOASTS — notificações auto-dismiss (4.2s) com barra de progresso e tipos
-//     tipos: sucesso (emerald), erro (rose), info (indigo)
+//     tipos: sucesso (preto), erro (branco), info (zinc) — monocromático
 //     escaparHTML na mensagem para prevenir XSS via toast
 // ============================================================
 function exibirToast(mensagem, tipo = 'sucesso') {
@@ -5043,35 +5043,35 @@ function exibirToast(mensagem, tipo = 'sucesso') {
 
     const configs = {
         sucesso: {
-            bg:      'bg-white dark:bg-slate-800',
-            border:  'border-emerald-200 dark:border-emerald-800/60',
+            bg:      'bg-black dark:bg-white',
+            border:  'border-black dark:border-white',
             icon:    'check-circle',
-            iconCls: 'text-emerald-500',
-            bar:     'bg-emerald-500',
-            text:    'text-slate-800 dark:text-slate-100',
+            iconCls: 'text-white dark:text-black',
+            bar:     'bg-white dark:bg-black',
+            text:    'text-white dark:text-black',
         },
         erro: {
-            bg:      'bg-white dark:bg-slate-800',
-            border:  'border-rose-200 dark:border-rose-800/60',
+            bg:      'bg-white dark:bg-zinc-900',
+            border:  'border-black dark:border-white',
             icon:    'x-circle',
-            iconCls: 'text-rose-500',
-            bar:     'bg-rose-500',
-            text:    'text-slate-800 dark:text-slate-100',
+            iconCls: 'text-black dark:text-white',
+            bar:     'bg-black dark:bg-white',
+            text:    'text-black dark:text-white',
         },
         info: {
-            bg:      'bg-white dark:bg-slate-800',
-            border:  'border-indigo-200 dark:border-indigo-800/60',
+            bg:      'bg-zinc-800 dark:bg-zinc-200',
+            border:  'border-zinc-800 dark:border-zinc-200',
             icon:    'info',
-            iconCls: 'text-indigo-500',
-            bar:     'bg-indigo-500',
-            text:    'text-slate-800 dark:text-slate-100',
+            iconCls: 'text-white dark:text-black',
+            bar:     'bg-white dark:bg-black',
+            text:    'text-white dark:text-black',
         },
     };
 
     const cfg = configs[tipo] || configs.info;
     const toast = document.createElement('div');
     toast.className = [
-        'relative overflow-hidden flex items-center gap-3 px-4 py-3.5 rounded-xl shadow-xl border',
+        'relative overflow-hidden flex items-center gap-3 px-4 py-3.5 rounded-none border-2',
         cfg.bg, cfg.border,
         'pointer-events-auto transform transition-all duration-300 translate-y-6 opacity-0',
         'max-w-sm w-full'
@@ -5080,10 +5080,10 @@ function exibirToast(mensagem, tipo = 'sucesso') {
     toast.innerHTML = `
         <i data-lucide="${cfg.icon}" class="w-5 h-5 flex-shrink-0 ${cfg.iconCls}"></i>
         <span class="text-sm font-medium flex-1 ${cfg.text}">${escaparHTML(mensagem)}</span>
-        <button onclick="this.closest('.toast-item')?.remove()" class="p-0.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors flex-shrink-0">
+        <button onclick="this.closest('.toast-item')?.remove()" class="p-0.5 rounded-none text-zinc-400 hover:text-current transition-colors flex-shrink-0">
             <i data-lucide="x" class="w-4 h-4"></i>
         </button>
-        <div class="toast-progress absolute bottom-0 left-0 h-[2px] ${cfg.bar} rounded-full" style="width: 100%; animation: toastProgress 4s linear forwards;"></div>
+        <div class="toast-progress absolute bottom-0 left-0 h-[2px] ${cfg.bar} rounded-none" style="width: 100%; animation: toastProgress 4s linear forwards;"></div>
     `;
     toast.classList.add('toast-item');
 
