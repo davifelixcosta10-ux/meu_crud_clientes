@@ -12,7 +12,7 @@
  *  5. Landing: animações fadeInUp, reveal, feature-card hover, navbar
  *
  * Tokens principais:
- *  --dash-accent (#4f46e5 indigo-600 light / #6366f1 dark)
+ *  --dash-accent (#000 preto light / #fff dark) — neo-brutalista monocromático
  *  --dash-surface / --dash-border / --dash-text-*
  *  --dash-shadow-sm/md e --dash-radius (0.75rem)
  *
@@ -43,49 +43,49 @@ html {
 }
 
 /* ============================================================
-   DESIGN TOKENS — Dashboard Profissional
-   Design System DaviFlow — tokens limpos por spec feat/design-system
+   DESIGN TOKENS — Neo-Brutalista Monocromático
+   Regra 60-30-10: zinc-50 fundo / zinc-800 estrutura / preto destaque
    ============================================================ */
 :root {
-    --dash-bg:            #f8fafc; /* slate-50 — fundo claro limpo (spec) */
-    --dash-surface:       #ffffff; /* branco puro — cards/superfície (spec) */
-    --dash-border:        #e2e8f0; /* slate-200 — borda sutil (spec) */
-    --dash-accent:        #4f46e5; /* indigo-600 — ação primária (spec) */
-    --dash-surface-2:     #f1f5f9; /* slate-100 — hover/alternado */
-    --dash-border-subtle: rgba(226,232,240,0.8);
-    --dash-text-1:        #0f172a;
-    --dash-text-2:        #475569;
-    --dash-text-3:        #64748b;
-    --dash-accent-hover:  #4338ca; /* indigo-700 */
-    --dash-accent-light:  #eef2ff; /* indigo-50 */
-    --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-    --dash-shadow-md:     0 8px 24px rgba(79,70,229,0.12), 0 2px 8px rgba(0,0,0,0.08);
-    --dash-radius:        0.75rem;
+    --dash-bg:            #fafafa; /* zinc-50 */
+    --dash-surface:       #ffffff;
+    --dash-border:        #d4d4d8; /* zinc-300 — divisórias internas */
+    --dash-accent:        #000000; /* preto puro — destaque/CTA */
+    --dash-surface-2:     #f4f4f5; /* zinc-100 */
+    --dash-border-subtle: rgba(212,212,216,0.8);
+    --dash-text-1:        #09090b; /* zinc-950 */
+    --dash-text-2:        #3f3f46; /* zinc-700 */
+    --dash-text-3:        #71717a; /* zinc-500 */
+    --dash-accent-hover:  #27272a; /* zinc-800 */
+    --dash-accent-light:  #e4e4e7; /* zinc-200 */
+    --dash-shadow-sm:     3px 3px 0 #000000;  /* sombra dura pequena */
+    --dash-shadow-md:     6px 6px 0 #000000;  /* sombra dura média */
+    --dash-radius:        0px;     /* rounded-none */
 }
 .dark {
-    --dash-bg:            #020617; /* slate-950 — spec dark */
-    --dash-surface:       #1e293b; /* slate-800 */
-    --dash-surface-2:     #0f172a; /* slate-900 */
-    --dash-border:        rgba(51,65,85,0.6);
-    --dash-border-subtle: rgba(51,65,85,0.35);
-    --dash-text-1:        #f1f5f9;
-    --dash-text-2:        #cbd5e1;
-    --dash-text-3:        #94a3b8;
-    --dash-accent:        #6366f1; /* indigo-500 dark */
-    --dash-accent-hover:  #818cf8;
-    --dash-accent-light:  rgba(99,102,241,0.12);
-    --dash-shadow-sm:     0 1px 3px rgba(0,0,0,0.4);
-    --dash-shadow-md:     0 4px 12px rgba(0,0,0,0.5);
+    --dash-bg:            #09090b; /* zinc-950 */
+    --dash-surface:       #18181b; /* zinc-900 */
+    --dash-surface-2:     #27272a; /* zinc-800 */
+    --dash-border:        #3f3f46; /* zinc-700 */
+    --dash-border-subtle: rgba(63,63,70,0.6);
+    --dash-text-1:        #fafafa;
+    --dash-text-2:        #d4d4d8;
+    --dash-text-3:        #a1a1aa;
+    --dash-accent:        #ffffff;
+    --dash-accent-hover:  #e4e4e7;
+    --dash-accent-light:  rgba(255,255,255,0.12);
+    --dash-shadow-sm:     3px 3px 0 rgba(255,255,255,0.25);
+    --dash-shadow-md:     6px 6px 0 rgba(255,255,255,0.25);
 }
 /* ============================================================
    SHARED: Custom Scrollbars
    ============================================================ */
 ::-webkit-scrollbar         { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track   { background: transparent; }
-::-webkit-scrollbar-thumb   { background: rgba(148,163,184,0.4); border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.6); }
-.dark ::-webkit-scrollbar-thumb       { background: rgba(71,85,105,0.5); }
-.dark ::-webkit-scrollbar-thumb:hover { background: rgba(71,85,105,0.8); }
+::-webkit-scrollbar-thumb   { background: rgba(113,113,122,0.5); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: rgba(113,113,122,0.8); }
+.dark ::-webkit-scrollbar-thumb       { background: rgba(161,161,170,0.4); }
+.dark ::-webkit-scrollbar-thumb:hover { background: rgba(161,161,170,0.7); }
 
 /* ============================================================
    DASHBOARD: Form Elements
@@ -109,19 +109,20 @@ html {
 .form-input {
     width: 100%;
     padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    border: 1px solid var(--dash-border);
+    border-radius: 0;
+    border: 2px solid var(--dash-border);
     background-color: var(--dash-surface);
     color: var(--dash-text-1);
     font-size: 0.875rem;
     line-height: 1.5;
+    box-sizing: border-box;
     transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 .form-input::placeholder { color: var(--dash-text-3); }
 .form-input:focus {
     outline: none;
     border-color: var(--dash-accent);
-    box-shadow: 0 0 0 3px var(--dash-accent-light);
+    box-shadow: 3px 3px 0 var(--dash-accent-light);
 }
 .form-input:disabled {
     background-color: var(--dash-surface-2);
@@ -132,17 +133,17 @@ html {
 .field-error {
     display: none;
     font-size: 0.75rem;
-    font-weight: 500;
-    color: #f43f5e;
+    font-weight: 700;
+    color: #000;
     align-items: center;
     gap: 0.25rem;
 }
-.dark .field-error { color: #fb7185; }
+.dark .field-error { color: #fff; }
 .field-error.visible { display: flex; }
 
 /* ============================================================
-   DASHBOARD: Buttons
-   ============================================================ */
+    DASHBOARD: Buttons
+    ============================================================ */
 .btn-primary {
     display: inline-flex;
     align-items: center;
@@ -153,15 +154,18 @@ html {
     font-weight: 600;
     color: #ffffff;
     background-color: var(--dash-accent);
-    border-radius: 0.5rem;
-    border: none;
+    border-radius: 0;
+    border: 2px solid var(--dash-accent);
+    box-sizing: border-box;
     cursor: pointer;
     transition: background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
-    box-shadow: var(--dash-shadow-sm);
+    box-shadow: 3px 3px 0 #71717a;
 }
-.btn-primary:hover  { background-color: var(--dash-accent-hover); transform: translateY(-1px); box-shadow: var(--dash-shadow-md); }
-.btn-primary:active { transform: translateY(0) scale(0.98); }
-.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.dark .btn-primary { color: #09090b; box-shadow: 3px 3px 0 #3f3f46; }
+.btn-primary:hover  { background-color: var(--dash-accent-hover); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #71717a; }
+.dark .btn-primary:hover { box-shadow: 4px 4px 0 #3f3f46; }
+.btn-primary:active { transform: translate(0, 0); box-shadow: none; }
+.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .btn-ghost {
     display: inline-flex;
@@ -173,16 +177,17 @@ html {
     font-weight: 500;
     color: var(--dash-text-2);
     background-color: transparent;
-    border: 1px solid var(--dash-border);
-    border-radius: 0.5rem;
+    border: 2px solid var(--dash-border);
+    border-radius: 0;
+    box-sizing: border-box;
     cursor: pointer;
-    transition: background-color 150ms ease, border-color 150ms ease;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 100ms ease;
 }
 .btn-ghost:hover {
     background-color: var(--dash-surface-2);
-    border-color: var(--dash-text-3);
+    border-color: var(--dash-accent);
     color: var(--dash-text-1);
-    transform: translateY(-1px);
+    transform: translate(-1px, -1px);
 }
 
 .btn-danger {
@@ -194,14 +199,17 @@ html {
     font-size: 0.875rem;
     font-weight: 600;
     color: #ffffff;
-    background-color: #e11d48;
-    border-radius: 0.5rem;
-    border: none;
+    background-color: #27272a; /* zinc-800 — destrutivo monocromático */
+    border-radius: 0;
+    border: 2px solid #000;
+    box-sizing: border-box;
     cursor: pointer;
     transition: background-color 150ms ease, transform 100ms ease;
 }
-.btn-danger:hover  { background-color: #be123c; }
-.btn-danger:active { transform: scale(0.98); }
+.dark .btn-danger { border-color: #fafafa; }
+.btn-danger:hover  { background-color: #000; }
+.dark .btn-danger:hover { background-color: #fafafa; color: #09090b; }
+.btn-danger:active { transform: translate(0, 0); }
 .btn-danger:disabled { opacity: 0.55; cursor: not-allowed; }
 
 body {
@@ -221,8 +229,8 @@ body {
     background-color: var(--dash-surface) !important;
     color: var(--dash-text-1);
 }
-.dark .bg-slate-50,
-.dark .bg-slate-100 {
+.dark .bg-zinc-50,
+.dark .bg-zinc-100 {
     background-color: var(--dash-surface-2) !important;
 }
 
@@ -232,33 +240,33 @@ body {
 .metric-card {
     background-color: var(--dash-surface);
     padding: 1.25rem 1.25rem 1rem;
-    border-radius: var(--dash-radius);
-    border: 1px solid var(--dash-border);
-    box-shadow: var(--dash-shadow-sm);
-    transition: all 0.2s ease;
+    border-radius: 0;
+    border: 2px solid var(--dash-accent);
+    box-sizing: border-box;
+    box-shadow: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     min-height: 108px;
 }
 .metric-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-    border-color: var(--dash-accent);
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--dash-accent);
 }
 
 .skeleton {
-    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background: linear-gradient(90deg, #f4f4f5 25%, #d4d4d8 50%, #f4f4f5 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
-    border-radius: 0.375rem;
+    border-radius: 0;
 }
 @keyframes shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
 }
 .dark .skeleton {
-    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 }
@@ -268,36 +276,40 @@ body {
    ============================================================ */
 .toggle-track {
     width: 2.75rem; height: 1.5rem;
-    background-color: #cbd5e1;
+    background-color: #d4d4d8;
+    border: 2px solid #000;
+    box-sizing: border-box;
     border-radius: 9999px; position: relative;
     transition: background-color 200ms ease;
 }
-.dark .toggle-track { background-color: #475569; }
+.dark .toggle-track { background-color: #3f3f46; border-color: #fafafa; }
 .peer:checked ~ .toggle-track { background-color: var(--dash-accent); }
 .toggle-track::after {
     content: ''; position: absolute;
-    top: 3px; left: 3px;
-    width: 1.125rem; height: 1.125rem;
+    top: 2px; left: 2px;
+    width: 1rem; height: 1rem;
     background-color: #fff; border-radius: 9999px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    border: 1px solid #000;
     transition: transform 200ms ease;
 }
 .peer:checked ~ .toggle-track::after { transform: translateX(1.25rem); }
 
 .plan-toggle-track {
     width: 2.25rem; height: 1.125rem;
-    background-color: #cbd5e1;
+    background-color: #d4d4d8;
+    border: 2px solid #000;
+    box-sizing: border-box;
     border-radius: 9999px; position: relative;
     transition: background-color 200ms ease;
 }
-.dark .plan-toggle-track { background-color: #475569; }
+.dark .plan-toggle-track { background-color: #3f3f46; border-color: #fafafa; }
 .peer:checked ~ .plan-toggle-track { background-color: var(--dash-accent); }
 .plan-toggle-track::after {
     content: ''; position: absolute;
-    top: 2px; left: 2px;
-    width: 0.875rem; height: 0.875rem;
+    top: 1px; left: 1px;
+    width: 0.75rem; height: 0.75rem;
     background-color: #fff; border-radius: 9999px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    border: 1px solid #000;
     transition: transform 200ms ease;
 }
 .peer:checked ~ .plan-toggle-track::after { transform: translateX(1.125rem); }
@@ -344,16 +356,17 @@ body {
 /* Plan cards no modal */
 .plan-card {
     cursor: pointer;
-    border-radius: 0.5rem;
-    border: 1px solid var(--dash-border);
+    border-radius: 0;
+    border: 2px solid var(--dash-border);
     background-color: var(--dash-surface);
+    box-sizing: border-box;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.plan-card:hover { border-color: var(--dash-accent); }
+.plan-card:hover { border-color: var(--dash-text-3); }
 .plan-card[aria-checked="true"] {
     border-color: var(--dash-accent);
     background-color: var(--dash-accent-light);
-    box-shadow: 0 0 0 1px var(--dash-accent);
+    box-shadow: 3px 3px 0 var(--dash-accent);
 }
 .plan-check-icon {
     transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -370,21 +383,21 @@ body {
     max-width: 320px;
     flex: 1 0 280px;
     background-color: var(--dash-surface-2);
-    border: 1px solid var(--dash-border);
-    border-radius: var(--dash-radius);
+    border: 2px solid var(--dash-accent);
+    border-radius: 0;
     display: flex;
     flex-direction: column;
     max-height: calc(100vh - 280px);
 }
 .kanban-column-header {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--dash-border);
+    border-bottom: 2px solid var(--dash-accent);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
     background-color: var(--dash-surface);
-    border-radius: var(--dash-radius) var(--dash-radius) 0 0;
+    border-radius: 0;
 }
 .kanban-column-body {
     flex: 1;
@@ -397,17 +410,17 @@ body {
 }
 .kanban-card {
     background-color: var(--dash-surface);
-    border: 1px solid var(--dash-border);
-    border-radius: 0.75rem;
+    border: 2px solid var(--dash-border);
+    border-radius: 0;
     padding: 0.75rem;
+    box-sizing: border-box;
     cursor: grab;
     transition: border-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
-    box-shadow: var(--dash-shadow-sm);
 }
 .kanban-card:hover {
     border-color: var(--dash-accent);
-    box-shadow: var(--dash-shadow-md);
-    transform: translateY(-1px);
+    box-shadow: 4px 4px 0 var(--dash-accent);
+    transform: translate(-1px, -1px);
 }
 .kanban-card:active { cursor: grabbing; }
 .sortable-ghost {
@@ -416,7 +429,7 @@ body {
     border: 2px dashed var(--dash-accent) !important;
 }
 .sortable-chosen {
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    box-shadow: 6px 6px 0 var(--dash-accent);
 }
 .kanban-empty {
     text-align: center;
@@ -424,7 +437,7 @@ body {
     color: var(--dash-text-3);
     font-size: 0.75rem;
     border: 2px dashed var(--dash-border);
-    border-radius: 0.5rem;
+    border-radius: 0;
     background-color: var(--dash-surface);
 }
 
@@ -479,23 +492,22 @@ body {
 .reveal.visible { opacity: 1; transform: translateY(0); }
 
 .feature-card {
-    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
 }
 .feature-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
-    border-color: #cbd5e1;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #000;
 }
 .dark .feature-card:hover {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    box-shadow: 6px 6px 0 rgba(255, 255, 255, 0.25);
 }
 
 .navbar-scrolled {
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid #e2e8f0;
-    box-shadow: 0 1px 8px rgba(15, 23, 42, 0.06);
+    background: #fafafa; /* zinc-50 — sólido, sem blur (neo-brutalista) */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 2px solid #000;
+    box-shadow: none;
 }
 
 /* ============================================================
@@ -509,31 +521,32 @@ body {
     animation: mockupRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
 }
 .mockup-frame {
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 .mockup-frame:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12);
+    transform: translate(-2px, -2px);
+    box-shadow: 12px 12px 0 #000;
 }
 .btn-lift {
-    transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 .btn-lift:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #000;
 }
-.btn-lift:active { transform: translateY(0) scale(0.99); }
+.btn-lift:active { transform: translate(0, 0); box-shadow: none; }
 .step-num {
-    transition: transform 0.2s ease, background-color 0.2s ease;
+    transition: transform 0.15s ease, background-color 0.15s ease;
 }
 .step-card:hover .step-num {
-    transform: scale(1.1);
+    transform: translate(-2px, -2px);
+    box-shadow: 3px 3px 0 #71717a;
 }
 .table-row-hi {
-    transition: background-color 0.15s ease;
+    transition: background-color 0.1s ease;
 }
 .table-row-hi:hover {
-    background-color: #f8fafc;
+    background-color: #f4f4f5; /* zinc-100 */
 }
 .pulse-dot {
     animation: pulseDot 2s ease-in-out infinite;
@@ -567,7 +580,7 @@ body {
     background-color: var(--dash-surface-2);
 }
 .dark #tabela-clientes-body tr:hover {
-    background-color: rgba(51, 65, 85, 0.4);
+    background-color: rgba(63, 63, 70, 0.5);
 }
 .kanban-card {
     transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -594,32 +607,31 @@ body {
 #secao-overview .metric-card:nth-child(8) { animation-delay: 0.35s; }
 
 /* ============================================================
-   DASHBOARD copia a LANDING (modo claro): tinta neutra slate.
-   Escopo html:not(.dark) preserva o dark mode e as cores de
-   dados (ex: .bg-indigo-500 sólido dos dots de plano).
+   DASHBOARD copia a LANDING (modo claro): zinc monocromático.
+   Escopo html:not(.dark) preserva o dark mode e os dots de plano.
    ============================================================ */
-html:not(.dark) .bg-indigo-600 { background-color: #0f172a !important; }
-html:not(.dark) .hover\:bg-indigo-700:hover { background-color: #000000 !important; }
-html:not(.dark) .hover\:bg-indigo-500:hover { background-color: #1e293b !important; }
+html:not(.dark) .bg-indigo-600 { background-color: #000000 !important; }
+html:not(.dark) .hover\:bg-indigo-700:hover { background-color: #27272a !important; }
+html:not(.dark) .hover\:bg-indigo-500:hover { background-color: #27272a !important; }
 html:not(.dark) .bg-indigo-50,
-html:not(.dark) .bg-indigo-100 { background-color: #f1f5f9 !important; }
+html:not(.dark) .bg-indigo-100 { background-color: #f4f4f5 !important; }
 html:not(.dark) .text-indigo-600,
-html:not(.dark) .text-indigo-700 { color: #0f172a !important; }
-html:not(.dark) .text-indigo-400 { color: #334155 !important; }
+html:not(.dark) .text-indigo-700 { color: #09090b !important; }
+html:not(.dark) .text-indigo-400 { color: #52525b !important; }
 html:not(.dark) .border-indigo-200,
-html:not(.dark) .border-indigo-100 { border-color: #e2e8f0 !important; }
+html:not(.dark) .border-indigo-100 { border-color: #000000 !important; }
 html:not(.dark) .bg-indigo-600\/15,
 html:not(.dark) .bg-indigo-500\/10,
 html:not(.dark) .bg-indigo-50\/40,
 html:not(.dark) .bg-indigo-950\/20,
 html:not(.dark) .bg-indigo-900\/20,
 html:not(.dark) .bg-indigo-900\/40,
-html:not(.dark) .bg-indigo-800\/40 { background-color: #f1f5f9 !important; }
+html:not(.dark) .bg-indigo-800\/40 { background-color: #f4f4f5 !important; }
 html:not(.dark) .border-indigo-500\/20,
-html:not(.dark) .border-indigo-200\/60 { border-color: #e2e8f0 !important; }
+html:not(.dark) .border-indigo-200\/60 { border-color: #000000 !important; }
 html:not(.dark) .border-indigo-500\/60,
-html:not(.dark) .border-indigo-400 { border-color: #cbd5e1 !important; }
-html:not(.dark) .ring-indigo-500\/30 { --tw-ring-color: rgb(15 23 42 / 0.15) !important; }
+html:not(.dark) .border-indigo-400 { border-color: #52525b !important; }
+html:not(.dark) .ring-indigo-500\/30 { --tw-ring-color: rgb(0 0 0 / 0.25) !important; }
 html:not(.dark) .hover\:bg-indigo-50:hover,
-html:not(.dark) .hover\:bg-indigo-100:hover { background-color: #f1f5f9 !important; }
-html:not(.dark) .focus\:border-indigo-500\/60:focus { border-color: #0f172a !important; }
+html:not(.dark) .hover\:bg-indigo-100:hover { background-color: #f4f4f5 !important; }
+html:not(.dark) .focus\:border-indigo-500\/60:focus { border-color: #000000 !important; }

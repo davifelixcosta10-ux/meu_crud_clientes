@@ -43,198 +43,187 @@
     </script>
     <script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
-<body class="bg-white text-slate-900 antialiased font-sans">
-    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
+<body class="bg-zinc-50 text-zinc-800 antialiased font-sans">
+    <header class="sticky top-0 z-40 bg-zinc-50 border-b-2 border-black">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
             <a href="#" class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div>
-                <span class="text-sm font-bold tracking-tight">DaviFlow</span>
+                <div class="w-7 h-7 rounded-none bg-black flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div>
+                <span class="text-sm font-bold tracking-tight font-mono uppercase">DaviFlow</span>
             </a>
             <nav class="hidden md:flex items-center gap-6 text-sm">
-                <a href="#features" class="text-slate-600 hover:text-slate-900">Recursos</a>
-                <a href="#how-it-works" class="text-slate-600 hover:text-slate-900">Como funciona</a>
-                <a href="#about" class="text-slate-600 hover:text-slate-900">Sobre</a>
+                <a href="#features" class="text-zinc-600 hover:text-black hover:underline underline-offset-4">Recursos</a>
+                <a href="#how-it-works" class="text-zinc-600 hover:text-black hover:underline underline-offset-4">Como funciona</a>
+                <a href="#about" class="text-zinc-600 hover:text-black hover:underline underline-offset-4">Sobre</a>
             </nav>
             <div class="flex items-center gap-2">
-                <button onclick="openModal('modal-login')" class="hidden sm:inline-flex px-3 py-1.5 text-sm font-medium text-slate-700 hover:text-slate-900">Entrar</button>
-                <button onclick="openModal('modal-register')" class="inline-flex px-4 py-1.5 text-sm font-semibold text-white bg-slate-900 rounded-lg hover:bg-slate-800">Criar conta</button>
-                <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-600" aria-label="Menu"><i data-lucide="menu" class="w-5 h-5" id="menu-icon-open"></i><i data-lucide="x" class="w-5 h-5 hidden" id="menu-icon-close"></i></button>
+                <button onclick="openModal('modal-login')" class="hidden sm:inline-flex px-3 py-1.5 text-sm font-medium text-zinc-800 hover:text-black hover:underline underline-offset-4">Entrar</button>
+                <button onclick="openModal('modal-register')" class="inline-flex px-4 py-1.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none hover:bg-zinc-800">Criar conta</button>
+                <button id="mobile-menu-btn" class="md:hidden p-2 text-zinc-800" aria-label="Menu"><i data-lucide="menu" class="w-5 h-5" id="menu-icon-open"></i><i data-lucide="x" class="w-5 h-5 hidden" id="menu-icon-close"></i></button>
             </div>
         </div>
-        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2">
-            <a href="#features" onclick="closeMobileMenu()" class="block py-2 text-sm text-slate-600">Recursos</a>
-            <a href="#how-it-works" onclick="closeMobileMenu()" class="block py-2 text-sm text-slate-600">Como funciona</a>
-            <a href="#about" onclick="closeMobileMenu()" class="block py-2 text-sm text-slate-600">Sobre</a>
+        <div id="mobile-menu" class="hidden md:hidden border-t-2 border-black bg-zinc-50 px-4 py-3 space-y-2">
+            <a href="#features" onclick="closeMobileMenu()" class="block py-2 text-sm text-zinc-600">Recursos</a>
+            <a href="#how-it-works" onclick="closeMobileMenu()" class="block py-2 text-sm text-zinc-600">Como funciona</a>
+            <a href="#about" onclick="closeMobileMenu()" class="block py-2 text-sm text-zinc-600">Sobre</a>
         </div>
     </header>
 
     <main>
         <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-12">
             <div class="max-w-2xl">
-                <p class="text-xs font-semibold tracking-widest uppercase text-slate-500 mb-3 animate-fade-in-up stagger-1">CRM para freelancers e pequenas equipes</p>
-                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight animate-fade-in-up stagger-2">Todos os seus clientes,<br>cobranças e follow-ups em um painel.</h1>
-                <p class="mt-4 text-base text-slate-600 leading-relaxed animate-fade-in-up stagger-3">Cadastre clientes, defina planos e vencimentos, acompanhe quem pagou e receba lembretes de retorno. Leva 30 segundos para criar a conta.</p>
+                <p class="inline-block text-[11px] font-mono font-semibold tracking-widest uppercase bg-black text-white px-2 py-1 mb-4 animate-fade-in-up stagger-1">CRM para freelancers e pequenas equipes</p>
+                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight text-black animate-fade-in-up stagger-2">Todos os seus clientes,<br>cobranças e follow-ups em um painel.</h1>
+                <p class="mt-4 text-base text-zinc-600 leading-relaxed animate-fade-in-up stagger-3">Cadastre clientes, defina planos e vencimentos, acompanhe quem pagou e receba lembretes de retorno. Leva 30 segundos para criar a conta.</p>
                 <div class="mt-7 flex flex-col sm:flex-row gap-3 animate-fade-in-up stagger-4">
-                    <button onclick="openModal('modal-register')" class="btn-lift inline-flex justify-center px-5 py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-lg hover:bg-black">Criar conta em 30 segundos</button>
-                    <a href="#how-it-works" class="btn-lift inline-flex justify-center px-5 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50">Ver em 60 segundos</a>
+                    <button onclick="openModal('modal-register')" class="btn-lift inline-flex justify-center px-5 py-2.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none shadow-[4px_4px_0_0_#71717a]">Criar conta em 30 segundos</button>
+                    <a href="#how-it-works" class="btn-lift inline-flex justify-center px-5 py-2.5 text-sm font-semibold text-black bg-white border-2 border-black rounded-none shadow-[4px_4px_0_0_#000]">Ver em 60 segundos</a>
                 </div>
-                <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 animate-fade-in-up stagger-5">
+                <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500 animate-fade-in-up stagger-5">
                     <span>Sem cartão de crédito</span>
                     <span>Cancele quando quiser</span>
                     <span>Seus dados isolados por conta</span>
                 </div>
             </div>
-            <div class="mockup-rise mockup-frame mt-10 border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-                <div class="flex items-center gap-1.5 px-3 py-2 border-b border-slate-200 bg-white">
-                    <span class="w-2.5 h-2.5 rounded-full bg-slate-200"></span><span class="w-2.5 h-2.5 rounded-full bg-slate-200"></span><span class="w-2.5 h-2.5 rounded-full bg-slate-200"></span>
-                    <span class="ml-3 text-xs text-slate-500 font-mono">dashboard.daviflow.com</span>
+            <div class="mockup-rise mockup-frame mt-10 border-2 border-black rounded-none overflow-hidden bg-white box-border shadow-[8px_8px_0_0_#000]">
+                <div class="flex items-center gap-1.5 px-3 py-2 border-b-2 border-black bg-zinc-100">
+                    <span class="w-2.5 h-2.5 rounded-none bg-black"></span><span class="w-2.5 h-2.5 rounded-none border border-black bg-white"></span><span class="w-2.5 h-2.5 rounded-none border border-black bg-white"></span>
+                    <span class="ml-3 text-xs text-zinc-600 font-mono">dashboard.daviflow.com</span>
                 </div>
                 <div class="p-4 grid grid-cols-4 gap-3 text-center">
-                    <div class="border border-slate-200 rounded-lg p-3 bg-white"><div class="text-xs text-slate-500">Total</div><div class="text-lg font-bold">48</div></div>
-                    <div class="border border-slate-200 rounded-lg p-3 bg-white"><div class="text-xs text-slate-500">Ativos</div><div class="text-lg font-bold text-emerald-600">36</div></div>
-                    <div class="border border-slate-200 rounded-lg p-3 bg-white"><div class="text-xs text-slate-500">Inativos</div><div class="text-lg font-bold">12</div></div>
-                    <div class="border border-slate-200 rounded-lg p-3 bg-white"><div class="text-xs text-slate-500">Planos</div><div class="text-xs font-mono mt-1">VIP 12 • Básico 20</div></div>
+                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Total</div><div class="text-lg font-bold font-mono text-black">48</div></div>
+                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Ativos</div><div class="text-lg font-bold font-mono text-black">36</div></div>
+                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Inativos</div><div class="text-lg font-bold font-mono text-black">12</div></div>
+                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Planos</div><div class="text-xs font-mono mt-1 text-black">VIP 12 • Básico 20</div></div>
                 </div>
                 <div class="px-4 pb-4">
-                    <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
-                        <div class="grid grid-cols-4 gap-3 px-3 py-2 border-b bg-slate-50 text-xs font-medium text-slate-500"><span>Nome</span><span>Email</span><span>Plano</span><span>Status</span></div>
-                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs border-b"><span>Ana Lima</span><span class="text-slate-500">ana@mail.com</span><span>Ouro</span><span class="text-emerald-600">Ativo</span></div>
-                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs border-b"><span>Carlos M.</span><span class="text-slate-500">carlos@mail.com</span><span>Prata</span><span class="text-emerald-600">Ativo</span></div>
-                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs"><span>Juliana R.</span><span class="text-slate-500">ju@mail.com</span><span>Pro</span><span class="text-rose-600">Inativo</span></div>
+                    <div class="border-2 border-black rounded-none overflow-hidden bg-white box-border">
+                        <div class="grid grid-cols-4 gap-3 px-3 py-2 border-b-2 border-black bg-zinc-100 text-[10px] font-mono font-semibold uppercase tracking-widest text-zinc-600"><span>Nome</span><span>Email</span><span>Plano</span><span>Status</span></div>
+                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs border-b border-zinc-300"><span>Ana Lima</span><span class="text-zinc-500 font-mono">ana@mail.com</span><span>Ouro</span><span class="font-mono bg-black text-white px-1 w-fit">Ativo</span></div>
+                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs border-b border-zinc-300"><span>Carlos M.</span><span class="text-zinc-500 font-mono">carlos@mail.com</span><span>Prata</span><span class="font-mono bg-black text-white px-1 w-fit">Ativo</span></div>
+                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs"><span>Juliana R.</span><span class="text-zinc-500 font-mono">ju@mail.com</span><span>Pro</span><span class="font-mono border border-black text-zinc-600 px-1 w-fit">Inativo</span></div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="features" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
+        <section id="features" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t-2 border-black">
             <div class="max-w-2xl reveal">
-                <h2 class="text-xl font-bold tracking-tight">Cadastro, cobrança e acompanhamento em um lugar.</h2>
-                <p class="mt-2 text-sm text-slate-600">Três recursos que cobrem a rotina: registrar clientes, controlar pagamentos e ver números.</p>
+                <h2 class="text-xl font-bold tracking-tight text-black">Cadastro, cobrança e acompanhamento em um lugar.</h2>
+                <p class="mt-2 text-sm text-zinc-600">Três recursos que cobrem a rotina: registrar clientes, controlar pagamentos e ver números.</p>
             </div>
             <div class="mt-6 grid md:grid-cols-3 gap-4">
-                <div class="feature-card reveal border border-slate-200 rounded-xl p-5 bg-white">
-                    <div class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center mb-3"><i data-lucide="users" class="w-4 h-4"></i></div>
-                    <h3 class="text-sm font-semibold">Cadastro com filtros</h3>
-                    <p class="mt-1 text-sm text-slate-600 leading-relaxed">Registre nome, contato, plano e etapa. Filtre por status, plano, etapa ou tag.</p>
+                <div class="feature-card reveal border-2 border-black rounded-none p-5 bg-white box-border">
+                    <div class="w-8 h-8 rounded-none border-2 border-black flex items-center justify-center mb-3"><i data-lucide="users" class="w-4 h-4"></i></div>
+                    <h3 class="text-sm font-semibold text-black">Cadastro com filtros</h3>
+                    <p class="mt-1 text-sm text-zinc-600 leading-relaxed">Registre nome, contato, plano e etapa. Filtre por status, plano, etapa ou tag.</p>
                 </div>
-                <div class="feature-card reveal border border-slate-200 rounded-xl p-5 bg-white border-l-2 border-l-slate-900">
-                    <div class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center mb-3"><i data-lucide="bar-chart-3" class="w-4 h-4"></i></div>
+                <div class="feature-card reveal border-2 border-black rounded-none p-5 bg-black text-white box-border">
+                    <div class="w-8 h-8 rounded-none border-2 border-white flex items-center justify-center mb-3"><i data-lucide="bar-chart-3" class="w-4 h-4"></i></div>
                     <h3 class="text-sm font-semibold">Cobrança e métricas</h3>
-                    <p class="mt-1 text-sm text-slate-600 leading-relaxed">Defina valor e vencimento por cliente. Veja receita prevista, inadimplentes, churn e LTV.</p>
+                    <p class="mt-1 text-sm text-zinc-300 leading-relaxed">Defina valor e vencimento por cliente. Veja receita prevista, inadimplentes, churn e LTV.</p>
                 </div>
-                <div class="feature-card reveal border border-slate-200 rounded-xl p-5 bg-white">
-                    <div class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center mb-3"><i data-lucide="shield-check" class="w-4 h-4"></i></div>
-                    <h3 class="text-sm font-semibold">Equipe com permissões</h3>
-                    <p class="mt-1 text-sm text-slate-600 leading-relaxed">Convide membros por email. Administradores gerenciam tudo, membros operam o dia a dia.</p>
+                <div class="feature-card reveal border-2 border-black rounded-none p-5 bg-white box-border">
+                    <div class="w-8 h-8 rounded-none border-2 border-black flex items-center justify-center mb-3"><i data-lucide="shield-check" class="w-4 h-4"></i></div>
+                    <h3 class="text-sm font-semibold text-black">Equipe com permissões</h3>
+                    <p class="mt-1 text-sm text-zinc-600 leading-relaxed">Convide membros por email. Administradores gerenciam tudo, membros operam o dia a dia.</p>
                 </div>
             </div>
         </section>
 
-        <section id="how-it-works" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
-            <h2 class="text-xl font-bold reveal">Comece em 3 passos.</h2>
+        <section id="how-it-works" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t-2 border-black">
+            <h2 class="text-xl font-bold text-black reveal">Comece em 3 passos.</h2>
             <div class="mt-6 grid md:grid-cols-3 gap-6">
                 <div class="step-card reveal flex gap-3">
-                    <span class="step-num w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
-                    <div><h3 class="text-sm font-semibold">Crie a conta</h3><p class="text-sm text-slate-600 mt-1">30 segundos, sem cartão.</p></div>
+                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">1</span>
+                    <div><h3 class="text-sm font-semibold text-black">Crie a conta</h3><p class="text-sm text-zinc-600 mt-1">30 segundos, sem cartão.</p></div>
                 </div>
                 <div class="step-card reveal flex gap-3">
-                    <span class="step-num w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
-                    <div><h3 class="text-sm font-semibold">Cadastre clientes</h3><p class="text-sm text-slate-600 mt-1">Nome, email, plano, etapa.</p></div>
+                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">2</span>
+                    <div><h3 class="text-sm font-semibold text-black">Cadastre clientes</h3><p class="text-sm text-zinc-600 mt-1">Nome, email, plano, etapa.</p></div>
                 </div>
                 <div class="step-card reveal flex gap-3">
-                    <span class="step-num w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
-                    <div><h3 class="text-sm font-semibold">Acompanhe</h3><p class="text-sm text-slate-600 mt-1">Kanban e relatórios com período.</p></div>
+                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">3</span>
+                    <div><h3 class="text-sm font-semibold text-black">Acompanhe</h3><p class="text-sm text-zinc-600 mt-1">Kanban e relatórios com período.</p></div>
                 </div>
             </div>
             <div class="mt-8 reveal">
-                <button onclick="openModal('modal-register')" class="btn-lift inline-flex px-5 py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-lg">Começar gratuitamente agora</button>
+                <button onclick="openModal('modal-register')" class="btn-lift inline-flex px-5 py-2.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none shadow-[4px_4px_0_0_#71717a]">Começar gratuitamente agora</button>
             </div>
         </section>
 
-        <section id="about" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
-            <div class="feature-card reveal border border-slate-200 rounded-xl p-6 bg-white max-w-3xl">
-                <h2 class="text-lg font-bold">Feito para quem atende cliente todo dia.</h2>
-                <p class="mt-2 text-sm text-slate-600 leading-relaxed">Clínicas, oficinas, dentistas, academias e freelancers usam o DaviFlow para manter cadastro, pagamento e retorno em dia, com campos próprios para cada tipo de negócio.</p>
+        <section id="about" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t-2 border-black">
+            <div class="feature-card reveal border-2 border-black rounded-none p-6 sm:p-8 bg-white box-border shadow-[8px_8px_0_0_#000]">
+                <h2 class="text-lg font-bold text-black">Feito para quem atende cliente todo dia.</h2>
+                <p class="mt-2 text-sm text-zinc-600 leading-relaxed">Clínicas, oficinas, dentistas, academias e freelancers usam o DaviFlow para manter cadastro, pagamento e retorno em dia, com campos próprios para cada tipo de negócio.</p>
                 <div class="mt-4 grid sm:grid-cols-3 gap-4 text-xs">
-                    <div class="border border-slate-200 rounded-lg p-3"><div class="font-semibold">Acesso controlado</div><div class="text-slate-600 mt-1">Cada conta vê só os próprios dados. Convites por email.</div></div>
-                    <div class="border border-slate-200 rounded-lg p-3"><div class="font-semibold">Lembretes automáticos</div><div class="text-slate-600 mt-1">Avisos de vencimento e clientes sem retorno.</div></div>
-                    <div class="border border-slate-200 rounded-lg p-3"><div class="font-semibold">Funciona no celular</div><div class="text-slate-600 mt-1">Painel adaptado para atender entre um cliente e outro.</div></div>
-                </div>
-            </div>
-        </section>
-
-        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="reveal border border-slate-200 rounded-xl p-8 text-center bg-slate-900 text-white">
-                <h2 class="text-xl font-bold">Crie sua conta e cadastre o primeiro cliente hoje.</h2>
-                <p class="mt-2 text-sm text-slate-400">Leva 30 segundos. Sem cartão de crédito.</p>
-                <div class="mt-5 flex flex-col sm:flex-row gap-3 justify-center">
-                    <button onclick="openModal('modal-register')" class="btn-lift px-5 py-2.5 text-sm font-semibold bg-white text-slate-900 rounded-lg">Criar conta grátis</button>
-                    <button onclick="openModal('modal-login')" class="btn-lift px-5 py-2.5 text-sm font-semibold border border-slate-700 rounded-lg">Já tem conta → Entrar</button>
+                    <div class="border-2 border-black rounded-none p-3 bg-zinc-50 box-border"><div class="font-semibold text-black">Acesso controlado</div><div class="text-zinc-600 mt-1">Cada conta vê só os próprios dados. Convites por email.</div></div>
+                    <div class="border-2 border-black rounded-none p-3 bg-zinc-50 box-border"><div class="font-semibold text-black">Lembretes automáticos</div><div class="text-zinc-600 mt-1">Avisos de vencimento e clientes sem retorno.</div></div>
+                    <div class="border-2 border-black rounded-none p-3 bg-zinc-50 box-border"><div class="font-semibold text-black">Funciona no celular</div><div class="text-zinc-600 mt-1">Painel adaptado para atender entre um cliente e outro.</div></div>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="border-t border-slate-200 py-8 px-4">
+    <footer class="border-t-2 border-black py-8 px-4 bg-zinc-50">
         <div class="max-w-6xl mx-auto grid md:grid-cols-4 gap-6">
             <div class="md:col-span-2">
-                <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div><span class="text-sm font-bold">DaviFlow</span></div>
-                <p class="mt-2 text-sm text-slate-600 max-w-xs">Cadastro, cobrança e acompanhamento de clientes para pequenos negócios.</p>
-                <address class="not-italic text-xs text-slate-500 mt-2">CNPJ 00.000.000/0001-00 • Rua Example 123 • São Paulo, SP<br><a href="mailto:contato@daviflow.com.br" class="underline">contato@daviflow.com.br</a> • <a href="tel:+5511999999999" class="underline">(11) 99999-9999</a></address>
+                <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-none bg-black flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div><span class="text-sm font-bold font-mono uppercase">DaviFlow</span></div>
+                <p class="mt-2 text-sm text-zinc-600 max-w-xs">Cadastro, cobrança e acompanhamento de clientes para pequenos negócios.</p>
+                <address class="not-italic text-xs text-zinc-500 mt-2 font-mono">CNPJ 00.000.000/0001-00 • Rua Example 123 • São Paulo, SP<br><a href="mailto:contato@daviflow.com.br" class="underline">contato@daviflow.com.br</a> • <a href="tel:+5511999999999" class="underline">(11) 99999-9999</a></address>
             </div>
-            <div><h4 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Produto</h4><ul class="space-y-1 text-sm"><li><a href="#features" class="text-slate-600 hover:text-slate-900">Recursos</a></li><li><a href="#how-it-works" class="text-slate-600 hover:text-slate-900">Como funciona</a></li><li><a href="/dashboard.html" class="text-slate-600 hover:text-slate-900">Painel</a></li></ul></div>
-            <div><h4 class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Legal</h4><ul class="space-y-1 text-sm"><li><a href="/privacidade.html" class="text-slate-600 hover:text-slate-900">Privacidade</a></li><li><a href="/termos.html" class="text-slate-600 hover:text-slate-900">Termos</a></li></ul></div>
+            <div><h4 class="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-2">Produto</h4><ul class="space-y-1 text-sm"><li><a href="#features" class="text-zinc-600 hover:text-black">Recursos</a></li><li><a href="#how-it-works" class="text-zinc-600 hover:text-black">Como funciona</a></li><li><a href="/dashboard.html" class="text-zinc-600 hover:text-black">Painel</a></li></ul></div>
+            <div><h4 class="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-2">Legal</h4><ul class="space-y-1 text-sm"><li><a href="/privacidade.html" class="text-zinc-600 hover:text-black">Privacidade</a></li><li><a href="/termos.html" class="text-zinc-600 hover:text-black">Termos</a></li></ul></div>
         </div>
-        <div class="max-w-6xl mx-auto mt-6 pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p class="text-xs text-slate-500">© 2026 DaviFlow. Feito no Brasil.</p>
-            <span class="text-xs text-slate-500">FastAPI + Supabase + Vercel</span>
+        <div class="max-w-6xl mx-auto mt-6 pt-4 border-t-2 border-black flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p class="text-xs text-zinc-500 font-mono">© 2026 DaviFlow. Feito no Brasil.</p>
+            <span class="text-xs text-zinc-500 font-mono">FastAPI + Supabase + Vercel</span>
         </div>
     </footer>
 
-    <div class="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3">
-        <div class="flex-1 min-w-0"><p class="text-xs font-semibold leading-tight">Pronto para começar?</p><p class="text-xs text-slate-500">Sem cartão • Cancele quando quiser</p></div>
-        <button onclick="openModal('modal-register')" class="px-4 py-2 text-sm font-semibold text-white bg-slate-900 rounded-lg">Criar conta</button>
+    <div class="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-zinc-50 border-t-2 border-black px-4 py-3 flex items-center gap-3">
+        <div class="flex-1 min-w-0"><p class="text-xs font-semibold leading-tight text-black">Pronto para começar?</p><p class="text-xs text-zinc-500">Sem cartão • Cancele quando quiser</p></div>
+        <button onclick="openModal('modal-register')" class="px-4 py-2 text-sm font-semibold text-white bg-black border-2 border-black rounded-none">Criar conta</button>
     </div>
 
     <div id="modal-login" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modal-login')"></div>
-        <div class="relative w-full max-w-md bg-white rounded-xl border border-slate-200 p-6">
-            <div class="flex items-start justify-between mb-4"><div><h2 class="text-lg font-bold">Bem-vindo de volta</h2><p class="text-sm text-slate-600">Entre na sua conta.</p></div><button onclick="closeModal('modal-login')" class="p-2 text-slate-500 hover:text-slate-900"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+        <div class="absolute inset-0 bg-black/70" onclick="closeModal('modal-login')"></div>
+        <div class="relative w-full max-w-md bg-white rounded-none border-2 border-black box-border shadow-[8px_8px_0_0_#000] p-6">
+            <div class="flex items-start justify-between mb-4"><div><h2 class="text-lg font-bold">Bem-vindo de volta</h2><p class="text-sm text-zinc-600">Entre na sua conta.</p></div><button onclick="closeModal('modal-login')" class="p-2 text-zinc-500 hover:text-black"><i data-lucide="x" class="w-5 h-5"></i></button></div>
             <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4" novalidate>
-                <div><label for="login-email" class="text-xs font-semibold uppercase tracking-widest text-slate-600">E-mail</label><input type="email" id="login-email" required autocomplete="email" placeholder="seu@email.com" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
-                <div><div class="flex items-center justify-between"><label for="login-password" class="text-xs font-semibold uppercase tracking-widest text-slate-600">Senha</label><a href="#" onclick="handleForgotPassword(event)" class="text-xs text-slate-900 underline">Esqueci a senha</a></div><input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
-                <div id="login-error" class="hidden px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-2"><span id="login-error-text"></span></div>
-                <button type="submit" id="btn-login-submit" class="w-full py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-lg">Entrar na minha conta</button>
+                <div><label for="login-email" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">E-mail</label><input type="email" id="login-email" required autocomplete="email" placeholder="seu@email.com" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
+                <div><div class="flex items-center justify-between"><label for="login-password" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">Senha</label><a href="#" onclick="handleForgotPassword(event)" class="text-xs text-black underline">Esqueci a senha</a></div><input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
+                <div id="login-error" class="hidden px-3 py-2 rounded-none bg-zinc-100 border-2 border-black text-zinc-800 text-sm items-center gap-2 box-border"><span id="login-error-text" class="font-mono text-xs"></span></div>
+                <button type="submit" id="btn-login-submit" class="w-full py-2.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none shadow-[4px_4px_0_0_#71717a] hover:bg-zinc-800">Entrar na minha conta</button>
             </form>
-            <p class="mt-4 text-center text-sm text-slate-600">Não tem conta? <button onclick="closeModal('modal-login'); openModal('modal-register')" class="font-semibold text-slate-900 underline">Criar conta grátis</button></p>
+            <p class="mt-4 text-center text-sm text-zinc-600">Não tem conta? <button onclick="closeModal('modal-login'); openModal('modal-register')" class="font-semibold text-black underline">Criar conta grátis</button></p>
         </div>
     </div>
 
     <div id="modal-register" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modal-register')"></div>
-        <div class="relative w-full max-w-md bg-white rounded-xl border border-slate-200 p-6">
-            <div class="flex items-start justify-between mb-4"><div><h2 class="text-lg font-bold">Crie sua conta grátis</h2><p class="text-sm text-slate-600">Sem cartão. Cancele quando quiser.</p></div><button onclick="closeModal('modal-register')" class="p-2 text-slate-500 hover:text-slate-900"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+        <div class="absolute inset-0 bg-black/70" onclick="closeModal('modal-register')"></div>
+        <div class="relative w-full max-w-md bg-white rounded-none border-2 border-black box-border shadow-[8px_8px_0_0_#000] p-6">
+            <div class="flex items-start justify-between mb-4"><div><h2 class="text-lg font-bold">Crie sua conta grátis</h2><p class="text-sm text-zinc-600">Sem cartão. Cancele quando quiser.</p></div><button onclick="closeModal('modal-register')" class="p-2 text-zinc-500 hover:text-black"><i data-lucide="x" class="w-5 h-5"></i></button></div>
             <form id="form-register" onsubmit="cadastrarUsuarioPelaModal(event)" class="space-y-3" novalidate>
-                <div><label for="signup-nome" class="text-xs font-semibold uppercase tracking-widest text-slate-600">Nome</label><input type="text" id="signup-nome" required autocomplete="name" placeholder="Seu nome" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
-                <div><label for="signup-email" class="text-xs font-semibold uppercase tracking-widest text-slate-600">E-mail</label><input type="email" id="signup-email" required autocomplete="email" placeholder="seu@email.com" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
-                <div><label for="signup-senha" class="text-xs font-semibold uppercase tracking-widest text-slate-600">Senha</label><input type="password" id="signup-senha" required autocomplete="new-password" placeholder="Mínimo 8 caracteres" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
-                <div><label for="signup-confirm-senha" class="text-xs font-semibold uppercase tracking-widest text-slate-600">Confirmar senha</label><input type="password" id="signup-confirm-senha" required autocomplete="new-password" placeholder="Repita a senha" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm"></div>
-                <label class="flex items-start gap-2 text-xs text-slate-600"><input type="checkbox" id="register-terms" required class="mt-0.5"> Concordo com <a href="/termos.html" class="underline">Termos</a> e <a href="/privacidade.html" class="underline">Privacidade</a></label>
-                <button type="submit" class="w-full py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-lg">Criar conta grátis</button>
+                <div><label for="signup-nome" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">Nome</label><input type="text" id="signup-nome" required autocomplete="name" placeholder="Seu nome" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
+                <div><label for="signup-email" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">E-mail</label><input type="email" id="signup-email" required autocomplete="email" placeholder="seu@email.com" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
+                <div><label for="signup-senha" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">Senha</label><input type="password" id="signup-senha" required autocomplete="new-password" placeholder="Mínimo 8 caracteres" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
+                <div><label for="signup-confirm-senha" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">Confirmar senha</label><input type="password" id="signup-confirm-senha" required autocomplete="new-password" placeholder="Repita a senha" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
+                <label class="flex items-start gap-2 text-xs text-zinc-600"><input type="checkbox" id="register-terms" required class="mt-0.5"> Concordo com <a href="/termos.html" class="underline">Termos</a> e <a href="/privacidade.html" class="underline">Privacidade</a></label>
+                <button type="submit" class="w-full py-2.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none shadow-[4px_4px_0_0_#71717a] hover:bg-zinc-800">Criar conta grátis</button>
             </form>
-            <p class="mt-4 text-center text-sm text-slate-600">Já tem conta? <button onclick="closeModal('modal-register'); openModal('modal-login')" class="font-semibold text-slate-900 underline">Entrar</button></p>
+            <p class="mt-4 text-center text-sm text-zinc-600">Já tem conta? <button onclick="closeModal('modal-register'); openModal('modal-login')" class="font-semibold text-black underline">Entrar</button></p>
         </div>
     </div>
 
     <div id="modal-recovery" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modal-recovery')"></div>
-        <div class="relative w-full max-w-md bg-white rounded-xl border border-slate-200 p-6">
+        <div class="absolute inset-0 bg-black/70" onclick="closeModal('modal-recovery')"></div>
+        <div class="relative w-full max-w-md bg-white rounded-none border-2 border-black box-border shadow-[8px_8px_0_0_#000] p-6">
             <h2 class="text-lg font-bold">Definir nova senha</h2>
-            <p class="text-sm text-slate-600 mt-1">Token de recuperação detectado.</p>
+            <p class="text-sm text-zinc-600 mt-1">Token de recuperação detectado.</p>
             <form id="form-recovery" onsubmit="handleRecoverySubmit(event)" class="mt-4 space-y-3">
-                <input type="password" id="recovery-password" placeholder="Nova senha (mín 8)" required class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm">
-                <input type="password" id="recovery-confirm" placeholder="Confirmar" required class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-slate-900 focus:outline-none text-sm">
-                <button type="submit" class="w-full py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-lg">Atualizar senha</button>
+                <input type="password" id="recovery-password" placeholder="Nova senha (mín 8)" required class="w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm">
+                <input type="password" id="recovery-confirm" placeholder="Confirmar" required class="w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm">
+                <button type="submit" class="w-full py-2.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none shadow-[4px_4px_0_0_#71717a] hover:bg-zinc-800">Atualizar senha</button>
             </form>
         </div>
     </div>
@@ -459,11 +448,11 @@
                 const data = await resp.json().catch(() => ({}));
                 // sempre mostra sucesso para não enumerar emails (privacidade)
                 showAuthError('login-error', 'login-error-text', data.mensagem || 'Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha. Verifique spam.');
-                // troca para visual de sucesso (verde) temporariamente
+                // troca para visual de sucesso (invertido, monocromático) temporariamente
                 const errEl = document.getElementById('login-error');
                 if (errEl) {
-                    errEl.classList.remove('bg-rose-500/10','border-rose-500/20','text-rose-400');
-                    errEl.classList.add('bg-emerald-500/10','border-emerald-500/20','text-emerald-400');
+                    errEl.classList.remove('bg-zinc-100','text-zinc-800');
+                    errEl.classList.add('bg-black','text-white');
                     errEl.classList.remove('hidden');
                 }
                 // também toast se existir

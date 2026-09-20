@@ -34,15 +34,15 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="h-full bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-slate-100 antialiased font-sans flex flex-col justify-between min-h-screen">
+<body class="h-full bg-zinc-50 dark:bg-[#09090b] text-zinc-800 dark:text-zinc-100 antialiased font-sans flex flex-col justify-between min-h-screen">
 
     <!-- Header / Brand -->
     <header class="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
         <a href="/" class="flex items-center space-x-2.5 group">
-            <div class="w-9 h-9 rounded-xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center shadow-md">
-                <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+            <div class="w-9 h-9 rounded-none bg-black dark:bg-white flex items-center justify-center">
+                <i data-lucide="zap" class="w-5 h-5 text-white dark:text-black"></i>
             </div>
-            <span class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Davi<span class="text-indigo-600 dark:text-indigo-400">Flow</span></span>
+            <span class="text-xl font-bold text-black dark:text-white tracking-tight">Davi<span class="text-zinc-500 dark:text-zinc-400">Flow</span></span>
         </a>
     </header>
 
@@ -50,16 +50,16 @@
     <main class="flex-1 flex flex-col items-center justify-center px-4 py-12 text-center max-w-md mx-auto">
         <div class="relative mb-6">
             <!-- Subtle background ring -->
-            <div class="w-24 h-24 rounded-3xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 flex items-center justify-center shadow-sm">
-                <span class="text-4xl font-black text-indigo-600 dark:text-indigo-400 tracking-tighter">404</span>
+            <div class="w-24 h-24 rounded-none bg-zinc-100 dark:bg-[#18181b] border-2 border-black dark:border-white flex items-center justify-center shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff]">
+                <span class="text-4xl font-black font-mono text-black dark:text-white tracking-tighter">404</span>
             </div>
         </div>
 
-        <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-3">
+        <h1 class="text-2xl sm:text-3xl font-black text-black dark:text-white tracking-tight mb-3">
             Página Não Encontrada
         </h1>
 
-        <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
+        <p class="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-8">
             A página que você está tentando acessar não existe, foi removida ou o endereço (URL) foi digitado incorretamente.
         </p>
 
@@ -69,19 +69,19 @@
                 <span>Voltar ao Início</span>
             </a>
             <a href="/dashboard.html" class="w-full sm:w-auto flex-1 btn-ghost py-3 flex items-center justify-center gap-2 font-semibold">
-                <i data-lucide="layout-dashboard" class="w-4 h-4 text-indigo-500"></i>
+                <i data-lucide="layout-dashboard" class="w-4 h-4 text-zinc-900 dark:text-zinc-100"></i>
                 <span>Ir ao Painel</span>
             </a>
         </div>
     </main>
 
     <!-- Footer -->
-    <footer class="w-full max-w-7xl mx-auto px-6 py-6 text-center text-xs text-slate-400 dark:text-slate-500">
+    <footer class="w-full max-w-7xl mx-auto px-6 py-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
         <p>&copy; 2026 DaviFlow &middot; Todos os direitos reservados.</p>
         <div class="flex items-center justify-center gap-4 mt-2 text-xs">
-            <a href="/privacidade.html" class="text-slate-500 hover:text-slate-300 transition-colors">Política de Privacidade</a>
-            <span class="text-slate-700">·</span>
-            <a href="/termos.html" class="text-slate-500 hover:text-slate-300 transition-colors">Termos de Serviço</a>
+            <a href="/privacidade.html" class="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors">Política de Privacidade</a>
+            <span class="text-zinc-400 dark:text-zinc-600">·</span>
+            <a href="/termos.html" class="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors">Termos de Serviço</a>
         </div>
     </footer>
 
