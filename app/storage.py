@@ -2601,3 +2601,73 @@ def _ensure_org_id(payload: dict, user_id: str):
     if oid:
         payload["org_id"] = oid
     return payload
+
+
+# ============================================================
+# BILLING (Fase 3D — Stripe)
+# ============================================================
+
+def registrar_pagamento(org_id: str, user_id: str | None, stripe_session_id: str | None,
+                        stripe_customer_id: str | None, stripe_subscription_id: str | None,
+                        status_pag: str, valor: float | None = None, moeda: str = "brl") -> dict:
+    """Upsert idempotente de pagamento por stripe_session_id (webhook pode reenviar)."""
+    if not org_id or not _validar_uuid(org_id):
+        raise ValueError("org_id inválido")
+    payload = {
+        "org_id": org_id,
+        "user_id": user_id,
+        "stripe_session_id": stripe_session_id,
+        "stripe_customer_id": stripe_customer_id,
+        "stripe_subscription_id": stripe_subscription_id,
+        "status": status_pag,
+        "valor": valor,
+        "moeda": moeda,
+    }
+    supabase = get_supabase_client()
+    if stripe_session_id:
+        existe = supabase.table("pagamentos").select("id").eq("stripe_session_id", stripe_session_id).limit(1).execute()
+        if existe.data:
+            upd = {k: v for k, v in payload.items() if v is not None and k not in ("stripe_session_id",)}
+            upd["updated_at"] = __import__("datetime").datetime.utcnow().isoformat()
+            r = supabase.table("pagamentos").update(upd).eq("stripe_session_id", stripe_session_id).execute()
+            return r.data[0] if r.data else {}
+    r = supabase.table("pagamentos").insert(payload).execute()
+    return r.data[0] if r.data else {}
+
+
+def atualizar_pagamento_status_por_customer(stripe_customer_id: str, status_pag: str) -> int:
+    """Atualiza status de todos os pagamentos de um customer (eventos de assinatura sem session)."""
+    if not stripe_customer_id:
+        return 0
+    supabase = get_supabase_client()
+    r = supabase.table("pagamentos").update({
+        "status": status_pag,
+        "updated_at": __import__("datetime").datetime.utcnow().isoformat(),
+    }).eq("stripe_customer_id", stripe_customer_id).execute()
+    return len(r.data) if r.data else 0
+
+
+def get_billing_status(user_id: str, org_id: str | None) -> dict:
+    """Retorna status de assinatura da org (qualquer membro pode ler)."""
+    if not org_id:
+        org_id = _get_default_org_id(user_id)
+    _verificar_membro(user_id, org_id)
+    supabase = get_supabase_client()
+    r = (
+        supabase.table("pagamentos")
+        .select("status,plano,updated_at,stripe_customer_id")
+        .eq("org_id", org_id)
+        .order("updated_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not r.data:
+        return {"plano": "free", "status": None, "assinatura_ativa": False, "atualizado_em": None}
+    p = r.data[0]
+    ativa = p.get("status") == "active"
+    return {
+        "plano": "pro" if ativa else "free",
+        "status": p.get("status"),
+        "assinatura_ativa": ativa,
+        "atualizado_em": p.get("updated_at"),
+    }

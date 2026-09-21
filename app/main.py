@@ -85,6 +85,7 @@ from app.storage import (
     get_usuario_me, update_usuario_me, alterar_senha_usuario,
     listar_templates, criar_template, atualizar_template, deletar_template,
     listar_automacoes, atualizar_automacao, run_automacoes_manual,
+    registrar_pagamento, atualizar_pagamento_status_por_customer, get_billing_status,
 )
 
 # --- Rate Limiter (F12 fix: não confia em X-Forwarded-For spoofável) ---
@@ -1016,6 +1017,72 @@ async def webhook_zapier_com_id(request: Request, integracao_id: str, payload: d
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao processar webhook.")
+
+# ============================================================
+# BILLING (Fase 3D — Stripe)
+# ============================================================
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
+
+
+@app.get("/api/billing/status", tags=["Billing"])
+async def billing_status(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Status de assinatura da org (qualquer membro lê)."""
+    try:
+        return get_billing_status(user_id, org_id)
+    except ValueError as e:
+        msg = str(e).lower()
+        if "negado" in msg or "inválido" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao consultar status de assinatura.")
+
+
+@app.post("/api/billing/webhook", tags=["Billing"])
+async def billing_webhook(request: Request):
+    """Webhook público do Stripe — verifica assinatura HMAC via lib oficial.
+    Retorna 503 amigável quando Stripe não está configurado (Fase 3D sem conta)."""
+    if not STRIPE_SECRET_KEY or not STRIPE_WEBHOOK_SECRET:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Billing não configurado.")
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature")
+    if not sig:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assinatura ausente.")
+    try:
+        import stripe
+        event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
+    except ImportError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Billing não configurado.")
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assinatura inválida.")
+
+    tipo = event.get("type")
+    data = (event.get("data") or {}).get("object") or {}
+    try:
+        if tipo == "checkout.session.completed":
+            org_id = data.get("client_reference_id")
+            if not org_id:
+                return {"status": "ignorado"}  # sessão sem org vinculada
+            amount = data.get("amount_total")
+            registrar_pagamento(
+                org_id=org_id,
+                user_id=(data.get("metadata") or {}).get("user_id"),
+                stripe_session_id=data.get("id"),
+                stripe_customer_id=data.get("customer"),
+                stripe_subscription_id=data.get("subscription"),
+                status_pag="active",
+                valor=(amount / 100) if isinstance(amount, (int, float)) else None,
+                moeda=data.get("currency") or "brl",
+            )
+        elif tipo in ("customer.subscription.deleted",):
+            atualizar_pagamento_status_por_customer(data.get("customer"), "canceled")
+        elif tipo in ("invoice.payment_failed",):
+            atualizar_pagamento_status_por_customer(data.get("customer"), "past_due")
+        # demais eventos: ignorados (200 sempre para não gerar retry infinito)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao processar webhook de pagamento.")
+    return {"status": "ok"}
 
 # Placeholder OAuth Calendar - retorna URL para conectar (mock)
 @app.get("/api/integracoes/calendar/auth-url", tags=["Integrações"])

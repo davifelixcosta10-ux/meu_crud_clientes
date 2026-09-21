@@ -19,6 +19,7 @@
 | Security | ✅ 2026-09-02 | direto → `56a5180` | 22 fixes OWASP (F1-F21 Mega Brain) |
 | Org | ✅ 2026-09-02 | direto → `f267a98` | `supabase/migrations 001-007` + `README` |
 | Neo-Brutalista | ✅ 2026-09-20 | `feat/landing-neo-brutalista` → `9ad5981` | Tema monocromático 60-30-10 (zinc-50/zinc-800/preto) em `index/404/privacidade/termos/dashboard.html` + `app.js` + `style.css` |
+| 3D-1 Stripe fundação | 🟡 Preview | `feat/fase3d-billing-fundacao` | `pagamentos` + RLS, `POST /api/billing/webhook` (assinatura verificada, idempotente, 503 sem env), `GET /api/billing/status`, 6 testes |
 
 ## Próximo Plano — Consolidação (1-2 dias) + 3D Backlog
 

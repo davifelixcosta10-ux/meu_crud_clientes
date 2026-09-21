@@ -114,7 +114,10 @@ supabase/archive/     # fix_*.sql já aplicados (recursion, planos_org, security
 - `supabase_all.sql` — cat 001-007 para fresh install
 - `archive/` — 8 fixes já aplicados (`fix_recursion`, `fix_2c_data_cast`, `fix_security_anon` revoke `anon` em `is_org_member`)
 
-## Histórico de Sessões (2026-08-30 → 2026-09-02)
+## Histórico de Sessões (2026-08-30 → 2026-09-20)
+
+### Fase 3D-1 Stripe fundação feat/fase3d-billing-fundacao (2026-09-20)
+- `pagamentos` (RLS `is_org_member`, `stripe_session_id` único idempotente), `POST /api/billing/webhook` (verificação via lib `stripe`, 503 se sem env), `GET /api/billing/status`, models `Pagamento/BillingStatusResponse/CheckoutRequest`, storage `registrar_pagamento`/`atualizar_pagamento_status_por_customer`/`get_billing_status`, `tests/test_billing.py` (6 casos), `requirements.txt + stripe`, `.env.example` + README com `STRIPE_*`
 
 ### Fase 2B WhatsApp 6f87c34-a769326 (2026-09-02)
 - Fix `plano_id uuid→bigint` `42804`, `DROP TABLE IF EXISTS` + `supabase/migrations/002`, `wa.me` com `carros[0].placa`
