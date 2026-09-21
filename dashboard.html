@@ -746,6 +746,19 @@
                 <!-- Conta -->
                 <div id="config-conteudo-conta" class="hidden space-y-4">
                     <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500">Conta</h3>
+                    <!-- Assinatura -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-widest text-zinc-500">Assinatura</h4>
+                        <div id="assinatura-status" class="flex items-center gap-3">
+                            <span id="assinatura-badge" class="px-3 py-1 rounded-none text-xs font-medium border-2 border-black text-zinc-600">Plano gratuito</span>
+                        </div>
+                        <div class="flex gap-2 w-full">
+                            <button id="btn-assinar" class="flex-1 btn-primary w-full">Assinar DaviFlow</button>
+                            <button id="btn-gerenciar" class="flex-1 btn-ghost w-full hidden">Gerenciar</button>
+                        </div>
+                    </div>
+                    <!-- Fim Assinatura -->
+                    
                     <div><label class="form-label">Nova senha</label><div class="flex gap-2"><input id="config-nova-senha" type="password" placeholder="mínimo 6 caracteres" class="form-input flex-1"><button onclick="alterarSenhaConfig()" class="btn-primary">Alterar senha</button></div></div>
                     <button onclick="exportarDados()" class="btn-ghost w-full"><i data-lucide="download" class="w-4 h-4"></i> Exportar meus dados (JSON)</button>
                     <div class="pt-4 border-t"><button onclick="deletarConta()" class="w-full py-2.5 rounded-none bg-black text-white border-2 border-black box-border text-sm font-bold">Deletar conta permanentemente</button><p class="text-[11px] text-zinc-400 mt-1 text-center">Irreversível. Remove auth.users e cascata.</p></div>
