@@ -1530,6 +1530,7 @@ function trocarAbaConfig(aba) {
     if (aba === 'notif') {
         carregarAutomacoes();
     }
+    if (aba === 'conta') atualizarAssinaturaUI();
     if (window.lucide) lucide.createIcons();
 }
 async function carregarConfigGeral() {
@@ -1577,6 +1578,91 @@ async function carregarConfigOrg() {
             const isAdmin = org?.papel === 'admin';
             cont.innerHTML = membros.map(m=> `<div class="flex items-center justify-between p-1.5 rounded border"><span class="font-mono text-[10px]">${escaparHTML(m.user_id.slice(0,8))}... ${escaparHTML(m.papel)}</span>${isAdmin ? `<button onclick="removerMembro('${m.user_id}')" class="text-zinc-600 text-[10px]">Remover</button>` : ''}</div>`).join('');
         } catch(e) { cont.innerHTML = '<p class="text-zinc-500">Erro</p>'; }
+    }
+}
+async function atualizarAssinaturaUI() {
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/billing/status${getOrgQuery()}`, { method: 'GET' });
+        if (!resp || !resp.ok) {
+            // If we can't fetch status, show error state
+            const badge = document.getElementById('assinatura-badge');
+            if (badge) {
+                badge.textContent = 'Erro ao carregar';
+                badge.className = 'px-3 py-1 rounded-none text-xs font-medium border-2 border-black text-zinc-400';
+            }
+            const btnAssinar = document.getElementById('btn-assinar');
+            const btnGerenciar = document.getElementById('btn-gerenciar');
+            if (btnAssinar) btnAssinar.classList.remove('hidden');
+            if (btnGerenciar) btnGerenciar.classList.add('hidden');
+            return;
+        }
+        
+        const data = await resp.json();
+        const badge = document.getElementById('assinatura-badge');
+        const btnAssinar = document.getElementById('btn-assinar');
+        const btnGerenciar = document.getElementById('btn-gerenciar');
+        
+        if (!badge || !btnAssinar || !btnGerenciar) return;
+        
+        // Update UI based on billing status
+        if (data.assinatura_ativa) {
+            // Active subscription
+            badge.textContent = `Plano ${data.plano === 'pro' ? 'Pro' : 'Grátis'} • ${data.status || 'ativo'}`;
+            badge.className = 'px-3 py-1 rounded-none text-xs font-medium bg-black text-white';
+            btnAssinar.classList.add('hidden');
+            btnGerenciar.classList.remove('hidden');
+            
+            // Set up Gerenciar button to open Stripe customer portal
+            // In a real implementation, we would need to get the customer portal URL
+            // For now, we'll make it show a toast or redirect to a placeholder
+            btnGerenciar.onclick = () => {
+                exibirToast('Abrindo portal do cliente Stripe...', 'info');
+                // In production, this would redirect to Stripe customer portal
+                // We would need to get this from the backend or Stripe API
+            };
+        } else {
+            // Inactive or no subscription
+            badge.textContent = data.plano === 'pro' ? 'Plano Pro • inativo' : 'Plano gratuito';
+            badge.className = 'px-3 py-1 rounded-none text-xs font-medium border-2 border-black text-zinc-600';
+            btnAssinar.classList.remove('hidden');
+            btnGerenciar.classList.add('hidden');
+            
+            // Set up Assinar button to create checkout session
+            btnAssinar.onclick = async () => {
+                try {
+                    const checkoutResp = await fetchAuth(`${API_BASE_URL}/billing/checkout`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ org_id: currentOrgId })
+                    });
+                    
+                    if (!checkoutResp || !checkoutResp.ok) {
+                        const err = await checkoutResp.json().catch(() => ({}));
+                        exibirToast(err.detail || 'Erro ao criar sessão de checkout', 'erro');
+                        return;
+                    }
+                    
+                    const data = await checkoutResp.json();
+                    if (data.checkout_url) {
+                        // Redirect to Stripe checkout
+                        window.location.href = data.checkout_url;
+                    } else {
+                        exibirToast('URL de checkout não recebida', 'erro');
+                    }
+                } catch (e) {
+                    console.error('Erro ao criar checkout:', e);
+                    exibirToast('Erro ao processar pagamento', 'erro');
+                }
+            };
+        }
+    } catch (e) {
+        console.error('Erro ao atualizar assinatura UI:', e);
+        // Show error state
+        const badge = document.getElementById('assinatura-badge');
+        if (badge) {
+            badge.textContent = 'Erro ao carregar';
+            badge.className = 'px-3 py-1 rounded-none text-xs font-medium border-2 border-black text-zinc-400';
+        }
     }
 }
 async function renomearOrgConfig() {
