@@ -1084,6 +1084,49 @@ async def billing_webhook(request: Request):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao processar webhook de pagamento.")
     return {"status": "ok"}
 
+
+@app.post("/api/billing/checkout", tags=["Billing"])
+async def billing_checkout(dados: CheckoutRequest, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Cria Stripe Checkout Session para assinatura (apenas admin)."""
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Billing não configurado.")
+    try:
+        import stripe
+        stripe.api_key = STRIPE_SECRET_KEY
+        
+        # Verifica permissão admin
+        _verificar_admin(user_id, org_id)
+        
+        # Define URLs de sucesso e cancelamento
+        site_url = os.environ.get("SITE_URL") or "https://daviflow.vercel.app"
+        success_url = f"{site_url}/?checkout_success=true&session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{site_url}/?checkout_canceled=true"
+        
+        # Cria Checkout Session
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price": os.environ.get("STRIPE_PRICE_ID"),
+                "quantity": 1,
+            }],
+            mode="subscription",
+            success_url=success_url,
+            cancel_url=cancel_url,
+            client_reference_id=org_id,
+            metadata={
+                "org_id": org_id,
+                "user_id": user_id
+            }
+        )
+        
+        return {"checkout_url": checkout_session.url}
+    except ImportError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Billing não configurado.")
+    except Exception as e:
+        # Log para debug (em produção, não expor detalhes)
+        print(f"[ERRO billing_checkout] {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar sessão de checkout.")
+
 # Placeholder OAuth Calendar - retorna URL para conectar (mock)
 @app.get("/api/integracoes/calendar/auth-url", tags=["Integrações"])
 async def get_calendar_auth_url(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
