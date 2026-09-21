@@ -5123,6 +5123,91 @@ function escaparHTML(str) {
 //     tipos: sucesso (preto), erro (branco), info (zinc) — monocromático
 //     escaparHTML na mensagem para prevenir XSS via toast
 // ============================================================
+
+async function iniciarCheckout() {
+    const btn = document.querySelector('button[onclick="iniciarCheckout()"]');
+    if (!btn) return;
+    
+    // Disable button and show loading
+    const originalText = btn.textContent;
+    btn.textContent = 'Processando...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetchAuth(`${API_BASE_URL}/api/billing/checkout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ org_id: currentOrgId })
+        });
+        
+        if (!response) return; // Redirect handled by fetchAuth
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Erro ao criar checkout');
+        }
+        
+        const data = await response.json();
+        if (data.checkout_url) {
+            // Redirect to Stripe Checkout
+            window.location.href = data.checkout_url;
+        } else {
+            throw new Error('URL de checkout não recebida');
+        }
+    } catch (error) {
+        exibirToast(error.message || 'Erro inesperado', 'erro');
+        console.error('[ERRO iniciarCheckout]', error);
+    } finally {
+        // Re-enable button
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
+async function atualizarAssinaturaUI() {
+    if (!currentOrgId) return;
+    
+    const statusEl = document.getElementById('assinatura-status');
+    if (!statusEl) return;
+    
+    try {
+        const response = await fetchAuth(`${API_BASE_URL}/api/billing/status?org_id=${currentOrgId}`, {
+            method: 'GET'
+        });
+        
+        if (!response) return; // Redirect handled by fetchAuth
+        
+        if (!response.ok) {
+            // If 401/403, still consider as "logged in" but no access
+            if (response.status === 401 || response.status === 403) {
+                statusEl.textContent = 'Erro de permissão';
+                statusEl.className = 'px-2 py-0.5 rounded-none text-xs font-bold border-2 border-black bg-red-100 text-red-800';
+                return;
+            }
+            throw new Error('Falha ao buscar status');
+        }
+        
+        const data = await response.json();
+        
+        // Update UI based on status
+        if (data.ativo || data.status === 'active') {
+            statusEl.textContent = 'Ativo';
+            statusEl.className = 'px-2 py-0.5 rounded-none text-xs font-bold border-2 border-black bg-black text-white';
+        } else {
+            statusEl.textContent = 'Inativo';
+            statusEl.className = 'px-2 py-0.5 rounded-none text-xs font-bold border-2 border-black bg-transparent text-zinc-900 dark:text-zinc-100';
+        }
+    } catch (error) {
+        statusEl.textContent = 'Erro';
+        statusEl.className = 'px-2 py-0.5 rounded-none text-xs font-bold border-2 border-black bg-red-100 text-red-800';
+        console.error('[ERRO atualizarAssinaturaUI]', error);
+    }
+}
+
+function abrirGerenciarStripe() {
+    // Placeholder - in future would open Stripe Customer Portal
+    exibirToast('Funcionalidade em desenvolvimento', 'info');
+}
 function exibirToast(mensagem, tipo = 'sucesso') {
     const container = document.getElementById('toast-container');
     if (!container) return;
