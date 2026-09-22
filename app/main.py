@@ -22,7 +22,7 @@ Segurança:
 
 import os
 from datetime import date
-from fastapi import FastAPI, HTTPException, status, Header, Depends, Request
+from fastapi import FastAPI, HTTPException, status, Header, Depends, Request, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -112,6 +112,7 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(Exception, lambda request, exc: JSONResponse(status_code=500, content={"detail": "Internal Server Error"}))
 
 # --- CORS ---
 # Configuração restritiva: apenas domínios conhecidos + localhost
