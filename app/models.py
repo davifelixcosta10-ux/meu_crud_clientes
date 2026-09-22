@@ -1123,3 +1123,36 @@ class Automacao(BaseModel):
 class AutomacaoUpdate(BaseModel):
     ativo: Optional[bool] = None
     config: Optional[dict] = None
+
+
+# ============================================================
+# BILLING (Fase 3D — Stripe)
+# ============================================================
+
+class Pagamento(BaseModel):
+    id: str
+    org_id: str
+    user_id: str
+    stripe_session_id: Optional[str] = None
+    stripe_customer_id: Optional[str] = None
+    stripe_subscription_id: Optional[str] = None
+    status: str = "pending"  # pending | active | canceled | past_due
+    plano: str = "pro"
+    valor: Optional[float] = None
+    moeda: str = "brl"
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class BillingStatusResponse(BaseModel):
+    plano: str = "free"          # 'free' | 'pro'
+    status: Optional[str] = None  # último status conhecido (active/canceled/past_due/pending)
+    assinatura_ativa: bool = False
+    atualizado_em: Optional[str] = None
+
+
+class CheckoutRequest(BaseModel):
+    org_id: str

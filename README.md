@@ -27,6 +27,7 @@ Env Vars (Vercel → Settings → Environment Variables):
 - `SITE_URL` — `https://daviflow.vercel.app`
 - `ALLOWED_ORIGINS` — `https://daviflow.vercel.app,https://daviflowgestoes.vercel.app`
 - `API_KEY_PEPPER` — segredo para HMAC de `api_keys` (opcional)
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` — Fase 3D billing (opcional; sem elas `/api/billing/*` responde 503 amigável)
 
 ## Estrutura
 - `app/` — `main.py` (39+ rotas), `models.py`, `storage.py` (supabase singleton + RLS org-based)
