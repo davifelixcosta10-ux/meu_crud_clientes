@@ -705,6 +705,34 @@
                         <div><label class="form-label">Vertical</label><select id="config-vertical" class="form-input"><option value="geral">Geral</option><option value="hospital">Hospital</option><option value="lava_rapido_oficina">Oficina</option><option value="dentista">Dentista</option><option value="academia">Academia</option></select></div>
                         <div><label class="form-label">Tema</label><button onclick="toggleTemaManual()" class="w-full py-2.5 rounded-none border text-xs font-semibold">Alternar tema</button></div>
                     </div>
+                    <!-- WhatsApp -->
+                    <div id="config-whatsapp" class="space-y-4">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500">WhatsApp</h3>
+                        <div>
+                            <label class="form-label">Provedor</label>
+                            <select id="config-whatsapp-provedor" class="form-input" onchange="toggleWhatsAppFields()">
+                                <option value="evolution">Evolution API</option>
+                                <option value="meta">Meta Cloud API</option>
+                            </select>
+                        </div>
+                        <div id="config-whatsapp-evolution-fields">
+                            <div><label class="form-label">URL Base</label><input id="config-whatsapp-base-url" type="text" class="form-input" placeholder="https://sua-instancia-evolution.com"></div>
+                            <div><label class="form-label">Instância</label><input id="config-whatsapp-instancia" type="text" class="form-input" placeholder="nome-da-instancia"></div>
+                        </div>
+                        <div id="config-whatsapp-meta-fields" class="hidden">
+                            <div><label class="form-label">URL Base</label><input id="config-whatsapp-base-url-meta" type="text" class="form-input" placeholder="https://graph.facebook.com/v18.0"></div>
+                            <div><label class="form-label">Phone Number ID</label><input id="config-whatsapp-phone-number-id" type="text" class="form-input" placeholder="Seu Phone Number ID"></div>
+                        </div>
+                        <div><label class="form-label">Token</label><input id="config-whatsapp-token" type="password" class="form-input" placeholder="Token de acesso"></div>
+                        <div><label class="form-label">Telefone para teste</label><input id="config-whatsapp-teste-telefone" type="text" class="form-input" placeholder="5511999999999"></div>
+                        <div><label class="form-label">Mensagem de teste</label><input id="config-whatsapp-teste-mensagem" type="text" class="form-input" placeholder="Esta é uma mensagem de teste do DaviFlow"></div>
+                        <div class="flex gap-2">
+                            <button onclick="salvarConfigWhatsApp()" class="btn-ghost">Salvar Configuração</button>
+                            <button onclick="testarConexaoWhatsApp()" class="btn-ghost">Testar Conexão</button>
+                            <button onclick="enviarTesteWhatsApp()" class="btn-primary">Enviar Teste</button>
+                        </div>
+                        <div id="config-whatsapp-status" class="mt-2 text-xs"></div>
+                    </div>
                     <button onclick="salvarConfigGeral()" class="btn-primary">Salvar Geral</button>
                 </div>
                 <!-- Org -->
@@ -746,9 +774,24 @@
                 <!-- Conta -->
                 <div id="config-conteudo-conta" class="hidden space-y-4">
                     <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500">Conta</h3>
+                    <!-- Assinatura -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-widest text-zinc-500">Assinatura</h4>
+                        <div id="assinatura-status" class="flex items-center gap-3">
+                            <span id="assinatura-badge" class="px-3 py-1 rounded-none text-xs font-medium border-2 border-black text-zinc-600">Plano gratuito</span>
+                        </div>
+                        <div class="flex gap-2 w-full">
+                            <button id="btn-assinar" class="flex-1 btn-primary w-full">Assinar DaviFlow</button>
+                            <button id="btn-gerenciar" class="flex-1 btn-ghost w-full hidden">Gerenciar</button>
+                        </div>
+                    </div>
+                    <!-- Fim Assinatura -->
+                    
                     <div><label class="form-label">Nova senha</label><div class="flex gap-2"><input id="config-nova-senha" type="password" placeholder="mínimo 6 caracteres" class="form-input flex-1"><button onclick="alterarSenhaConfig()" class="btn-primary">Alterar senha</button></div></div>
                     <button onclick="exportarDados()" class="btn-ghost w-full"><i data-lucide="download" class="w-4 h-4"></i> Exportar meus dados (JSON)</button>
                     <div class="pt-4 border-t"><button onclick="deletarConta()" class="w-full py-2.5 rounded-none bg-black text-white border-2 border-black box-border text-sm font-bold">Deletar conta permanentemente</button><p class="text-[11px] text-zinc-400 mt-1 text-center">Irreversível. Remove auth.users e cascata.</p></div>
+
+
                 </div>
             </div>
         </section>

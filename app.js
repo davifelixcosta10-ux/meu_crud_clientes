@@ -13,6 +13,10 @@
  *
  * Seções (19 no total):
  *  0. Configuração (IS_LOCAL, API_BASE_URL, PLANOS_DEFAULT, CLIENTES_DEMO)
+
+// Stripe config flag (checked in atualizarAssinaturaUI)
+let stripeConfigured = true;
+
  *  1. Tema dark/light (localStorage + prefers-color-scheme)
  *  2. Status da API (badge Conectado/Demo/Desconectado, polling 15s)
  *  3. Planos - carregar e cache
@@ -1530,6 +1534,7 @@ function trocarAbaConfig(aba) {
     if (aba === 'notif') {
         carregarAutomacoes();
     }
+    if (aba === 'conta') atualizarAssinaturaUI();
     if (window.lucide) lucide.createIcons();
 }
 async function carregarConfigGeral() {
@@ -1541,6 +1546,36 @@ async function carregarConfigGeral() {
         document.getElementById('config-empresa').value = data.nome_empresa || '';
         document.getElementById('config-email').value = data.email || '';
         document.getElementById('config-vertical').value = data.vertical || currentVertical || 'geral';
+        
+        // Carregar configuração do WhatsApp
+        const integracaoResp = await fetchAuth(`${API_BASE_URL}/integracoes`, { method: 'GET' });
+        if (integracaoResp && integracaoResp.ok) {
+            const integracoes = await integracaoResp.json();
+            const whatsAppIntegracao = integracoes.find(i => i.tipo === 'whatsapp');
+            if (whatsAppIntegracao && whatsAppIntegracao.config) {
+                try {
+                    const config = typeof whatsAppIntegracao.config === 'string' 
+                        ? JSON.parse(whatsAppIntegracao.config) 
+                        : whatsAppIntegracao.config;
+                    
+                    // Preencher os campos
+                    document.getElementById('config-whatsapp-provedor').value = config.provider || 'evolution';
+                    toggleWhatsAppFields(); // Atualizar visibilidade dos campos
+                    
+                    if (config.provider === 'evolution') {
+                        document.getElementById('config-whatsapp-base-url').value = config.base_url || '';
+                        document.getElementById('config-whatsapp-instancia').value = config.instancia || '';
+                    } else if (config.provider === 'meta') {
+                        document.getElementById('config-whatsapp-base-url-meta').value = config.base_url || '';
+                        document.getElementById('config-whatsapp-phone-number-id').value = config.phone_number_id || '';
+                    }
+                    document.getElementById('config-whatsapp-token').value = config.token || '';
+                } catch(e) {
+                    // Se houver erro ao parsear o config, deixar os campos vazios
+                    console.error('Erro ao processar configuração WhatsApp:', e);
+                }
+            }
+        }
     } catch(e) {}
 }
 async function salvarConfigGeral() {
@@ -1557,6 +1592,137 @@ async function salvarConfigGeral() {
         if (data.vertical) { currentVertical = data.vertical; localStorage.setItem('daviflow_vertical', currentVertical); aplicarVertical(currentVertical); document.getElementById('vertical-select').value = currentVertical; }
     } catch(e) { exibirToast('Erro ao salvar', 'erro'); }
 }
+// WhatsApp Configuration Functions
+async function salvarConfigWhatsApp() {
+    const provedor = document.getElementById('config-whatsapp-provedor').value;
+    const baseUrl = document.getElementById('config-whatsapp-base-url')?.value.trim() || 
+                   document.getElementById('config-whatsapp-base-url-meta')?.value.trim() || null;
+    const instancia = document.getElementById('config-whatsapp-instancia')?.value.trim() || null;
+    const phoneNumberId = document.getElementById('config-whatsapp-phone-number-id')?.value.trim() || null;
+    const token = document.getElementById('config-whatsapp-token')?.value.trim() || null;
+    
+    // Validações básicas
+    if (!baseUrl) {
+        exibirToast('URL Base é obrigatória', 'erro');
+        return;
+    }
+    if (provedor === 'evolution' && !instancia) {
+        exibirToast('Instância é obrigatória para Evolution API', 'erro');
+        return;
+    }
+    if (provedor === 'meta' && !phoneNumberId) {
+        exibirToast('Phone Number ID é obrigatório para Meta Cloud API', 'erro');
+        return;
+    }
+    if (!token) {
+        exibirToast('Token é obrigatório', 'erro');
+        return;
+    }
+    
+    const config = {
+        provider: provedor,
+        base_url: baseUrl,
+        ...(provedor === 'evolution' ? { instancia: instancia } : { phone_number_id: phoneNumberId }),
+        token: token
+    };
+    
+    try {
+        const payload = { config: JSON.stringify(config) };
+        const resp = await fetchAuth(`${API_BASE_URL}/integracoes/whatsapp`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(payload) 
+        });
+        if (!resp || !resp.ok) { 
+            const err=await resp.json().catch(()=>({})); 
+            exibirToast(err.detail||'Erro ao salvar configuração WhatsApp', 'erro'); 
+            return; 
+        }
+        exibirToast('Configuração WhatsApp salva!', 'sucesso');
+    } catch(e) { 
+        exibirToast('Erro ao salvar configuração WhatsApp', 'erro'); 
+    }
+}
+
+async function testarConexaoWhatsApp() {
+    const provedor = document.getElementById('config-whatsapp-provedor').value;
+    const token = document.getElementById('config-whatsapp-token')?.value.trim();
+    if (!token) {
+        exibirToast('Token é obrigatório para testar conexão', 'erro');
+        return;
+    }
+    
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/integracoes/whatsapp/test`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' } 
+        });
+        if (!resp || !resp.ok) { 
+            const err=await resp.json().catch(()=>({})); 
+            exibirToast(err.detail||'Falha na conexão WhatsApp', 'erro'); 
+            return; 
+        }
+        exibirToast('Conexão WhatsApp estabelecida com sucesso!', 'sucesso');
+    } catch(e) { 
+        exibirToast('Erro ao testar conexão WhatsApp', 'erro'); 
+    }
+}
+
+async function enviarTesteWhatsApp() {
+    const telefone = document.getElementById('config-whatsapp-teste-telefone')?.value.trim() || '';
+    const mensagem = document.getElementById('config-whatsapp-teste-mensagem')?.value.trim() || 'Esta é uma mensagem de teste do DaviFlow';
+    
+    if (!telefone) {
+        exibirToast('Telefone de teste é obrigatório', 'erro');
+        return;
+    }
+    
+    // Validação básica de formato de telefone brasileiro (55 + 10 ou 11 dígitos)
+    if (!/^55\d{10,11}$/.test(telefone)) {
+        exibirToast('Telefone deve estar no formato E.164 brasileiro: 55 seguido de 10 ou 11 dígitos', 'erro');
+        return;
+    }
+    
+    try {
+        const payload = {
+            telefone_e164: telefone,
+            mensagem: mensagem
+        };
+        const resp = await fetchAuth(`${API_BASE_URL}/whatsapp/enviar`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(payload) 
+        });
+        if (!resp || !resp.ok) { 
+            const err=await resp.json().catch(()=>({})); 
+            exibirToast(err.detail || 'Falha ao enviar mensagem de teste', 'erro'); 
+            return; 
+        }
+        const result = await resp.json();
+        if (result.success) {
+            exibirToast('Mensagem de teste enviada com sucesso!', 'sucesso');
+        } else {
+            exibirToast(result.erro||'Falha ao enviar mensagem de teste', 'erro');
+        }
+    } catch(e) { 
+        exibirToast('Erro ao enviar mensagem de teste', 'erro'); 
+    }
+}
+
+function toggleWhatsAppFields() {
+    const provedor = document.getElementById('config-whatsapp-provedor').value;
+    const evolutionFields = document.getElementById('config-whatsapp-evolution-fields');
+    const metaFields = document.getElementById('config-whatsapp-meta-fields');
+    
+    if (provedor === 'evolution') {
+        evolutionFields.classList.remove('hidden');
+        metaFields.classList.add('hidden');
+    } else {
+        evolutionFields.classList.add('hidden');
+        metaFields.classList.remove('hidden');
+    }
+}
+
 async function carregarConfigOrg() {
     const org = orgsCache.find(o=>o.id===currentOrgId);
     const info = document.getElementById('config-org-info');
@@ -1577,6 +1743,105 @@ async function carregarConfigOrg() {
             const isAdmin = org?.papel === 'admin';
             cont.innerHTML = membros.map(m=> `<div class="flex items-center justify-between p-1.5 rounded border"><span class="font-mono text-[10px]">${escaparHTML(m.user_id.slice(0,8))}... ${escaparHTML(m.papel)}</span>${isAdmin ? `<button onclick="removerMembro('${m.user_id}')" class="text-zinc-600 text-[10px]">Remover</button>` : ''}</div>`).join('');
         } catch(e) { cont.innerHTML = '<p class="text-zinc-500">Erro</p>'; }
+    }
+}
+async function atualizarAssinaturaUI() {
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/billing/status${getOrgQuery()}`, { method: 'GET' });
+        if (!resp || !resp.ok) {
+            // If we can't fetch status, show error state
+            const badge = document.getElementById('assinatura-badge');
+            const btnAssinar = document.getElementById('btn-assinar');
+            const btnGerenciar = document.getElementById('btn-gerenciar');
+            if (resp && resp.status === 503) {
+                // Stripe not configured
+                stripeConfigured = false;
+                if (badge) {
+                    badge.textContent = 'Stripe não configurado';
+                    badge.className = 'px-3 py-1 rounded-none text-xs font-medium border-2 border-black text-zinc-400';
+                }
+                if (btnAssinar) {
+                    btnAssinar.disabled = true;
+                    btnAssinar.title = 'Configure STRIPE_SECRET_KEY e STRIPE_PRICE_ID no Vercel';
+                    btnAssinar.classList.add('opacity-50', 'cursor-not-allowed');
+                    btnAssinar.classList.remove('hidden');
+                }
+                if (btnGerenciar) btnGerenciar.classList.add('hidden');
+                return;
+            }
+            // Other errors
+            if (badge) {
+                badge.textContent = 'Erro ao carregar';
+                badge.className = 'px-3 py-1 rounded-none text-xs font-medium border-2 border-black text-zinc-400';
+            }
+            if (btnAssinar) btnAssinar.classList.remove('hidden');
+            if (btnGerenciar) btnGerenciar.classList.add('hidden');
+            return;
+        }
+        
+        const data = await resp.json();
+        const badge = document.getElementById('assinatura-badge');
+        const btnAssinar = document.getElementById('btn-assinar');
+        const btnGerenciar = document.getElementById('btn-gerenciar');
+        
+        if (!badge || !btnAssinar || !btnGerenciar) return;
+        
+        // Update UI based on billing status
+        if (data.assinatura_ativa) {
+            // Active subscription
+            badge.textContent = `Plano ${data.plano === 'pro' ? 'Pro' : 'Grátis'} • ${data.status || 'ativo'}`;
+            badge.className = 'px-3 py-1 rounded-none text-xs font-medium bg-black text-white';
+            btnAssinar.classList.add('hidden');
+            btnGerenciar.classList.remove('hidden');
+            
+            btnGerenciar.onclick = () => {
+                exibirToast('Abrindo portal do cliente Stripe...', 'info');
+            };
+        } else {
+            // Inactive or no subscription
+            badge.textContent = data.plano === 'pro' ? 'Plano Pro • inativo' : 'Plano gratuito';
+            badge.className = 'px-3 py-1 rounded-none text-xs font-medium border-2 border-black text-zinc-600';
+            btnAssinar.classList.remove('hidden');
+            btnGerenciar.classList.add('hidden');
+            
+            // Set up Assinar button to create checkout session
+            btnAssinar.onclick = async () => {
+                if (!stripeConfigured) {
+                    exibirToast('Funcionalidade de assinatura requer Stripe configurado no backend', 'info');
+                    return;
+                }
+                try {
+                    const checkoutResp = await fetchAuth(`${API_BASE_URL}/billing/checkout`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ org_id: currentOrgId })
+                    });
+                    
+                    if (!checkoutResp || !checkoutResp.ok) {
+                        const err = await checkoutResp.json().catch(() => ({}));
+                        exibirToast(err.detail || 'Erro ao criar sessão de checkout', 'erro');
+                        return;
+                    }
+                    
+                    const data = await checkoutResp.json();
+                    if (data.checkout_url) {
+                        window.location.href = data.checkout_url;
+                    } else {
+                        exibirToast('URL de checkout não recebida', 'erro');
+                    }
+                } catch (e) {
+                    console.error('Erro ao criar checkout:', e);
+                    exibirToast('Erro ao processar pagamento', 'erro');
+                }
+            };
+        }
+    } catch (e) {
+        console.error('Erro ao atualizar assinatura UI:', e);
+        const badge = document.getElementById('assinatura-badge');
+        if (badge) {
+            badge.textContent = 'Erro ao carregar';
+            badge.className = 'px-3 py-1 rounded-none text-xs font-medium border-2 border-black text-zinc-400';
+        }
     }
 }
 async function renomearOrgConfig() {
@@ -5037,6 +5302,91 @@ function escaparHTML(str) {
 //     tipos: sucesso (preto), erro (branco), info (zinc) — monocromático
 //     escaparHTML na mensagem para prevenir XSS via toast
 // ============================================================
+
+async function iniciarCheckout() {
+    const btn = document.querySelector('button[onclick="iniciarCheckout()"]');
+    if (!btn) return;
+    
+    // Disable button and show loading
+    const originalText = btn.textContent;
+    btn.textContent = 'Processando...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetchAuth(`${API_BASE_URL}/api/billing/checkout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ org_id: currentOrgId })
+        });
+        
+        if (!response) return; // Redirect handled by fetchAuth
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Erro ao criar checkout');
+        }
+        
+        const data = await response.json();
+        if (data.checkout_url) {
+            // Redirect to Stripe Checkout
+            window.location.href = data.checkout_url;
+        } else {
+            throw new Error('URL de checkout não recebida');
+        }
+    } catch (error) {
+        exibirToast(error.message || 'Erro inesperado', 'erro');
+        console.error('[ERRO iniciarCheckout]', error);
+    } finally {
+        // Re-enable button
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
+async function atualizarAssinaturaUI() {
+    if (!currentOrgId) return;
+    
+    const statusEl = document.getElementById('assinatura-status');
+    if (!statusEl) return;
+    
+    try {
+        const response = await fetchAuth(`${API_BASE_URL}/api/billing/status?org_id=${currentOrgId}`, {
+            method: 'GET'
+        });
+        
+        if (!response) return; // Redirect handled by fetchAuth
+        
+        if (!response.ok) {
+            // If 401/403, still consider as "logged in" but no access
+            if (response.status === 401 || response.status === 403) {
+                statusEl.textContent = 'Erro de permissão';
+                statusEl.className = 'px-2 py-0.5 rounded-none text-xs font-bold border-2 border-black bg-red-100 text-red-800';
+                return;
+            }
+            throw new Error('Falha ao buscar status');
+        }
+        
+        const data = await response.json();
+        
+        // Update UI based on status
+        if (data.ativo || data.status === 'active') {
+            statusEl.textContent = 'Ativo';
+            statusEl.className = 'px-2 py-0.5 rounded-none text-xs font-bold border-2 border-black bg-black text-white';
+        } else {
+            statusEl.textContent = 'Inativo';
+            statusEl.className = 'px-2 py-0.5 rounded-none text-xs font-bold border-2 border-black bg-transparent text-zinc-900 dark:text-zinc-100';
+        }
+    } catch (error) {
+        statusEl.textContent = 'Erro';
+        statusEl.className = 'px-2 py-0.5 rounded-none text-xs font-bold border-2 border-black bg-red-100 text-red-800';
+        console.error('[ERRO atualizarAssinaturaUI]', error);
+    }
+}
+
+function abrirGerenciarStripe() {
+    // Placeholder - in future would open Stripe Customer Portal
+    exibirToast('Funcionalidade em desenvolvimento', 'info');
+}
 function exibirToast(mensagem, tipo = 'sucesso') {
     const container = document.getElementById('toast-container');
     if (!container) return;
