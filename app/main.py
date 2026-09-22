@@ -22,7 +22,7 @@ Segurança:
 
 import os
 from datetime import date
-from fastapi import FastAPI, HTTPException, status, Header, Depends, Request
+from fastapi import FastAPI, HTTPException, status, Header, Depends, Request, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -61,6 +61,7 @@ from app.models import (
     UsuarioMe, UsuarioUpdate, AlterarSenhaRequest,
     Template, TemplateCreate, TemplateUpdate,
     Automacao, AutomacaoUpdate,
+    WhatsAppEnvioRequest, WhatsAppEnvioResponse,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -111,6 +112,7 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(Exception, lambda request, exc: JSONResponse(status_code=500, content={"detail": "Internal Server Error"}))
 
 # --- CORS ---
 # Configuração restritiva: apenas domínios conhecidos + localhost
@@ -1130,6 +1132,28 @@ async def billing_checkout(dados: CheckoutRequest, org_id: str | None = None, us
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro interno ao criar sessão de checkout",
         )
+
+@app.post("/api/whatsapp/enviar", tags=["WhatsApp"])
+@limiter.limit("10/minute")
+async def whatsapp_enviar(request: Request, dados: WhatsAppEnvioRequest, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Envía mensagem WhatsApp (apenas admin, 10/min)."""
+    from app.storage import _get_default_org_id, _verificar_admin, enviar_whatsapp
+    
+    if not org_id:
+        org_id = _get_default_org_id(user_id)
+    if org_id:
+        try:
+            _verificar_admin(user_id, org_id)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    
+    result = enviar_whatsapp(org_id, dados.telefone_e164, dados.mensagem)
+    if not result["success"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result["erro"]
+        )
+    return result
 
 # Placeholder OAuth Calendar - retorna URL para conectar (mock)
 @app.get("/api/integracoes/calendar/auth-url", tags=["Integrações"])
