@@ -396,8 +396,15 @@
                     body: JSON.stringify({ email, password })
                 });
 
-                const data = await response.json();
-
+                // SAFE JSON PARSE - não quebra em HTML/texto
+                let data;
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    throw new Error(text.slice(0, 200) || 'Resposta inválido do servidor');
+                }
                 if (!response.ok) {
                     throw new Error(data.detail || 'Email ou senha incorretos.');
                 }

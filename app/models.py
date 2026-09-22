@@ -1123,3 +1123,54 @@ class Automacao(BaseModel):
 class AutomacaoUpdate(BaseModel):
     ativo: Optional[bool] = None
     config: Optional[dict] = None
+
+
+# ============================================================
+# BILLING (Fase 3D — Stripe)
+# ============================================================
+
+class Pagamento(BaseModel):
+    id: str
+    org_id: str
+    user_id: str
+    stripe_session_id: Optional[str] = None
+    stripe_customer_id: Optional[str] = None
+    stripe_subscription_id: Optional[str] = None
+    status: str = "pending"  # pending | active | canceled | past_due
+    plano: str = "pro"
+    valor: Optional[float] = None
+    moeda: str = "brl"
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class BillingStatusResponse(BaseModel):
+    plano: str = "free"          # 'free' | 'pro'
+    status: Optional[str] = None  # último status conhecido (active/canceled/past_due/pending)
+    assinatura_ativa: bool = False
+    atualizado_em: Optional[str] = None
+
+
+class CheckoutRequest(BaseModel):
+    org_id: str
+
+
+class WhatsAppEnvioRequest(BaseModel):
+    telefone_e164: str  # Format: ^55\d{10,11}$ (Brazil)
+    mensagem: str
+
+    @validator('telefone_e164')
+    def validate_telefone(cls, v):
+        import re
+        if not re.match(r'^55\d{10,11}$', v):
+            raise ValueError(r'Telefone deve estar no formato E.164 brasileiro: ^55\d{10,11}$')
+        return v
+
+
+class WhatsAppEnvioResponse(BaseModel):
+    success: bool
+    message_id: Optional[str] = None
+    erro: Optional[str] = None

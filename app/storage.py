@@ -29,6 +29,7 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 from supabase import create_client, Client
+import httpx
 from app.models import Cliente, ClienteCreate, Plano, UserLogin, UserSignUp, Etapa, Atividade, Tag, FiltroSalvo
 
 
@@ -2601,3 +2602,153 @@ def _ensure_org_id(payload: dict, user_id: str):
     if oid:
         payload["org_id"] = oid
     return payload
+
+
+# ============================================================
+# BILLING (Fase 3D — Stripe)
+# ============================================================
+
+def registrar_pagamento(org_id: str, user_id: str | None, stripe_session_id: str | None,
+                        stripe_customer_id: str | None, stripe_subscription_id: str | None,
+                        status_pag: str, valor: float | None = None, moeda: str = "brl") -> dict:
+    """Upsert idempotente de pagamento por stripe_session_id (webhook pode reenviar)."""
+    if not org_id or not _validar_uuid(org_id):
+        raise ValueError("org_id inválido")
+    payload = {
+        "org_id": org_id,
+        "user_id": user_id,
+        "stripe_session_id": stripe_session_id,
+        "stripe_customer_id": stripe_customer_id,
+        "stripe_subscription_id": stripe_subscription_id,
+        "status": status_pag,
+        "valor": valor,
+        "moeda": moeda,
+    }
+    supabase = get_supabase_client()
+    if stripe_session_id:
+        existe = supabase.table("pagamentos").select("id").eq("stripe_session_id", stripe_session_id).limit(1).execute()
+        if existe.data:
+            upd = {k: v for k, v in payload.items() if v is not None and k not in ("stripe_session_id",)}
+            upd["updated_at"] = __import__("datetime").datetime.utcnow().isoformat()
+            r = supabase.table("pagamentos").update(upd).eq("stripe_session_id", stripe_session_id).execute()
+            return r.data[0] if r.data else {}
+    r = supabase.table("pagamentos").insert(payload).execute()
+    return r.data[0] if r.data else {}
+
+
+def atualizar_pagamento_status_por_customer(stripe_customer_id: str, status_pag: str) -> int:
+    """Atualiza status de todos os pagamentos de um customer (eventos de assinatura sem session)."""
+    if not stripe_customer_id:
+        return 0
+    supabase = get_supabase_client()
+    r = supabase.table("pagamentos").update({
+        "status": status_pag,
+        "updated_at": __import__("datetime").datetime.utcnow().isoformat(),
+    }).eq("stripe_customer_id", stripe_customer_id).execute()
+    return len(r.data) if r.data else 0
+
+
+def get_billing_status(user_id: str, org_id: str | None) -> dict:
+    """Retorna status de assinatura da org (qualquer membro pode ler)."""
+    if not org_id:
+        org_id = _get_default_org_id(user_id)
+    _verificar_membro(user_id, org_id)
+    supabase = get_supabase_client()
+    r = (
+        supabase.table("pagamentos")
+        .select("status,plano,updated_at,stripe_customer_id")
+        .eq("org_id", org_id)
+        .order("updated_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not r.data:
+        return {"plano": "free", "status": None, "assinatura_ativa": False, "atualizado_em": None}
+    p = r.data[0]
+    ativa = p.get("status") == "active"
+    return {
+        "plano": "pro" if ativa else "free",
+        "status": p.get("status"),
+        "assinatura_ativa": ativa,
+        "atualizado_em": p.get("updated_at"),
+    }
+
+
+def enviar_whatsapp(org_id: str, telefone_e164: str, mensagem: str) -> dict:
+    """Envía mensagem WhatsApp via Evolution/Meta API. Nunca logar token."""
+    # Buscar configuração de WhatsApp da org
+    supabase = get_supabase_client()
+    config_result = (
+        supabase.table("integracoes")
+        .select("config")
+        .eq("org_id", org_id)
+        .eq("tipo", "whatsapp")
+        .single()
+        .execute()
+    )
+    
+    if not config_result.data:
+        return {"success": False, "erro": "WhatsApp não configurado para esta organização"}
+    
+    config = config_result.data["config"]
+    provider = config.get("provider", "evolution")  # evolution or meta
+    
+    if provider == "evolution":
+        base_url = config.get("base_url")
+        instance = config.get("instance")
+        token = config.get("token")
+        
+        if not all([base_url, instance, token]):
+            return {"success": False, "erro": "Configuração Evolution incompleta"}
+        
+        url = f"{base_url.rstrip('/')}/message/sendText/{instance}"
+        headers = {
+            "apikey": token,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "number": telefone_e164,
+            "textMessage": mensagem
+        }
+        
+    elif provider == "meta":
+        base_url = config.get("base_url", "https://graph.facebook.com/v18.0")
+        phone_number_id = config.get("phone_number_id")
+        token = config.get("token")
+        
+        if not all([base_url, phone_number_id, token]):
+            return {"success": False, "erro": "Configuração Meta incompleta"}
+        
+        url = f"{base_url.rstrip('/')}/{phone_number_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": telefone_e164,
+            "type": "text",
+            "text": {"body": mensagem}
+        }
+        
+    else:
+        return {"success": False, "erro": f"Provider WhatsApp não suportado: {provider}"}
+    
+    try:
+        response = httpx.post(url, json=payload, headers=headers, timeout=10.0)
+        response.raise_for_status()
+        result = response.json()
+        
+        # Extrair ID da mensagem baseado no provider
+        message_id = None
+        if provider == "evolution":
+            message_id = result.get("key", {}).get("id") or result.get("message", {}).get("id")
+        elif provider == "meta":
+            message_id = result.get("messages", [{}])[0].get("id")
+            
+        return {"success": True, "message_id": message_id}
+        
+    except httpx.HTTPStatusError as e:
+        return {"success": False, "erro": f"Erro HTTP {e.response.status_code}: {e.response.text[:200]}"}
+    except Exception as e:
+        return {"success": False, "erro": f"Erro ao enviar WhatsApp: {str(e)[:200]}"}

@@ -23,6 +23,7 @@ Segurança:
 import os
 from datetime import date
 from fastapi import FastAPI, HTTPException, status, Header, Depends, Request
+from starlette.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -61,6 +62,8 @@ from app.models import (
     UsuarioMe, UsuarioUpdate, AlterarSenhaRequest,
     Template, TemplateCreate, TemplateUpdate,
     Automacao, AutomacaoUpdate,
+    WhatsAppEnvioRequest, WhatsAppEnvioResponse,
+    CheckoutRequest,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
@@ -85,6 +88,7 @@ from app.storage import (
     get_usuario_me, update_usuario_me, alterar_senha_usuario,
     listar_templates, criar_template, atualizar_template, deletar_template,
     listar_automacoes, atualizar_automacao, run_automacoes_manual,
+    registrar_pagamento, atualizar_pagamento_status_por_customer, get_billing_status,
 )
 
 # --- Rate Limiter (F12 fix: não confia em X-Forwarded-For spoofável) ---
@@ -110,6 +114,7 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(Exception, lambda request, exc: JSONResponse(status_code=500, content={"detail": "Internal Server Error"}))
 
 # --- CORS ---
 # Configuração restritiva: apenas domínios conhecidos + localhost
@@ -1016,6 +1021,141 @@ async def webhook_zapier_com_id(request: Request, integracao_id: str, payload: d
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao processar webhook.")
+
+# ============================================================
+# BILLING (Fase 3D — Stripe)
+# ============================================================
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
+
+
+@app.get("/api/billing/status", tags=["Billing"])
+async def billing_status(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Status de assinatura da org (qualquer membro lê)."""
+    try:
+        return get_billing_status(user_id, org_id)
+    except ValueError as e:
+        msg = str(e).lower()
+        if "negado" in msg or "inválido" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao consultar status de assinatura.")
+
+
+@app.post("/api/billing/webhook", tags=["Billing"])
+async def billing_webhook(request: Request):
+    """Webhook público do Stripe — verifica assinatura HMAC via lib oficial.
+    Retorna 503 amigável quando Stripe não está configurado (Fase 3D sem conta)."""
+    if not STRIPE_SECRET_KEY or not STRIPE_WEBHOOK_SECRET:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Billing não configurado.")
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature")
+    if not sig:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assinatura ausente.")
+    try:
+        import stripe
+        event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
+    except ImportError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Billing não configurado.")
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assinatura inválida.")
+
+    tipo = event.get("type")
+    data = (event.get("data") or {}).get("object") or {}
+    try:
+        if tipo == "checkout.session.completed":
+            org_id = data.get("client_reference_id")
+            if not org_id:
+                return {"status": "ignorado"}  # sessão sem org vinculada
+            amount = data.get("amount_total")
+            registrar_pagamento(
+                org_id=org_id,
+                user_id=(data.get("metadata") or {}).get("user_id"),
+                stripe_session_id=data.get("id"),
+                stripe_customer_id=data.get("customer"),
+                stripe_subscription_id=data.get("subscription"),
+                status_pag="active",
+                valor=(amount / 100) if isinstance(amount, (int, float)) else None,
+                moeda=data.get("currency") or "brl",
+            )
+        elif tipo in ("customer.subscription.deleted",):
+            atualizar_pagamento_status_por_customer(data.get("customer"), "canceled")
+        elif tipo in ("invoice.payment_failed",):
+            atualizar_pagamento_status_por_customer(data.get("customer"), "past_due")
+        # demais eventos: ignorados (200 sempre para não gerar retry infinito)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao processar webhook de pagamento.")
+    return {"status": "ok"}
+
+
+@app.post("/api/billing/checkout", tags=["Billing"])
+async def billing_checkout(dados: CheckoutRequest, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Cria sessão de checkout do Stripe para assinatura (apenas admin)."""
+    try:
+        # Verifica se é admin
+        if not await _verificar_admin(user_id, org_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Apenas administradores podem criar sessões de checkout",
+            )
+        
+        # Verifica se Stripe está configurado
+        if not STRIPE_SECRET_KEY or not STRIPE_PRICE_ID:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Stripe não configurado. Defina STRIPE_SECRET_KEY e STRIPE_PRICE_ID.",
+            )
+        
+        # Importa Stripe
+        import stripe
+        
+        # Cria sessão de checkout
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price": STRIPE_PRICE_ID,
+                "quantity": 1,
+            }],
+            mode="subscription",
+            success_url=f"{SITE_URL}/dashboard.html?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{SITE_URL}/dashboard.html",
+            client_reference_id=org_id,
+            metadata={
+                "org_id": org_id,
+                "user_id": user_id
+            } if org_id and user_id else {}
+        )
+        
+        return {"checkout_url": checkout_session.url}
+    except Exception as e:
+        print(f"[ERRO billing_checkout] {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro interno ao criar sessão de checkout",
+        )
+
+@app.post("/api/whatsapp/enviar", tags=["WhatsApp"])
+@limiter.limit("10/minute")
+async def whatsapp_enviar(request: Request, dados: WhatsAppEnvioRequest, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Envía mensagem WhatsApp (apenas admin, 10/min)."""
+    from app.storage import _get_default_org_id, _verificar_admin, enviar_whatsapp
+    
+    if not org_id:
+        org_id = _get_default_org_id(user_id)
+    if org_id:
+        try:
+            _verificar_admin(user_id, org_id)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    
+    result = enviar_whatsapp(org_id, dados.telefone_e164, dados.mensagem)
+    if not result["success"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result["erro"]
+        )
+    return result
 
 # Placeholder OAuth Calendar - retorna URL para conectar (mock)
 @app.get("/api/integracoes/calendar/auth-url", tags=["Integrações"])
