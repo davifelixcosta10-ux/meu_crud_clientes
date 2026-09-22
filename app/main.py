@@ -63,6 +63,7 @@ from app.models import (
     Template, TemplateCreate, TemplateUpdate,
     Automacao, AutomacaoUpdate,
     WhatsAppEnvioRequest, WhatsAppEnvioResponse,
+    CheckoutRequest,
 )
 from app.storage import (
     carregar_clientes, salvar_novo_cliente,
