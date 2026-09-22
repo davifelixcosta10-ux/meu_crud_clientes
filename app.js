@@ -52,6 +52,7 @@ const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hos
 const API_BASE_URL = IS_LOCAL
     ? 'http://127.0.0.1:8000/api'
     : `${window.location.origin}/api`;
+let stripeConfigured = true;
 
 // ============================================================
 // 0. PLANOS DEFAULT — fallback visual quando API offline ou lista vazia
@@ -151,6 +152,7 @@ let currentOrgId = localStorage.getItem('daviflow_org_id') || null;
 function getOrgQS(qs = '') {
     if (!currentOrgId) return qs;
     return qs ? (qs.includes('?') ? `${qs}&org_id=${currentOrgId}` : `${qs}?org_id=${currentOrgId}`) : `?org_id=${currentOrgId}`;
+let stripeConfigured = true;
 }
 function getOrgQuery() { return currentOrgId ? `?org_id=${currentOrgId}` : ''; }
 
@@ -530,6 +532,7 @@ async function carregarMembros() {
             const isOwner = ownerId && m.user_id === ownerId;
             const canRemove = isAdmin && !isOwner;
             return `<div class="flex items-center justify-between p-2 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' (dono)' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-none ${m.papel==='admin' ? 'bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-700/60 dark:text-zinc-300'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-none text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800" title="Remover membro (apenas admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
+let stripeConfigured = true;
         }).join('');
         if (window.lucide) lucide.createIcons();
     } catch(e) {
@@ -667,6 +670,7 @@ function abrirModalGerenciarOrg() {
     const info = document.getElementById('gerenciar-org-info');
     if (info) {
         if (org) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-none bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300">${escaparHTML(org.papel || 'membro')}${org.owner_id ? ' • dono' : ''}</span></div><div class="text-[11px] font-mono text-zinc-400 mt-1">${escaparHTML(org.id.slice(0,8))}... • ${orgsCache.length} org(s)</div>`;
+let stripeConfigured = true;
         else info.innerHTML = '<p class="text-[11px] text-zinc-400">Nenhuma organização selecionada</p>';
     }
     const renameInput = document.getElementById('gerenciar-rename-input');
@@ -729,6 +733,7 @@ async function carregarMembrosGerenciar() {
             const isOwner = ownerId && m.user_id === ownerId;
             const canRemove = isAdmin && !isOwner;
             return `<div class="flex items-center justify-between p-2 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><div class="flex items-center gap-2 min-w-0"><span class="font-mono text-[10px] truncate" title="${escaparHTML(m.user_id)}">${escaparHTML(m.user_id.slice(0,8))}...${isOwner ? ' (dono)' : ''}</span><span class="text-[10px] font-bold px-1.5 py-0.5 rounded-none ${m.papel==='admin' ? 'bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300' : 'bg-zinc-100 text-zinc-600'}">${escaparHTML(m.papel)}</span></div>${canRemove ? `<button data-user-id="${escaparHTML(m.user_id)}" onclick="removerMembro(this.dataset.userId)" class="p-1 rounded-none text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800" title="Remover (admin)"><i data-lucide="user-x" class="w-3.5 h-3.5"></i></button>` : ''}</div>`;
+let stripeConfigured = true;
         }).join('');
         if (window.lucide) lucide.createIcons();
     } catch(e) { container.innerHTML = '<p class="text-[11px] text-zinc-500">Erro</p>'; }
@@ -785,6 +790,7 @@ async function criarOrgGerenciar() {
         // atualiza info
         const info = document.getElementById('gerenciar-org-info');
         if (info) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-none bg-zinc-200 text-zinc-900">admin</span></div>`;
+let stripeConfigured = true;
         await Promise.all([carregarClientes(), carregarEtapas(), carregarTags()]);
     } catch(e) { exibirToast('Erro ao criar organização', 'erro'); }
 }
@@ -851,6 +857,7 @@ function renderizarIntegracoes() {
         const tipoIcon = i.tipo === 'zapier' ? 'zap' : i.tipo === 'calendar' ? 'calendar' : 'banknote';
         const tipoLabel = i.tipo;
         return `<div class="flex items-center justify-between p-2 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><div class="flex items-center gap-2"><i data-lucide="${tipoIcon}" class="w-3.5 h-3.5 text-zinc-500"></i><span class="font-semibold">${escaparHTML(i.nome || tipoLabel)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-none ${i.ativo ? 'bg-black text-white' : 'bg-zinc-100 text-zinc-500'}">${i.ativo ? 'ativa' : 'inativa'}</span><span class="text-[10px] text-zinc-400">${escaparHTML(i.tipo)}</span></div><button onclick="deletarIntegracao('${i.id}')" class="p-1 rounded-none text-zinc-600 hover:bg-zinc-100" title="Remover (apenas admin)"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`;
+let stripeConfigured = true;
     }).join('');
     // atualiza webhook url se tiver zapier
     const zap = integracoesCache.find(x => x.tipo === 'zapier' || x.tipo === 'webhook');
@@ -858,6 +865,7 @@ function renderizarIntegracoes() {
     if (input && zap) {
         const base = window.location.origin;
         input.value = `${base}/api/webhooks/zapier/${zap.id}`;
+let stripeConfigured = true;
     }
     if (window.lucide) lucide.createIcons();
 }
@@ -979,6 +987,7 @@ function renderizarAnexos() {
     container.innerHTML = anexosCache.map(a => {
         const kb = (a.tamanho/1024).toFixed(1);
         return `<div class="flex items-center justify-between p-2 rounded-none bg-white dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><div class="flex items-center gap-2 min-w-0"><i data-lucide="file" class="w-3.5 h-3.5 text-zinc-400"></i><span class="text-xs font-semibold truncate">${escaparHTML(a.nome)}</span><span class="text-[10px] text-zinc-400">${escaparHTML(a.mime)} • ${kb}KB</span></div><button data-anexo-id="${escaparHTML(String(a.id))}" onclick="deletarAnexo(this.dataset.anexoId)" class="p-1 rounded-none text-zinc-600 hover:bg-zinc-100" title="Remover"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`;
+let stripeConfigured = true;
     }).join('');
     if (window.lucide) lucide.createIcons();
 }
@@ -1173,6 +1182,7 @@ function aplicarVertical(slug) {
         const base = 'Cargo';
         l.textContent = ren.cargo || base;
         if (ren.cargo) l.innerHTML = `${ren.cargo} <span class="text-[10px] text-zinc-400">(vertical)</span>`;
+let stripeConfigured = true;
     });
     document.querySelectorAll('label[for="criar-empresa"], label[for="editar-empresa"]').forEach(l => {
         const base = 'Empresa';
@@ -1205,6 +1215,7 @@ function aplicarVertical(slug) {
                 </div>
                 <div><label class="form-label">Status Internação</label><select id="${prefix}-cc-status_int" class="form-input"><option value="">Selecione</option><option value="internado">Internado</option><option value="alta">Alta</option><option value="triagem">Triagem</option></select></div>
             `;
+let stripeConfigured = true;
         } else if (slug === 'lava_rapido_oficina') {
             html = `
                 <div id="${prefix}-carros-container" class="space-y-3"></div>
@@ -1213,6 +1224,7 @@ function aplicarVertical(slug) {
                     <label class="form-label">Serviço</label><select id="${prefix}-cc-servico" class="form-input"><option value="">Selecione</option><option value="lavagem">Lavagem</option><option value="troca_oleo">Troca de óleo</option><option value="revisao">Revisão</option><option value="outro">Outro</option></select>
                 </div>
             `;
+let stripeConfigured = true;
         } else if (slug === 'dentista') {
             html = `
                 <div class="grid grid-cols-2 gap-3">
@@ -1224,6 +1236,7 @@ function aplicarVertical(slug) {
                     <div><label class="form-label">Retorno (6m)</label><input id="${prefix}-cc-retorno" type="date" class="form-input"></div>
                 </div>
             `;
+let stripeConfigured = true;
         } else if (slug === 'academia') {
             html = `
                 <div class="grid grid-cols-2 gap-3">
@@ -1231,11 +1244,13 @@ function aplicarVertical(slug) {
                     <div><label class="form-label">Último check-in</label><input id="${prefix}-cc-checkin" type="date" class="form-input"></div>
                 </div>
             `;
+let stripeConfigured = true;
         } else if (slug.startsWith('custom')) {
             const vert = verticaisCache.find(v=> v.slug===slug);
             const campos = (vert && vert.config_json && vert.config_json.campos_extras) || [];
             if (campos.length===0) {
                 html = `<p class="text-xs text-zinc-400">Sem campos extras. Edite o vertical para adicionar.</p>`;
+let stripeConfigured = true;
             } else {
                 html = '<div class="grid grid-cols-2 gap-3">' + campos.map(campo=> `<div><label class="form-label">${escaparHTML(campo)}</label><input id="${prefix}-cc-${campo}" type="text" placeholder="${escaparHTML(campo)}" class="form-input"></div>`).join('') + '</div>';
             }
@@ -1263,6 +1278,7 @@ function adicionarCarro(prefix) {
             <input data-cc="km_carro" type="number" placeholder="KM" class="form-input text-xs">
         </div>
     `;
+let stripeConfigured = true;
     // Corrige remover (simplificado)
     div.querySelector('button').onclick = () => div.remove();
     cont.appendChild(div);
@@ -1381,6 +1397,7 @@ let templatesCache = [];
 async function carregarTemplates() {
     try {
         let url = `${API_BASE_URL}/templates${getOrgQuery()}`;
+let stripeConfigured = true;
         // filtra por vertical atual se não for geral (opcional, mostra todos mas destaca)
         // para MVP mostra todos da org
         const resp = await fetchAuth(url, { method: 'GET' });
@@ -1409,6 +1426,7 @@ function renderizarTemplates() {
             <p class="text-xs text-zinc-600 dark:text-zinc-300 mt-1 whitespace-pre-wrap">${escaparHTML(tp.mensagem)}</p>
             <button onclick="usarTemplate('${tp.id}', null)" class="mt-2 px-2.5 py-1 text-[11px] font-bold rounded-none bg-black text-white hover:bg-zinc-800 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> Usar (escolha cliente)</button>
         </div>`;
+let stripeConfigured = true;
     }).join('');
     if (window.lucide) lucide.createIcons();
 }
@@ -1445,6 +1463,7 @@ async function salvarTemplate(e) {
     if (!payload.nome || !payload.mensagem) return;
     try {
         const url = id ? `${API_BASE_URL}/templates/${id}` : `${API_BASE_URL}/templates${getOrgQuery()}`;
+let stripeConfigured = true;
         const method = id ? 'PATCH' : 'POST';
         const resp = await fetchAuth(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); if(resp && resp.status===403) exibirToast(err.detail||'Apenas admin pode criar templates','erro'); else exibirToast(err.detail||'Erro ao salvar','erro'); return; }
@@ -1503,6 +1522,7 @@ function enviarWhatsApp(cliente, template) {
     }
     const tel = cliente.telefone.replace(/\D/g,'');
     const url = `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`;
+let stripeConfigured = true;
     window.open(url, '_blank');
     exibirToast('Abrindo WhatsApp...','sucesso');
 }
@@ -1724,6 +1744,7 @@ async function carregarConfigOrg() {
     const info = document.getElementById('config-org-info');
     if (info) {
         if (org) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-none bg-zinc-200 text-zinc-900">${escaparHTML(org.papel||'membro')}</span></div><div class="text-[11px] font-mono text-zinc-400 mt-1">${escaparHTML(org.id.slice(0,8))}... • ${org.vertical||'geral'}</div>`;
+let stripeConfigured = true;
         else info.innerHTML = '<p class="text-xs text-zinc-400">Nenhuma org selecionada</p>';
     }
     const input = document.getElementById('config-org-nome');
@@ -1747,12 +1768,29 @@ async function atualizarAssinaturaUI() {
         if (!resp || !resp.ok) {
             // If we can't fetch status, show error state
             const badge = document.getElementById('assinatura-badge');
+            const btnAssinar = document.getElementById('btn-assinar');
+            const btnGerenciar = document.getElementById('btn-gerenciar');
+            if (resp && resp.status === 503) {
+                // Stripe not configured
+                stripeConfigured = false;
+                if (badge) {
+                    badge.textContent = 'Stripe não configurado';
+                    badge.className = 'px-3 py-1 rounded-none text-xs font-medium border-2 border-black text-zinc-400';
+                }
+                if (btnAssinar) {
+                    btnAssinar.disabled = true;
+                    btnAssinar.title = 'Configure STRIPE_SECRET_KEY e STRIPE_PRICE_ID no Vercel';
+                    btnAssinar.classList.add('opacity-50', 'cursor-not-allowed');
+                    btnAssinar.classList.remove('hidden');
+                }
+                if (btnGerenciar) btnGerenciar.classList.add('hidden');
+                return;
+            }
+            // Other errors
             if (badge) {
                 badge.textContent = 'Erro ao carregar';
                 badge.className = 'px-3 py-1 rounded-none text-xs font-medium border-2 border-black text-zinc-400';
             }
-            const btnAssinar = document.getElementById('btn-assinar');
-            const btnGerenciar = document.getElementById('btn-gerenciar');
             if (btnAssinar) btnAssinar.classList.remove('hidden');
             if (btnGerenciar) btnGerenciar.classList.add('hidden');
             return;
@@ -1773,13 +1811,8 @@ async function atualizarAssinaturaUI() {
             btnAssinar.classList.add('hidden');
             btnGerenciar.classList.remove('hidden');
             
-            // Set up Gerenciar button to open Stripe customer portal
-            // In a real implementation, we would need to get the customer portal URL
-            // For now, we'll make it show a toast or redirect to a placeholder
             btnGerenciar.onclick = () => {
                 exibirToast('Abrindo portal do cliente Stripe...', 'info');
-                // In production, this would redirect to Stripe customer portal
-                // We would need to get this from the backend or Stripe API
             };
         } else {
             // Inactive or no subscription
@@ -1790,6 +1823,10 @@ async function atualizarAssinaturaUI() {
             
             // Set up Assinar button to create checkout session
             btnAssinar.onclick = async () => {
+                if (!stripeConfigured) {
+                    exibirToast('Funcionalidade de assinatura requer Stripe configurado no backend', 'info');
+                    return;
+                }
                 try {
                     const checkoutResp = await fetchAuth(`${API_BASE_URL}/billing/checkout`, {
                         method: 'POST',
@@ -1805,7 +1842,6 @@ async function atualizarAssinaturaUI() {
                     
                     const data = await checkoutResp.json();
                     if (data.checkout_url) {
-                        // Redirect to Stripe checkout
                         window.location.href = data.checkout_url;
                     } else {
                         exibirToast('URL de checkout não recebida', 'erro');
@@ -1818,7 +1854,6 @@ async function atualizarAssinaturaUI() {
         }
     } catch (e) {
         console.error('Erro ao atualizar assinatura UI:', e);
-        // Show error state
         const badge = document.getElementById('assinatura-badge');
         if (badge) {
             badge.textContent = 'Erro ao carregar';
@@ -1855,6 +1890,7 @@ function renderizarConfigPlanos() {
     cont.innerHTML = planosCache.map(p=> {
         const estilo = (typeof MAPA_CORES_PLANO !== 'undefined' && MAPA_CORES_PLANO[p.cor]) ? MAPA_CORES_PLANO[p.cor] : MAPA_CORES_PLANO.slate;
         return `<div class="flex items-center justify-between p-2 rounded border bg-white dark:bg-zinc-800/40"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${estilo.dot} flex-shrink-0"></span><span class="font-bold text-xs">${escaparHTML(p.nome)}</span></div><span class="text-[10px] font-mono px-1.5 py-0.5 rounded-none ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(p.valor||'')}</span></div>`;
+let stripeConfigured = true;
     }).join('');
 }
 function renderizarConfigEtapas() {
@@ -1939,6 +1975,7 @@ async function exportarDados() {
         const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href=url; a.download=`daviflow-export-${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url);
+let stripeConfigured = true;
         exibirToast('Exportado!', 'sucesso');
     } catch(e) { exibirToast('Erro ao exportar', 'erro'); }
 }
@@ -2115,6 +2152,7 @@ async function carregarAtividadesAgenda() {
                 </div>
                 <button onclick="abrirModalDetalhes(${a.cliente_id})" class="p-1.5 rounded-none text-zinc-400 hover:text-black hover:bg-zinc-100 text-xs">Ver</button>
             </div>`;
+let stripeConfigured = true;
         }).join('');
         if (window.lucide) lucide.createIcons();
     } catch(e) { container.innerHTML = '<p class="text-xs text-zinc-500">Erro</p>'; }
@@ -2238,6 +2276,7 @@ function inicializarFiltroPlanos() {
         const opt = document.createElement('option');
         opt.value = p.id;
         opt.textContent = `${p.nome} ${p.valor ? '(' + p.valor + ')' : ''}`;
+let stripeConfigured = true;
         select.appendChild(opt);
     });
     const semOpt = document.createElement('option');
@@ -2377,6 +2416,7 @@ function renderizarKanban() {
             ${semEtapa.length ? semEtapa.map(c => kanbanCardHTML(c)).join('') : '<div class="kanban-empty">Arraste clientes aqui</div>'}
         </div>
     </div>`;
+let stripeConfigured = true;
     etapasCache.forEach(etapa => {
         const estilo = MAPA_CORES_PLANO[etapa.cor] || MAPA_CORES_PLANO.indigo;
         const clientes = grupos[etapa.id] || [];
@@ -2392,11 +2432,13 @@ function renderizarKanban() {
                 ${clientes.length ? clientes.map(c => kanbanCardHTML(c)).join('') : '<div class="kanban-empty">Arraste clientes aqui</div>'}
             </div>
         </div>`;
+let stripeConfigured = true;
     });
     container.innerHTML = html;
     if (countEl) {
         const totalClientesKanban = clientesCache.length;
         countEl.textContent = `${etapasCache.length} etapas • ${totalClientesKanban} cliente${totalClientesKanban !== 1 ? 's' : ''}`;
+let stripeConfigured = true;
         countEl.classList.remove('hidden');
     }
     container.querySelectorAll('.kanban-column-body').forEach(col => {
@@ -2455,6 +2497,7 @@ function kanbanCardHTML(cliente) {
         if (!t) return '';
         const estilo = MAPA_CORES_PLANO[t.cor] || MAPA_CORES_PLANO.slate;
         return `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded-none ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(t.nome)}</span>`;
+let stripeConfigured = true;
     }).join(' ');
     return `<div class="kanban-card" data-cliente-id="${cliente.id}" onclick="abrirModalDetalhes(${cliente.id})">
         <div class="flex items-center gap-2 mb-1.5">
@@ -2469,6 +2512,7 @@ function kanbanCardHTML(cliente) {
             <i data-lucide="grip" class="w-3 h-3 text-zinc-300"></i>
         </div>
     </div>`;
+let stripeConfigured = true;
 }
 function abrirModalEtapas() { if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode gerenciar etapas', 'erro'); return; } renderizarListaEtapasGerenciamento(); resetarFormEtapa(); abrirModal('modal-etapas'); }
 function fecharModalEtapas() { fecharModal('modal-etapas'); }
@@ -2495,6 +2539,7 @@ function renderizarListaEtapasGerenciamento() {
             <button onclick="editarEtapaForm('${e.id}')" class="p-1.5 rounded-none text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-700/60 transition-all" title="Editar"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
             <button onclick="deletarEtapa('${e.id}')" class="p-1.5 rounded-none text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
         </div>`;
+let stripeConfigured = true;
         container.appendChild(div);
     });
     if (window.lucide) lucide.createIcons();
@@ -2532,6 +2577,7 @@ async function salvarEtapa(event) {
     try {
         if (!modoDemo) {
             const url = id ? `${API_BASE_URL}/etapas/${id}` : `${API_BASE_URL}/etapas${getOrgQuery()}`;
+let stripeConfigured = true;
             const method = id ? 'PATCH' : 'POST';
             const resp = await fetchAuth(url, { method, body: JSON.stringify(payload) });
             if (!resp) return;
@@ -2620,6 +2666,7 @@ function renderizarTagsSelects() {
                 <span class="w-2 h-2 rounded-full ${estilo.dot}"></span>
                 <span class="text-xs font-semibold ${estilo.text}">${escaparHTML(t.nome)}</span>
             </label>`;
+let stripeConfigured = true;
         }).join('');
     });
     if (window.lucide) lucide.createIcons();
@@ -2642,6 +2689,7 @@ function renderizarListaTagsGerenciamento() {
             <button onclick="editarTagForm('${t.id}')" class="p-1.5 rounded-none text-zinc-400 hover:text-black hover:bg-zinc-100 dark:hover:bg-zinc-700/60"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
             <button onclick="deletarTag('${t.id}')" class="p-1.5 rounded-none text-zinc-400 hover:text-black hover:bg-zinc-100"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
         </div>`;
+let stripeConfigured = true;
         container.appendChild(div);
     });
     if (window.lucide) lucide.createIcons();
@@ -2676,6 +2724,7 @@ async function salvarTag(event) {
     try {
         if (!modoDemo) {
             const url = id ? `${API_BASE_URL}/tags/${id}` : `${API_BASE_URL}/tags${getOrgQuery()}`;
+let stripeConfigured = true;
             const method = id ? 'PATCH' : 'POST';
             const resp = await fetchAuth(url, { method, body: JSON.stringify(payload) });
             if (!resp) return;
@@ -2767,6 +2816,7 @@ function renderizarFiltrosSalvos() {
             <button onclick="aplicarFiltroSalvo('${f.id}')" class="p-1.5 rounded-none text-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800" title="Aplicar filtro"><i data-lucide="play" class="w-3.5 h-3.5"></i></button>
             <button onclick="deletarFiltroSalvo('${f.id}')" class="p-1.5 rounded-none text-zinc-400 hover:text-black hover:bg-zinc-100 dark:hover:bg-zinc-800" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
         </div>`;
+let stripeConfigured = true;
         container.appendChild(div);
     });
     if (window.lucide) lucide.createIcons();
@@ -2837,6 +2887,7 @@ async function carregarAtividades(clienteId) {
     }
     try {
         const url = clienteId ? `${API_BASE_URL}/atividades?cliente_id=${clienteId}` : `${API_BASE_URL}/atividades`;
+let stripeConfigured = true;
         const resp = await fetchAuth(url, { method: 'GET' });
         if (!resp || !resp.ok) {
             if (IS_LOCAL) {
@@ -3110,6 +3161,7 @@ function renderImportPreview() {
     html += '</tbody></table>';
     tableDiv.innerHTML = html;
     countEl.textContent = `${importPreviewData.length} clientes prontos para importar (mostrando 5)`;
+let stripeConfigured = true;
     btn.classList.remove('hidden');
     preview.classList.remove('hidden');
     document.getElementById('import-result').classList.add('hidden');
@@ -3141,10 +3193,12 @@ async function confirmarImport() {
                     const planosInfo = data.planos_criados?.length ? `<br><span class="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Planos criados: ${data.planos_criados.join(', ')}</span>` : '';
                     resultDiv.className = data.sucessos > 0 ? 'p-3 rounded-none border text-sm bg-zinc-200 dark:bg-zinc-800 border-zinc-400 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200' : 'p-3 rounded-none border text-sm bg-white dark:bg-zinc-900 border-black dark:border-white text-black dark:text-white';
                     resultDiv.innerHTML = `${data.sucessos > 0 ? 'Atenção:' : 'Erro:'} ${data.sucessos}/${data.total} importados. ${data.erros.length} erro(s):<br><span class="text-xs">${detalhes}${mais}${hintDup}${planosInfo}</span>`;
+let stripeConfigured = true;
                 } else {
                     const planosInfo = data.planos_criados?.length ? `<br><span class="text-xs">Planos criados: ${data.planos_criados.join(', ')}</span>` : '';
                     resultDiv.className = 'p-3 rounded-none border text-sm bg-black border-black text-white dark:bg-white dark:border-white dark:text-black';
                     resultDiv.innerHTML = `${data.sucessos}/${data.total} importados.${planosInfo}`;
+let stripeConfigured = true;
                 }
                 resultDiv.classList.remove('hidden');
                 exibirToast(`${data.sucessos} clientes importados!${data.planos_criados?.length ? ` Planos: ${data.planos_criados.join(', ')}` : ''}${data.erros?.length ? ` (${data.erros.length} erros)` : ''}`, data.sucessos > 0 ? 'sucesso' : 'erro');
@@ -3178,6 +3232,7 @@ async function confirmarImport() {
     });
     resultDiv.className = 'p-3 rounded-none border text-sm bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-300';
     resultDiv.textContent = `${sucessos}/${importPreviewData.length} importados (Local)`;
+let stripeConfigured = true;
     resultDiv.classList.remove('hidden');
     atualizarMetricas(clientesCache);
     filtrarTabela();
@@ -3274,7 +3329,9 @@ function atualizarMetricas(clientes) {
     document.getElementById('metric-ativos').textContent      = ativos;
     document.getElementById('metric-inativos').textContent    = inativos;
     document.getElementById('metric-ativos-pct').textContent  = `${ativosPct}%`;
+let stripeConfigured = true;
     document.getElementById('metric-inativos-pct').textContent = `${inativosPct}%`;
+let stripeConfigured = true;
 
     // Fase 1B/1D — Atrasados (follow-ups) e Receita prevista
     // Atrasados: baseado em status_pagamento === 'atrasado' (simples) + atividades atrasadas se carregadas
@@ -3312,6 +3369,7 @@ function atualizarMetricas(clientes) {
     if (churnEl) {
         const c = total > 0 ? (inativos / total * 100) : 0;
         churnEl.textContent = `${Number(c.toFixed(1))}%`;
+let stripeConfigured = true;
     }
     // LTV header fallback — será sobrescrito por carregarRelatorioLtv
     const ltvHeaderEl = document.getElementById('metric-ltv');
@@ -3339,10 +3397,12 @@ function atualizarMetricas(clientes) {
             const theme = (MAPA_CORES_PLANO && MAPA_CORES_PLANO[plano.cor]) ? MAPA_CORES_PLANO[plano.cor] : (MAPA_CORES_PLANO ? MAPA_CORES_PLANO.indigo : { bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-900 dark:text-zinc-300', border: 'border-black dark:border-white' });
             const div = document.createElement('div');
             div.className = `rounded-none ${theme.bg} border ${theme.border} px-1.5 py-1 text-center flex-1 min-w-[55px]`;
+let stripeConfigured = true;
             div.innerHTML = `
                 <div class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide leading-none ${theme.text} mb-1 truncate">${escaparHTML(plano.nome ? plano.nome.slice(0, 8) : '')}</div>
                 <div class="text-sm font-black font-mono ${theme.text} tabular-nums leading-none">${count}</div>
             `;
+let stripeConfigured = true;
             container.appendChild(div);
         });
 
@@ -3353,6 +3413,7 @@ function atualizarMetricas(clientes) {
                 <div class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide leading-none text-zinc-500 dark:text-zinc-400 mb-1 truncate">Livre</div>
                 <div class="text-sm font-black font-mono text-zinc-600 dark:text-zinc-300 tabular-nums leading-none">${semPlanoCount}</div>
             `;
+let stripeConfigured = true;
             container.appendChild(div);
         }
     }
@@ -3441,6 +3502,7 @@ function renderizarRelatorioConversao(data) {
                         label: (ctx) => {
                             const idx = ctx.dataIndex;
                             return `${counts[idx]} clientes (${percents[idx]}%)`;
+let stripeConfigured = true;
                         }
                     }
                 }
@@ -3472,9 +3534,11 @@ function renderizarRelatorioConversao(data) {
                     <span class="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-none bg-white/70 dark:bg-zinc-900/30 ${estilo.text}">${i.percent}%</span>
                 </div>
             </div>`;
+let stripeConfigured = true;
         }).join('');
     }
     if (totalEl) totalEl.textContent = `Total: ${data.total} cliente(s)${document.getElementById('relatorio-periodo')?.value ? ` • últimos ${document.getElementById('relatorio-periodo').value} dias` : ''}`;
+let stripeConfigured = true;
     if (window.lucide) lucide.createIcons();
 }
 async function carregarRelatorios() {
@@ -3510,6 +3574,7 @@ function renderizarRelatorioReceita(data) {
     const tabelaMesEl = document.getElementById('relatorio-receita-mes-tabela');
     if (!data) return;
     const totalFmt = `R$ ${Number(data.total_receita || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+let stripeConfigured = true;
     if (totalEl) totalEl.textContent = totalFmt;
     if (typeof Chart === 'undefined') return;
     // Por plano - doughnut
@@ -3534,6 +3599,7 @@ function renderizarRelatorioReceita(data) {
                 tabelaPlanoEl.innerHTML = data.por_plano.map(p => {
                     const estilo = MAPA_CORES_PLANO[p.plano_cor] || MAPA_CORES_PLANO.slate;
                     return `<div class="flex items-center justify-between p-2 rounded-none border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text}">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] font-mono text-zinc-500">${p.count} cli • ${p.percent}%</span></div><span class="text-xs font-black font-mono ${estilo.text}">R$ ${Number(p.total).toLocaleString('pt-BR', {minimumFractionDigits:2})}</span></div>`;
+let stripeConfigured = true;
                 }).join('');
             }
         }
@@ -3592,8 +3658,11 @@ function renderizarRelatorioChurn(data) {
     const churnHeaderEl = document.getElementById('metric-churn');
     if (!canvas || !data) return;
     if (totalEl) totalEl.textContent = `${Number(data.churn_medio || 0).toFixed(1)}%`;
+let stripeConfigured = true;
     if (churnHeaderEl) churnHeaderEl.textContent = `${Number(data.churn_medio || 0).toFixed(1)}%`;
+let stripeConfigured = true;
     if (footerEl) footerEl.textContent = `${data.total_inativos || 0} inativos de ${data.total_geral || 0} • média ${Number(data.churn_medio || 0).toFixed(1)}%${document.getElementById('relatorio-periodo')?.value ? ` • últimos ${document.getElementById('relatorio-periodo').value} dias` : ''}`;
+let stripeConfigured = true;
     if (typeof Chart === 'undefined') return;
     if (chartChurn) { try { chartChurn.destroy(); } catch(e) {} chartChurn = null; }
     if (chartChurnPlano) { try { chartChurnPlano.destroy(); } catch(e) {} chartChurnPlano = null; }
@@ -3637,6 +3706,7 @@ function renderizarRelatorioChurn(data) {
                 tabelaPlanoEl.innerHTML = porPlano.map(p => {
                     const estilo = MAPA_CORES_PLANO[p.plano_cor] || MAPA_CORES_PLANO.slate;
                     return `<div class="flex items-center justify-between p-2 rounded-none border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text}">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] font-mono text-zinc-500">${p.inativos} de ${p.total} cancelaram</span></div><span class="text-xs font-black font-mono ${p.churn_percent > 30 ? 'text-zinc-800 dark:text-zinc-300' : estilo.text}">${p.churn_percent}%</span></div>`;
+let stripeConfigured = true;
                 }).join('');
             }
         }
@@ -3672,10 +3742,13 @@ function renderizarRelatorioLtv(data) {
     const headerEl = document.getElementById('metric-ltv');
     if (!data) return;
     const fmt = (v) => `R$ ${Number(v || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+let stripeConfigured = true;
     if (totalEl) totalEl.textContent = fmt(data.ltv_medio_geral);
     if (headerEl) headerEl.textContent = Number(data.ltv_medio_geral || 0) >= 1000 ? `R$ ${(Number(data.ltv_medio_geral)/1000).toFixed(1)}k` : fmt(data.ltv_medio_geral);
     if (headerEl) headerEl.title = `${fmt(data.ltv_medio_geral)} médio • ${data.meses_medio_geral} meses • ${fmt(data.valor_medio_mensal_geral)}/mês`;
+let stripeConfigured = true;
     if (footerEl) footerEl.textContent = `${data.total_clientes || 0} clientes • ${fmt(data.receita_estimada_total)} estimado • ${data.meses_medio_geral} meses médio${document.getElementById('relatorio-periodo')?.value ? ` • últimos ${document.getElementById('relatorio-periodo').value} dias` : ''}`;
+let stripeConfigured = true;
     if (typeof Chart === 'undefined') return;
     if (chartLtvPlano) { try { chartLtvPlano.destroy(); } catch(e) {} chartLtvPlano = null; }
     const porPlano = data.por_plano || [];
@@ -3701,10 +3774,12 @@ function renderizarRelatorioLtv(data) {
         tabelaEl.innerHTML = porPlano.map(p => {
             const estilo = MAPA_CORES_PLANO[p.plano_cor] || MAPA_CORES_PLANO.slate;
             return `<div class="flex items-center justify-between p-2 rounded-none border ${estilo.border} ${estilo.bg}"><div class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full ${estilo.dot}"></span><span class="text-xs font-semibold ${estilo.text} truncate">${escaparHTML(p.plano_nome)}</span><span class="text-[10px] font-mono text-zinc-500">${p.count} cli</span></div><div class="text-right"><div class="text-xs font-black font-mono ${estilo.text}">${fmt(p.ltv_medio)}</div><div class="text-[10px] font-mono text-zinc-400">${p.meses_medio}m × ${fmt(p.valor_medio_mensal)}</div></div></div>`;
+let stripeConfigured = true;
         }).join('');
     }
     if (detalheEl) {
         detalheEl.innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="p-3 rounded-none bg-zinc-100 dark:bg-zinc-500/10 border border-zinc-200 dark:border-zinc-500/20 text-center"><div class="text-[10px] font-bold uppercase tracking-widest text-zinc-800 dark:text-zinc-300">LTV médio</div><div class="text-lg font-black font-mono text-zinc-600 dark:text-zinc-400">${fmt(data.ltv_medio_geral)}</div><div class="text-[10px] font-mono text-zinc-500">${data.meses_medio_geral}m × ${fmt(data.valor_medio_mensal_geral)}</div></div><div class="p-3 rounded-none bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40 text-center"><div class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Receita estimada</div><div class="text-lg font-black font-mono text-zinc-700 dark:text-zinc-200">${fmt(data.receita_estimada_total)}</div><div class="text-[10px] font-mono text-zinc-500">${data.total_clientes} clientes</div></div></div><div class="mt-2 p-2 rounded-none bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 text-[11px] text-zinc-800 dark:text-zinc-300"><i data-lucide="info" class="w-3 h-3 inline mr-1"></i> LTV = valor × meses desde cadastro (coorte). Valor com vírgula BR parseado.</div>`;
+let stripeConfigured = true;
     }
     if (window.lucide) lucide.createIcons();
 }
@@ -3836,6 +3911,7 @@ function renderizarClientes(clientes) {
 
     clientes.forEach((cliente, index) => {
         const ordinal = `#${index + 1}`;
+let stripeConfigured = true;
         const dataFormatada = formatarData(cliente.data_cadastro);
         const planoBadgeHTML = getPlanoBadgeHTML(cliente.plano);
         const statusBadgeHTML = getStatusBadgeHTML(cliente.ativo, cliente.id);
@@ -3880,6 +3956,7 @@ function renderizarClientes(clientes) {
                 </div>
             </td>
         `;
+let stripeConfigured = true;
         tbody.appendChild(tr);
 
         // Mobile card
@@ -3916,6 +3993,7 @@ function renderizarClientes(clientes) {
                 </button>
             </div>
         `;
+let stripeConfigured = true;
         mobileCardsContainer.appendChild(card);
     });
 
@@ -3932,15 +4010,18 @@ function renderizarClientes(clientes) {
 function getPlanoBadgeHTML(planoId) {
     if (!planoId) {
         return `<span class="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-medium bg-zinc-100 text-zinc-500 dark:bg-zinc-700/60 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-600/60">Sem plano</span>`;
+let stripeConfigured = true;
     }
     const p = planosCache.find(x => String(x.id) === String(planoId));
     if (!p) {
         return `<span class="inline-flex items-center px-2 py-0.5 rounded-none text-xs font-medium bg-zinc-100 text-zinc-600 dark:text-zinc-300 capitalize">${escaparHTML(planoId)}</span>`;
+let stripeConfigured = true;
     }
     const estilo = MAPA_CORES_PLANO[p.cor] || MAPA_CORES_PLANO.slate;
     return `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none text-xs font-semibold ${estilo.bg} ${estilo.text} border ${estilo.border}">
                 <span class="w-1.5 h-1.5 rounded-full ${estilo.dot}"></span>${escaparHTML(p.nome)}
             </span>`;
+let stripeConfigured = true;
 }
 
 function getStatusBadgeHTML(ativo, clienteId) {
@@ -3953,6 +4034,7 @@ function getStatusBadgeHTML(ativo, clienteId) {
                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-none text-xs font-semibold bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-400 dark:border-zinc-600 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors">
                <span class="w-1.5 h-1.5 rounded-full bg-zinc-500 dark:bg-zinc-400"></span>Inativo
             </button>`;
+let stripeConfigured = true;
 }
 
 function avatarInitials(nome) {
@@ -3980,6 +4062,7 @@ function formatarData(rawDate) {
     if (rawDate.includes('-')) {
         const parts = rawDate.split('T')[0].split('-');
         if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+let stripeConfigured = true;
     }
     return rawDate;
 }
@@ -4397,6 +4480,7 @@ function abrirModalDetalhes(id) {
     const statusHTML = cliente.ativo
         ? `<span class="px-2 py-0.5 rounded-none text-xs font-semibold bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white">Ativo</span>`
         : `<span class="px-2 py-0.5 rounded-none text-xs font-semibold bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-400 dark:border-zinc-600">Inativo</span>`;
+let stripeConfigured = true;
     const etapaObj = etapasCache.find(e => String(e.id)===String(cliente.etapa_id));
     const etapaHTML2 = etapaObj ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none text-xs font-semibold ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).bg} ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).text} border ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).border}"><span class="w-1.5 h-1.5 rounded-full ${(MAPA_CORES_PLANO[etapaObj.cor]||MAPA_CORES_PLANO.indigo).dot}"></span>${escaparHTML(etapaObj.nome)}</span>` : '<span class="text-xs text-zinc-400">Sem etapa</span>';
     const financeiroHTML2 = (cliente.valor_plano || cliente.vencimento_dia || cliente.status_pagamento) ? `
@@ -4418,6 +4502,7 @@ function abrirModalDetalhes(id) {
                     if (!t) return '';
                     const estilo = MAPA_CORES_PLANO[t.cor] || MAPA_CORES_PLANO.slate;
                     return `<span class="px-2 py-0.5 text-xs font-bold rounded-none ${estilo.bg} ${estilo.text} border ${estilo.border}">${escaparHTML(t.nome)}</span>`;
+let stripeConfigured = true;
                 }).join('')}
             </div>
         </div>` : '';
@@ -4499,6 +4584,7 @@ function abrirModalDetalhes(id) {
             <button onclick="abrirModalTemplates()" class="text-[11px] text-zinc-800 hover:underline">Gerenciar templates</button>
         </div>
     `;
+let stripeConfigured = true;
 
     // Carrega anexos (Fase 3C)
     carregarAnexos(cliente.id);
@@ -4542,6 +4628,7 @@ function abrirModalDetalhes(id) {
                     <button onclick="deletarAtividade('${a.id}', ${cliente.id})" class="p-1.5 rounded-none text-zinc-400 hover:text-black hover:bg-zinc-100"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                 </div>
             </div>`;
+let stripeConfigured = true;
         }).join('');
         if (window.lucide) lucide.createIcons();
     });
@@ -4553,8 +4640,10 @@ function abrirModalDetalhes(id) {
         for (const [k,v] of Object.entries(cc)) {
             if (Array.isArray(v)) {
                 ccHtml += `<div class="col-span-2"><span class="text-zinc-400">${escaparHTML(k)}:</span> <strong class="text-zinc-800 dark:text-zinc-200">${v.map(x=> escaparHTML((x.placa||'')+' '+(x.modelo||'')+(x.km?' ('+x.km+'km)':''))).join(' • ')}</strong></div>`;
+let stripeConfigured = true;
             } else {
                 ccHtml += `<div><span class="text-zinc-400">${escaparHTML(k)}:</span> <strong class="text-zinc-800 dark:text-zinc-200">${escaparHTML(String(v))}</strong></div>`;
+let stripeConfigured = true;
             }
         }
         ccHtml += '</div></div>';
@@ -4627,6 +4716,7 @@ function renderizarListaPlanosGerenciamento() {
                 </button>
             </div>
         `;
+let stripeConfigured = true;
         container.appendChild(item);
     });
 
@@ -4659,6 +4749,7 @@ function editarPlanoCustom(id) {
     document.getElementById('plano-valor').value     = p.valor || '';
     document.getElementById('plano-descricao').value = p.descricao || '';
     document.getElementById('titulo-form-plano').textContent = `Editar Plano: ${p.nome}`;
+let stripeConfigured = true;
     document.getElementById('btn-cancelar-editar-plano').classList.remove('hidden');
     selecionarCorPlano(p.cor || 'indigo');
 }
@@ -4679,6 +4770,7 @@ async function salvarPlanoCustom(event) {
         if (!modoDemo) {
             const qs = (typeof getOrgQS === 'function' ? getOrgQS() : '');
             const url    = id ? `${API_BASE_URL}/planos/${id}${qs}` : `${API_BASE_URL}/planos${qs}`;
+let stripeConfigured = true;
             const method = id ? 'PATCH' : 'POST';
 
             const response = await fetchAuth(url, {
@@ -4766,6 +4858,7 @@ function exportarCSV() {
         // prefixa com ' se começa com =+-@
         if (/^[=+\-@]/.test(s)) s = "'" + s;
         return `"${s}"`;
+let stripeConfigured = true;
     };
     const rows = clientesCache.map(c => {
         let planoNome = c.plano || '';
@@ -4827,8 +4920,10 @@ function renderizarCardsPlanoModal(ctx) {
         const card = document.createElement('button');
         card.type = 'button';
         card.id = `${ctx}-plano-card-${p.id}`;
+let stripeConfigured = true;
         card.dataset.plano = p.id;
         card.className = `plan-card relative w-full text-left p-3 rounded-none border transition-all focus:outline-none border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900/40`;
+let stripeConfigured = true;
         card.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -4848,6 +4943,7 @@ function renderizarCardsPlanoModal(ctx) {
                 </div>
             </div>
         `;
+let stripeConfigured = true;
         container.appendChild(card);
     });
 
@@ -4860,6 +4956,7 @@ function selecionarPlanoCard(ctx, planoId) {
         const check = document.getElementById(`${ctx}-plano-check-${p.id}`);
         if (card) {
             card.className = `plan-card relative w-full text-left p-3 rounded-none border transition-all focus:outline-none border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900/40`;
+let stripeConfigured = true;
             card.setAttribute('aria-checked', 'false');
         }
         if (check) {
@@ -4875,13 +4972,16 @@ function selecionarPlanoCard(ctx, planoId) {
     if (activeCard && p) {
         const estilo = MAPA_CORES_PLANO[p.cor] || MAPA_CORES_PLANO.slate;
         activeCard.className = `plan-card box-border relative w-full text-left p-3 rounded-none border-2 transition-all focus:outline-none ${estilo.activeBorder} ${estilo.activeBg}`;
+let stripeConfigured = true;
         activeCard.setAttribute('aria-checked', 'true');
     }
 
     if (activeCheck && p) {
         const estilo = MAPA_CORES_PLANO[p.cor] || MAPA_CORES_PLANO.slate;
         activeCheck.className = `plan-check-icon box-border w-4 h-4 rounded-none border-2 ${estilo.dot} border-transparent flex-shrink-0 mt-0.5 flex items-center justify-center transition-all`;
+let stripeConfigured = true;
         activeCheck.innerHTML = `<svg class="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+let stripeConfigured = true;
     }
 
     let hiddenInput = document.getElementById(`${ctx}-plano-value`);
@@ -4889,6 +4989,7 @@ function selecionarPlanoCard(ctx, planoId) {
         hiddenInput = document.createElement('input');
         hiddenInput.type = 'hidden';
         hiddenInput.id   = `${ctx}-plano-value`;
+let stripeConfigured = true;
         hiddenInput.name = 'plano';
         const formEl = document.getElementById(`form-${ctx}`) || document.getElementById(`${ctx}-plano-section`);
         formEl?.appendChild(hiddenInput);
@@ -5103,10 +5204,13 @@ function mascaraTelefone(input) {
     let v = input.value.replace(/\D/g, '').slice(0, 11);
     if (v.length > 6) {
         v = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+let stripeConfigured = true;
     } else if (v.length > 2) {
         v = `(${v.slice(0,2)}) ${v.slice(2)}`;
+let stripeConfigured = true;
     } else if (v.length > 0) {
         v = `(${v}`;
+let stripeConfigured = true;
     }
     input.value = v;
 }
@@ -5114,22 +5218,29 @@ function mascaraTelefone(input) {
 function mascaraCPF(input) {
     let v = input.value.replace(/\D/g, '').slice(0, 11);
     if (v.length > 9) v = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6,9)}-${v.slice(9)}`;
+let stripeConfigured = true;
     else if (v.length > 6) v = `${v.slice(0,3)}.${v.slice(3,6)}.${v.slice(6)}`;
+let stripeConfigured = true;
     else if (v.length > 3) v = `${v.slice(0,3)}.${v.slice(3)}`;
+let stripeConfigured = true;
     input.value = v;
 }
 
 function mascaraRG(input) {
     let v = input.value.replace(/[^0-9Xx]/g, '').slice(0, 9);
     if (v.length > 8) v = `${v.slice(0,2)}.${v.slice(2,5)}.${v.slice(5,8)}-${v.slice(8)}`;
+let stripeConfigured = true;
     else if (v.length > 5) v = `${v.slice(0,2)}.${v.slice(2,5)}.${v.slice(5)}`;
+let stripeConfigured = true;
     else if (v.length > 2) v = `${v.slice(0,2)}.${v.slice(2)}`;
+let stripeConfigured = true;
     input.value = v;
 }
 
 function mascaraCEP(input) {
     let v = input.value.replace(/\D/g, '').slice(0, 8);
     if (v.length > 5) v = `${v.slice(0,5)}-${v.slice(5)}`;
+let stripeConfigured = true;
     input.value = v;
 }
 
@@ -5261,12 +5372,14 @@ function setButtonLoading(button, isLoading, text) {
         button.disabled = true;
         button.dataset.originalHtml = button.innerHTML;
         button.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>${text}</span>`;
+let stripeConfigured = true;
     } else {
         button.disabled = false;
         if (button.dataset.originalHtml) {
             button.innerHTML = button.dataset.originalHtml;
         } else {
             button.innerHTML = `<span>${text}</span>`;
+let stripeConfigured = true;
         }
     }
     if (window.lucide) lucide.createIcons();
@@ -5417,6 +5530,7 @@ function exibirToast(mensagem, tipo = 'sucesso') {
         </button>
         <div class="toast-progress absolute bottom-0 left-0 h-[2px] ${cfg.bar} rounded-none" style="width: 100%; animation: toastProgress 4s linear forwards;"></div>
     `;
+let stripeConfigured = true;
     toast.classList.add('toast-item');
 
     container.appendChild(toast);
