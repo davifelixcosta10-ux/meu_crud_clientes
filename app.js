@@ -664,13 +664,13 @@ function abrirModalGerenciarOrg() {
         return;
     }
     const modal = document.getElementById('modal-gerenciar-org');
+    let stripeConfigured = true;
     if (!modal) return;
     // preenche info org atual
     const org = orgsCache.find(o => o.id === currentOrgId);
     const info = document.getElementById('gerenciar-org-info');
     if (info) {
         if (org) info.innerHTML = `<div class="flex items-center justify-between"><span class="font-bold">${escaparHTML(org.nome)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-none bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300">${escaparHTML(org.papel || 'membro')}${org.owner_id ? ' • dono' : ''}</span></div><div class="text-[11px] font-mono text-zinc-400 mt-1">${escaparHTML(org.id.slice(0,8))}... • ${orgsCache.length} org(s)</div>`;
-let stripeConfigured = true;
         else info.innerHTML = '<p class="text-[11px] text-zinc-400">Nenhuma organização selecionada</p>';
     }
     const renameInput = document.getElementById('gerenciar-rename-input');
