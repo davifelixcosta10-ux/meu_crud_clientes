@@ -1542,6 +1542,36 @@ async function carregarConfigGeral() {
         document.getElementById('config-empresa').value = data.nome_empresa || '';
         document.getElementById('config-email').value = data.email || '';
         document.getElementById('config-vertical').value = data.vertical || currentVertical || 'geral';
+        
+        // Carregar configuração do WhatsApp
+        const integracaoResp = await fetchAuth(`${API_BASE_URL}/integracoes`, { method: 'GET' });
+        if (integracaoResp && integracaoResp.ok) {
+            const integracoes = await integracaoResp.json();
+            const whatsAppIntegracao = integracoes.find(i => i.tipo === 'whatsapp');
+            if (whatsAppIntegracao && whatsAppIntegracao.config) {
+                try {
+                    const config = typeof whatsAppIntegracao.config === 'string' 
+                        ? JSON.parse(whatsAppIntegracao.config) 
+                        : whatsAppIntegracao.config;
+                    
+                    // Preencher os campos
+                    document.getElementById('config-whatsapp-provedor').value = config.provider || 'evolution';
+                    toggleWhatsAppFields(); // Atualizar visibilidade dos campos
+                    
+                    if (config.provider === 'evolution') {
+                        document.getElementById('config-whatsapp-base-url').value = config.base_url || '';
+                        document.getElementById('config-whatsapp-instancia').value = config.instancia || '';
+                    } else if (config.provider === 'meta') {
+                        document.getElementById('config-whatsapp-base-url-meta').value = config.base_url || '';
+                        document.getElementById('config-whatsapp-phone-number-id').value = config.phone_number_id || '';
+                    }
+                    document.getElementById('config-whatsapp-token').value = config.token || '';
+                } catch(e) {
+                    // Se houver erro ao parsear o config, deixar os campos vazios
+                    console.error('Erro ao processar configuração WhatsApp:', e);
+                }
+            }
+        }
     } catch(e) {}
 }
 async function salvarConfigGeral() {
@@ -1558,6 +1588,137 @@ async function salvarConfigGeral() {
         if (data.vertical) { currentVertical = data.vertical; localStorage.setItem('daviflow_vertical', currentVertical); aplicarVertical(currentVertical); document.getElementById('vertical-select').value = currentVertical; }
     } catch(e) { exibirToast('Erro ao salvar', 'erro'); }
 }
+// WhatsApp Configuration Functions
+async function salvarConfigWhatsApp() {
+    const provedor = document.getElementById('config-whatsapp-provedor').value;
+    const baseUrl = document.getElementById('config-whatsapp-base-url')?.value.trim() || 
+                   document.getElementById('config-whatsapp-base-url-meta')?.value.trim() || null;
+    const instancia = document.getElementById('config-whatsapp-instancia')?.value.trim() || null;
+    const phoneNumberId = document.getElementById('config-whatsapp-phone-number-id')?.value.trim() || null;
+    const token = document.getElementById('config-whatsapp-token')?.value.trim() || null;
+    
+    // Validações básicas
+    if (!baseUrl) {
+        exibirToast('URL Base é obrigatória', 'erro');
+        return;
+    }
+    if (provedor === 'evolution' && !instancia) {
+        exibirToast('Instância é obrigatória para Evolution API', 'erro');
+        return;
+    }
+    if (provedor === 'meta' && !phoneNumberId) {
+        exibirToast('Phone Number ID é obrigatório para Meta Cloud API', 'erro');
+        return;
+    }
+    if (!token) {
+        exibirToast('Token é obrigatório', 'erro');
+        return;
+    }
+    
+    const config = {
+        provider: provedor,
+        base_url: baseUrl,
+        ...(provedor === 'evolution' ? { instancia: instancia } : { phone_number_id: phoneNumberId }),
+        token: token
+    };
+    
+    try {
+        const payload = { config: JSON.stringify(config) };
+        const resp = await fetchAuth(`${API_BASE_URL}/integracoes/whatsapp`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(payload) 
+        });
+        if (!resp || !resp.ok) { 
+            const err=await resp.json().catch(()=>({})); 
+            exibirToast(err.detail||'Erro ao salvar configuração WhatsApp', 'erro'); 
+            return; 
+        }
+        exibirToast('Configuração WhatsApp salva!', 'sucesso');
+    } catch(e) { 
+        exibirToast('Erro ao salvar configuração WhatsApp', 'erro'); 
+    }
+}
+
+async function testarConexaoWhatsApp() {
+    const provedor = document.getElementById('config-whatsapp-provedor').value;
+    const token = document.getElementById('config-whatsapp-token')?.value.trim();
+    if (!token) {
+        exibirToast('Token é obrigatório para testar conexão', 'erro');
+        return;
+    }
+    
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/integracoes/whatsapp/test`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' } 
+        });
+        if (!resp || !resp.ok) { 
+            const err=await resp.json().catch(()=>({})); 
+            exibirToast(err.detail||'Falha na conexão WhatsApp', 'erro'); 
+            return; 
+        }
+        exibirToast('Conexão WhatsApp estabelecida com sucesso!', 'sucesso');
+    } catch(e) { 
+        exibirToast('Erro ao testar conexão WhatsApp', 'erro'); 
+    }
+}
+
+async function enviarTesteWhatsApp() {
+    const telefone = document.getElementById('config-whatsapp-teste-telefone')?.value.trim() || '';
+    const mensagem = document.getElementById('config-whatsapp-teste-mensagem')?.value.trim() || 'Esta é uma mensagem de teste do DaviFlow';
+    
+    if (!telefone) {
+        exibirToast('Telefone de teste é obrigatório', 'erro');
+        return;
+    }
+    
+    // Validação básica de formato de telefone brasileiro (55 + 10 ou 11 dígitos)
+    if (!/^55\d{10,11}$/.test(telefone)) {
+        exibirToast('Telefone deve estar no formato E.164 brasileiro: 55 seguido de 10 ou 11 dígitos', 'erro');
+        return;
+    }
+    
+    try {
+        const payload = {
+            telefone_e164: telefone,
+            mensagem: mensagem
+        };
+        const resp = await fetchAuth(`${API_BASE_URL}/whatsapp/enviar`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(payload) 
+        });
+        if (!resp || !resp.ok) { 
+            const err=await resp.json().catch(()=>({})); 
+            exibirToast(err.detail || 'Falha ao enviar mensagem de teste', 'erro'); 
+            return; 
+        }
+        const result = await resp.json();
+        if (result.success) {
+            exibirToast('Mensagem de teste enviada com sucesso!', 'sucesso');
+        } else {
+            exibirToast(result.erro||'Falha ao enviar mensagem de teste', 'erro');
+        }
+    } catch(e) { 
+        exibirToast('Erro ao enviar mensagem de teste', 'erro'); 
+    }
+}
+
+function toggleWhatsAppFields() {
+    const provedor = document.getElementById('config-whatsapp-provedor').value;
+    const evolutionFields = document.getElementById('config-whatsapp-evolution-fields');
+    const metaFields = document.getElementById('config-whatsapp-meta-fields');
+    
+    if (provedor === 'evolution') {
+        evolutionFields.classList.remove('hidden');
+        metaFields.classList.add('hidden');
+    } else {
+        evolutionFields.classList.add('hidden');
+        metaFields.classList.remove('hidden');
+    }
+}
+
 async function carregarConfigOrg() {
     const org = orgsCache.find(o=>o.id===currentOrgId);
     const info = document.getElementById('config-org-info');

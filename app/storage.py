@@ -29,6 +29,7 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 from supabase import create_client, Client
+import httpx
 from app.models import Cliente, ClienteCreate, Plano, UserLogin, UserSignUp, Etapa, Atividade, Tag, FiltroSalvo
 
 
@@ -2671,3 +2672,83 @@ def get_billing_status(user_id: str, org_id: str | None) -> dict:
         "assinatura_ativa": ativa,
         "atualizado_em": p.get("updated_at"),
     }
+
+
+def enviar_whatsapp(org_id: str, telefone_e164: str, mensagem: str) -> dict:
+    """Envía mensagem WhatsApp via Evolution/Meta API. Nunca logar token."""
+    # Buscar configuração de WhatsApp da org
+    supabase = get_supabase_client()
+    config_result = (
+        supabase.table("integracoes")
+        .select("config")
+        .eq("org_id", org_id)
+        .eq("tipo", "whatsapp")
+        .single()
+        .execute()
+    )
+    
+    if not config_result.data:
+        return {"success": False, "erro": "WhatsApp não configurado para esta organização"}
+    
+    config = config_result.data["config"]
+    provider = config.get("provider", "evolution")  # evolution or meta
+    
+    if provider == "evolution":
+        base_url = config.get("base_url")
+        instance = config.get("instance")
+        token = config.get("token")
+        
+        if not all([base_url, instance, token]):
+            return {"success": False, "erro": "Configuração Evolution incompleta"}
+        
+        url = f"{base_url.rstrip('/')}/message/sendText/{instance}"
+        headers = {
+            "apikey": token,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "number": telefone_e164,
+            "textMessage": mensagem
+        }
+        
+    elif provider == "meta":
+        base_url = config.get("base_url", "https://graph.facebook.com/v18.0")
+        phone_number_id = config.get("phone_number_id")
+        token = config.get("token")
+        
+        if not all([base_url, phone_number_id, token]):
+            return {"success": False, "erro": "Configuração Meta incompleta"}
+        
+        url = f"{base_url.rstrip('/')}/{phone_number_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": telefone_e164,
+            "type": "text",
+            "text": {"body": mensagem}
+        }
+        
+    else:
+        return {"success": False, "erro": f"Provider WhatsApp não suportado: {provider}"}
+    
+    try:
+        response = httpx.post(url, json=payload, headers=headers, timeout=10.0)
+        response.raise_for_status()
+        result = response.json()
+        
+        # Extrair ID da mensagem baseado no provider
+        message_id = None
+        if provider == "evolution":
+            message_id = result.get("key", {}).get("id") or result.get("message", {}).get("id")
+        elif provider == "meta":
+            message_id = result.get("messages", [{}])[0].get("id")
+            
+        return {"success": True, "message_id": message_id}
+        
+    except httpx.HTTPStatusError as e:
+        return {"success": False, "erro": f"Erro HTTP {e.response.status_code}: {e.response.text[:200]}"}
+    except Exception as e:
+        return {"success": False, "erro": f"Erro ao enviar WhatsApp: {str(e)[:200]}"}

@@ -1156,3 +1156,21 @@ class BillingStatusResponse(BaseModel):
 
 class CheckoutRequest(BaseModel):
     org_id: str
+
+
+class WhatsAppEnvioRequest(BaseModel):
+    telefone_e164: str  # Format: ^55\d{10,11}$ (Brazil)
+    mensagem: str
+
+    @validator('telefone_e164')
+    def validate_telefone(cls, v):
+        import re
+        if not re.match(r'^55\d{10,11}$', v):
+            raise ValueError(r'Telefone deve estar no formato E.164 brasileiro: ^55\d{10,11}$')
+        return v
+
+
+class WhatsAppEnvioResponse(BaseModel):
+    success: bool
+    message_id: Optional[str] = None
+    erro: Optional[str] = None
