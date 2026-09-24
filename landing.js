@@ -11,8 +11,9 @@
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 const on = (type, sel, handler, ctx = document) => ctx.addEventListener(type, e => {
-  const target = e.target.closest(sel);
-  if (target) handler.call(target, e);
+  const el = e.target.closest(sel);
+  if (!el || !ctx.contains(el)) return;
+  handler(e, el);
 });
 const ready = (fn) => document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);
 
@@ -42,48 +43,74 @@ function releaseFocus(modal) {
 function openModal(id) {
   const modal = $('#' + id);
   if (!modal) return;
-  modal.showModal();
-  openModals.push(modal);
-  trapFocus(modal);
+  if (!modal.open) {
+    modal.showModal();
+    openModals.push(modal);
+    trapFocus(modal);
+  }
   document.body.style.overflow = 'hidden';
+}
+function syncOnClose(modal) {
+  modal.addEventListener('close', () => {
+    releaseFocus(modal);
+    const idx = openModals.indexOf(modal);
+    if (idx > -1) openModals.splice(idx, 1);
+    if (openModals.length === 0) document.body.style.overflow = '';
+  });
 }
 function closeModal(modal) {
   if (!modal) return;
-  modal.close();
-  releaseFocus(modal);
-  const idx = openModals.indexOf(modal);
-  if (idx > -1) openModals.splice(idx, 1);
-  if (openModals.length === 0) document.body.style.overflow = '';
+  modal.close(); // dispara 'close' → syncOnClose cuida da pilha/overflow
 }
 function closeTopModal() {
   const modal = openModals[openModals.length - 1];
   if (modal) closeModal(modal);
 }
 function switchModal(fromId, toId) {
-  const from = $('#' + fromId);
-  const to = $('#' + toId);
-  if (from) closeModal(from);
-  if (to) openModal(toId);
+  closeModal($('#' + fromId));
+  openModal(toId);
 }
 
-// Delegated handlers
-on('click', '[data-action="open-modal"]', e => {
+// Delegated handlers — recebem (e, el), nunca e.currentTarget
+on('click', '[data-action="open-modal"]', (e, el) => {
   e.preventDefault();
-  openModal(e.currentTarget.dataset.modal);
+  openModal(el.dataset.modal);
 });
 on('click', '[data-action="close-modal"]', () => closeTopModal());
-on('click', '[data-action="switch-modal"]', e => {
+on('click', '[data-action="switch-modal"]', (e, el) => {
   e.preventDefault();
-  const from = e.currentTarget.closest('dialog')?.id;
-  const to = e.currentTarget.dataset.target;
-  if (from && to) switchModal(from, to);
+  switchModal(el.closest('dialog')?.id, el.dataset.target);
 });
-on('click', '[data-action="forgot-password"]', e => {
+on('click', '[data-action="forgot-password"]', async (e, el) => {
   e.preventDefault();
-  switchModal('modal-login', 'modal-recovery');
+  const input = $('#login-email');
+  let email = (input?.value || '').trim();
+  if (!email) {
+    email = (prompt('Digite seu e-mail para redefinir a senha:') || '').trim();
+    if (!email) return;
+  } else if (!confirm(`Enviar link de redefinição para ${email}?`)) {
+    return;
+  }
+  if (!email.includes('@')) { showError('login-error', 'login-error-text', 'Informe um e-mail válido.'); return; }
+  const btn = $('#form-login button[type=submit]');
+  setButtonLoading(btn, true);
+  try {
+    const resp = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await safeJson(resp);
+    // mensagem genérica — não enumera emails (privacidade)
+    showError('login-error', 'login-error-text', data.mensagem || 'Se o e-mail estiver cadastrado, você receberá um link. Verifique spam.');
+    const box = $('#login-error');
+    if (box) { box.style.background = '#000'; box.style.color = '#fff'; }
+  } catch (err) {
+    showError('login-error', 'login-error-text', 'Erro ao enviar email. Tente novamente.');
+  } finally {
+    setButtonLoading(btn, false);
+  }
 });
-// ESC close
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTopModal(); });
 
 // ------------------------------------------------------------
 // counter.js — IntersectionObserver + WAAPI
@@ -146,8 +173,8 @@ function initReveal() {
 // ------------------------------------------------------------
 function initSmoothScroll() {
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  on('click', 'a[href^="#"]', e => {
-    const href = e.currentTarget.getAttribute('href');
+  on('click', 'a[href^="#"]', (e, el) => {
+    const href = el.getAttribute('href');
     if (href === '#') return;
     const target = $(href);
     if (!target) return;
@@ -156,7 +183,7 @@ function initSmoothScroll() {
     const offset = navbar ? navbar.offsetHeight + 16 : 72;
     const top = target.getBoundingClientRect().top + window.scrollY - offset;
     window.scrollTo({ top, behavior: prefersReduced ? 'auto' : 'smooth' });
-    // close mobile menu if open
+    // fecha menu mobile se aberto
     const mobileMenu = $('#mobile-menu');
     if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
       mobileMenu.classList.add('hidden');
@@ -175,7 +202,7 @@ function initNavbar() {
   let lastScroll = 0;
   const onScroll = () => {
     const y = window.scrollY;
-    if (y > 20) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+    if (y > 20) navbar.classList.add('navbar-scrolled'); else navbar.classList.remove('navbar-scrolled');
     lastScroll = y;
   };
   window.addEventListener('scroll', onScroll, { passive: true });
@@ -201,9 +228,16 @@ function setButtonLoading(btn, loading) {
 function showError(containerId, textId, msg) {
   const container = $(containerId);
   const text = $(textId);
-  if (container && text) { text.textContent = msg; container.classList.remove('hidden'); }
+  if (container && text) {
+    text.textContent = msg;
+    container.classList.remove('hidden');
+  }
 }
 function hideError(containerId) { const c = $(containerId); if (c) c.classList.add('hidden'); }
+function resetErrorStyle(containerId) {
+  const c = $(containerId);
+  if (c) { c.style.background = ''; c.style.color = ''; }
+}
 
 async function safeJson(response) {
   const ct = response.headers.get('content-type') || '';
@@ -218,6 +252,7 @@ function attachAuth() {
   if (loginForm) loginForm.addEventListener('submit', async e => {
     e.preventDefault();
     hideError('login-error');
+    resetErrorStyle('login-error');
     const email = $('#login-email').value.trim();
     const password = $('#login-password').value;
     if (!email || !password) return showError('login-error','login-error-text','Preencha todos os campos.');
@@ -288,14 +323,48 @@ function attachAuth() {
 }
 
 // ------------------------------------------------------------
+// recovery.js — detecta token Supabase/Resend na URL e abre modal de nova senha
+// ------------------------------------------------------------
+function initRecoveryDetection() {
+  const qs = window.location.search || '';
+  const hash = window.location.hash || '';
+  const hasToken = hash.includes('access_token') || hash.includes('refresh_token')
+    || qs.includes('access_token') || qs.includes('code=') || qs.includes('token=')
+    || hash.includes('type=recovery') || hash.includes('type=invite')
+    || qs.includes('type=recovery') || qs.includes('type=invite');
+  const isRecovery = qs.includes('recovery') || hash.includes('recovery');
+  if (!(hasToken || isRecovery)) return;
+  openModal('modal-recovery');
+  try {
+    let at = null, rt = null;
+    if (hash.includes('access_token')) {
+      const p = new URLSearchParams(hash.slice(1));
+      at = p.get('access_token'); rt = p.get('refresh_token');
+    }
+    if (!at && qs.includes('access_token')) {
+      const p = new URLSearchParams(qs);
+      at = p.get('access_token'); rt = p.get('refresh_token');
+    }
+    if (at) localStorage.setItem('df_recovery_token', at);
+    if (rt) localStorage.setItem('df_recovery_refresh', rt);
+    if (!at) {
+      const t = new URLSearchParams(qs).get('token') || new URLSearchParams(hash.slice(1)).get('token');
+      if (t) localStorage.setItem('df_recovery_token', t);
+    }
+  } catch (e) { console.warn('[recovery]', e); }
+}
+
+// ------------------------------------------------------------
 // init.js — bootstrap
 // ------------------------------------------------------------
 ready(() => {
+  // sincroniza pilha quando o <dialog> fecha sozinho (ESC nativo)
+  $$('.modal').forEach(syncOnClose);
   initNavbar();
   initSmoothScroll();
   initReveal();
   initCounters();
+  initRecoveryDetection();
   attachAuth();
-  // Lucide icons (if present)
   if (window.lucide) lucide.createIcons();
 });

@@ -672,6 +672,14 @@ dialog.modal .modal-box {
     box-shadow: var(--shadow-md);
 }
 
+/* Hero H1 — nunca vira parede de texto no mobile (máx. ~3 linhas) */
+@media (max-width: 639px) {
+    #hero-title {
+        font-size: 2rem;
+        line-height: 1.15;
+    }
+}
+
 /* Overview metric stagger */
 #secao-overview .metric-card {
     animation: fadeInUp 0.5s var(--ease-out) both;
