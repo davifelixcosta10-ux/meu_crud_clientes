@@ -44,7 +44,7 @@
     <script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
 <body class="bg-zinc-50 text-zinc-800 antialiased font-sans">
-    <header class="sticky top-0 z-40 bg-zinc-50 border-b-2 border-black">
+    <header id="navbar" class="sticky top-0 z-40 bg-zinc-50 border-b-2 border-black">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
             <a href="#" class="flex items-center gap-2">
                 <div class="w-7 h-7 rounded-none bg-black flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div>
@@ -69,10 +69,10 @@
     </header>
 
     <main>
-        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-12">
+        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-32 pb-16">
             <div class="max-w-2xl">
                 <p class="inline-block text-[11px] font-mono font-semibold tracking-widest uppercase bg-black text-white px-2 py-1 mb-4 animate-fade-in-up stagger-1">CRM para freelancers e pequenas equipes</p>
-                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight text-black animate-fade-in-up stagger-2">Todos os seus clientes,<br>cobranças e follow-ups em um painel.</h1>
+                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight text-black animate-fade-in-up stagger-2">Cadastre, cobre e acompanhe clientes em 1 painel.</h1>
                 <p class="mt-4 text-base text-zinc-600 leading-relaxed animate-fade-in-up stagger-3">Cadastre clientes, defina planos e vencimentos, acompanhe quem pagou e receba lembretes de retorno. Leva 30 segundos para criar a conta.</p>
                 <div class="mt-7 flex flex-col sm:flex-row gap-3 animate-fade-in-up stagger-4">
                     <button onclick="openModal('modal-register')" class="btn-lift inline-flex justify-center px-5 py-2.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none shadow-[4px_4px_0_0_#71717a]">Criar conta em 30 segundos</button>
@@ -84,23 +84,25 @@
                     <span>Seus dados isolados por conta</span>
                 </div>
             </div>
-            <div class="mockup-rise mockup-frame mt-10 border-2 border-black rounded-none overflow-hidden bg-white box-border shadow-[8px_8px_0_0_#000]">
+            <div class="mockup-rise mockup-frame mt-10 border-2 border-black rounded-none overflow-hidden bg-white box-border shadow-[8px_8px_0_0_#000] relative">
                 <div class="flex items-center gap-1.5 px-3 py-2 border-b-2 border-black bg-zinc-100">
                     <span class="w-2.5 h-2.5 rounded-none bg-black"></span><span class="w-2.5 h-2.5 rounded-none border border-black bg-white"></span><span class="w-2.5 h-2.5 rounded-none border border-black bg-white"></span>
                     <span class="ml-3 text-xs text-zinc-600 font-mono">dashboard.daviflow.com</span>
                 </div>
+                <span class="absolute top-2 right-2 text-[10px] font-mono font-semibold uppercase bg-black text-white px-1.5 py-0.5">30s para criar</span>
+                <span class="absolute bottom-2 left-2 text-[10px] font-mono text-zinc-400">Dados de exemplo</span>
                 <div class="p-4 grid grid-cols-4 gap-3 text-center">
-                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Total</div><div class="text-lg font-bold font-mono text-black">48</div></div>
-                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Ativos</div><div class="text-lg font-bold font-mono text-black">36</div></div>
-                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Inativos</div><div class="text-lg font-bold font-mono text-black">12</div></div>
+                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Total</div><div class="text-lg font-bold font-mono text-black counter" data-target="48">0</div></div>
+                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Ativos</div><div class="text-lg font-bold font-mono text-black counter" data-target="36">0</div></div>
+                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Inativos</div><div class="text-lg font-bold font-mono text-black counter" data-target="12">0</div></div>
                     <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Planos</div><div class="text-xs font-mono mt-1 text-black">VIP 12 • Básico 20</div></div>
                 </div>
                 <div class="px-4 pb-4">
                     <div class="border-2 border-black rounded-none overflow-hidden bg-white box-border">
                         <div class="grid grid-cols-4 gap-3 px-3 py-2 border-b-2 border-black bg-zinc-100 text-[10px] font-mono font-semibold uppercase tracking-widest text-zinc-600"><span>Nome</span><span>Email</span><span>Plano</span><span>Status</span></div>
-                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs border-b border-zinc-300"><span>Ana Lima</span><span class="text-zinc-500 font-mono">ana@mail.com</span><span>Ouro</span><span class="font-mono bg-black text-white px-1 w-fit">Ativo</span></div>
+                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs border-b border-zinc-300"><span>Ana Lima</span><span class="text-zinc-500 font-mono">ana.exemplo@</span><span>Ouro</span><span class="font-mono bg-black text-white px-1 w-fit">Ativo</span></div>
                         <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs border-b border-zinc-300"><span>Carlos M.</span><span class="text-zinc-500 font-mono">carlos@mail.com</span><span>Prata</span><span class="font-mono bg-black text-white px-1 w-fit">Ativo</span></div>
-                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs"><span>Juliana R.</span><span class="text-zinc-500 font-mono">ju@mail.com</span><span>Pro</span><span class="font-mono border border-black text-zinc-600 px-1 w-fit">Inativo</span></div>
+                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs"><span>Juliana R.</span><span class="text-zinc-500 font-mono">ju.exemplo@</span><span>Pro</span><span class="font-mono border border-black text-zinc-600 px-1 w-fit">Inativo</span></div>
                     </div>
                 </div>
             </div>
@@ -130,19 +132,19 @@
             </div>
         </section>
 
-        <section id="how-it-works" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t-2 border-black">
+        <section id="how-it-works" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t-2 border-black">
             <h2 class="text-xl font-bold text-black reveal">Comece em 3 passos.</h2>
             <div class="mt-6 grid md:grid-cols-3 gap-6">
                 <div class="step-card reveal flex gap-3">
-                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">1</span>
+                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">01</span>
                     <div><h3 class="text-sm font-semibold text-black">Crie a conta</h3><p class="text-sm text-zinc-600 mt-1">30 segundos, sem cartão.</p></div>
                 </div>
                 <div class="step-card reveal flex gap-3">
-                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">2</span>
+                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">02</span>
                     <div><h3 class="text-sm font-semibold text-black">Cadastre clientes</h3><p class="text-sm text-zinc-600 mt-1">Nome, email, plano, etapa.</p></div>
                 </div>
                 <div class="step-card reveal flex gap-3">
-                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">3</span>
+                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">03</span>
                     <div><h3 class="text-sm font-semibold text-black">Acompanhe</h3><p class="text-sm text-zinc-600 mt-1">Kanban e relatórios com período.</p></div>
                 </div>
             </div>
@@ -151,10 +153,10 @@
             </div>
         </section>
 
-        <section id="about" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t-2 border-black">
+        <section id="about" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t-2 border-black">
             <div class="feature-card reveal border-2 border-black rounded-none p-6 sm:p-8 bg-white box-border shadow-[8px_8px_0_0_#000]">
                 <h2 class="text-lg font-bold text-black">Feito para quem atende cliente todo dia.</h2>
-                <p class="mt-2 text-sm text-zinc-600 leading-relaxed">Clínicas, oficinas, dentistas, academias e freelancers usam o DaviFlow para manter cadastro, pagamento e retorno em dia, com campos próprios para cada tipo de negócio.</p>
+                <p class="mt-2 text-sm text-zinc-600 leading-relaxed">Clínica: retorno em 30 dias.<br>Oficina: revisão por km.<br>Academia: mensalidade vencida.</p>
                 <div class="mt-4 grid sm:grid-cols-3 gap-4 text-xs">
                     <div class="border-2 border-black rounded-none p-3 bg-zinc-50 box-border"><div class="font-semibold text-black">Acesso controlado</div><div class="text-zinc-600 mt-1">Cada conta vê só os próprios dados. Convites por email.</div></div>
                     <div class="border-2 border-black rounded-none p-3 bg-zinc-50 box-border"><div class="font-semibold text-black">Lembretes automáticos</div><div class="text-zinc-600 mt-1">Avisos de vencimento e clientes sem retorno.</div></div>
@@ -169,14 +171,13 @@
             <div class="md:col-span-2">
                 <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-none bg-black flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div><span class="text-sm font-bold font-mono uppercase">DaviFlow</span></div>
                 <p class="mt-2 text-sm text-zinc-600 max-w-xs">Cadastro, cobrança e acompanhamento de clientes para pequenos negócios.</p>
-                <address class="not-italic text-xs text-zinc-500 mt-2 font-mono">CNPJ 00.000.000/0001-00 • Rua Example 123 • São Paulo, SP<br><a href="mailto:contato@daviflow.com.br" class="underline">contato@daviflow.com.br</a> • <a href="tel:+5511999999999" class="underline">(11) 99999-9999</a></address>
+                <address class="not-italic text-xs text-zinc-500 mt-2 font-mono"><a href="mailto:contato@daviflow.com.br" class="underline">contato@daviflow.com.br</a> • <a href="https://wa.me/5511999999999" target="_blank" rel="noopener" class="underline">Falar no WhatsApp</a></address>
             </div>
             <div><h4 class="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-2">Produto</h4><ul class="space-y-1 text-sm"><li><a href="#features" class="text-zinc-600 hover:text-black">Recursos</a></li><li><a href="#how-it-works" class="text-zinc-600 hover:text-black">Como funciona</a></li><li><a href="/dashboard.html" class="text-zinc-600 hover:text-black">Painel</a></li></ul></div>
             <div><h4 class="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-2">Legal</h4><ul class="space-y-1 text-sm"><li><a href="/privacidade.html" class="text-zinc-600 hover:text-black">Privacidade</a></li><li><a href="/termos.html" class="text-zinc-600 hover:text-black">Termos</a></li></ul></div>
         </div>
         <div class="max-w-6xl mx-auto mt-6 pt-4 border-t-2 border-black flex flex-col sm:flex-row items-center justify-between gap-2">
             <p class="text-xs text-zinc-500 font-mono">© 2026 DaviFlow. Feito no Brasil.</p>
-            <span class="text-xs text-zinc-500 font-mono">FastAPI + Supabase + Vercel</span>
         </div>
     </footer>
 
@@ -632,6 +633,35 @@
         document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
         // =====================================================
+        // COUNTER ANIMATION on viewport entry
+        // =====================================================
+        const counterObserver = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                const el = entry.target;
+                const target = parseInt(el.getAttribute('data-target') || '0', 10);
+                const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (prefersReduced) {
+                    el.textContent = target;
+                } else {
+                    let start = 0;
+                    const duration = 1200;
+                    const startTime = performance.now();
+                    function tick(now) {
+                        const progress = Math.min((now - startTime) / duration, 1);
+                        const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+                        el.textContent = Math.round(eased * target);
+                        if (progress < 1) requestAnimationFrame(tick);
+                    }
+                    requestAnimationFrame(tick);
+                }
+                obs.unobserve(el);
+            });
+        }, { threshold: 0.5, rootMargin: '0px' });
+
+        document.querySelectorAll('.counter').forEach(el => counterObserver.observe(el));
+
+        // =====================================================
         // SMOOTH SCROLL for anchor links
         // =====================================================
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -641,7 +671,8 @@
                     e.preventDefault();
                     const offset = 72; // navbar height
                     const top = target.getBoundingClientRect().top + window.scrollY - offset;
-                    window.scrollTo({ top, behavior: 'smooth' });
+                    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    window.scrollTo({ top, behavior: prefersReduced ? 'auto' : 'smooth' });
                 }
             });
         });
