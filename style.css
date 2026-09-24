@@ -1,668 +1,302 @@
 /**
- * ===================================================================
  * DaviFlow — Design System (style.css)
- * ===================================================================
- * Folha única para Landing Page (index.html) + Dashboard (dashboard.html).
- *
- * Estrutura:
- *  1. Base (scroll, tap-highlight, iOS 16px anti-zoom, modal mobile)
- *  2. Tokens CSS vars (:root light / .dark) — cores, sombras, radius
- *  3. Scrollbars customizadas
- *  4. Dashboard: form, botões, metric cards, toggles, color dots, modais, cards
- *  5. Landing: animações fadeInUp, reveal, feature-card hover, navbar
- *
- * Tokens principais:
- *  --dash-accent (#000 preto light / #fff dark) — neo-brutalista monocromático
- *  --dash-surface / --dash-border / --dash-text-*
- *  --dash-shadow-sm/md e --dash-radius (0.75rem)
- *
- * Notas:
- * - Evita @apply para manter compatibilidade com CDN Tailwind
- * - Animações usam cubic-bezier(0.16,1,0.3,1) (easeOutExpo-like)
- * - Mobile: 16px em inputs evita zoom iOS; modais viram bottom-sheet
+ * Landing + Dashboard shared tokens, components, motion
+ * No @apply, Tailwind CDN compatible
  */
 
-/* --- Smooth Scroll & Touch Optimizations --- */
-html {
-    scroll-behavior: smooth;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* Previne auto-zoom desagradável no iOS ao focar em inputs em telas pequenas */
-@media (max-width: 639px) {
-    .form-input, input, select, textarea {
-        font-size: 16px !important;
-    }
-    .modal-box {
-        max-height: 88vh;
-        overscroll-behavior: contain;
-    }
-    .btn-primary, .btn-ghost, .btn-danger {
-        min-height: 42px;
-    }
-}
-
 /* ============================================================
-   DESIGN TOKENS — Neo-Brutalista Monocromático
-   Regra 60-30-10: zinc-50 fundo / zinc-800 estrutura / preto destaque
+   CSS VARIABLES — Premium Neobrutalista P&B (adjustable)
    ============================================================ */
 :root {
-    --dash-bg:            #fafafa; /* zinc-50 */
-    --dash-surface:       #ffffff;
-    --dash-border:        #d4d4d8; /* zinc-300 — divisórias internas */
-    --dash-accent:        #000000; /* preto puro — destaque/CTA */
-    --dash-surface-2:     #f4f4f5; /* zinc-100 */
-    --dash-border-subtle: rgba(212,212,216,0.8);
-    --dash-text-1:        #09090b; /* zinc-950 */
-    --dash-text-2:        #3f3f46; /* zinc-700 */
-    --dash-text-3:        #71717a; /* zinc-500 */
-    --dash-accent-hover:  #27272a; /* zinc-800 */
-    --dash-accent-light:  #e4e4e7; /* zinc-200 */
-    --dash-shadow-sm:     3px 3px 0 #000000;  /* sombra dura pequena */
-    --dash-shadow-md:     6px 6px 0 #000000;  /* sombra dura média */
-    --dash-radius:        0px;     /* rounded-none */
-    --ease-out:           cubic-bezier(0.23, 1, 0.32, 1);
-    --ease-in-out:        cubic-bezier(0.77, 0, 0.175, 1);
-    --ease-drawer:        cubic-bezier(0.32, 0.72, 0, 1);
+  /* Colors */
+  --bg:            #FAFAFA;        /* zinc-50 */
+  --surface:       #FFFFFF;
+  --surface-2:     #F4F4F5;        /* zinc-100 */
+  --border:        #D4D4D8;        /* zinc-300 */
+  --accent:        #000000;        /* pure black */
+  --text-1:        #09090B;        /* zinc-950 */
+  --text-2:        #3F3F46;        /* zinc-700 */
+  --text-3:        #71717A;        /* zinc-500 */
+
+  /* Shadows */
+  --shadow-sm:     0 2px 4px rgba(0,0,0,0.04);
+  --shadow-md:     0 8px 24px rgba(0,0,0,0.06);
+  --shadow-lg:     0 16px 48px rgba(0,0,0,0.08);
+
+  /* Motion */
+  --ease-out:      cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out:   cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer:   cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast:      160ms;
+  --dur-base:      200ms;
+  --dur-slow:      300ms;
+  --dur-marketing: 500ms;
+
+  /* Radius */
+  --radius-sm:     0.5rem;
+  --radius-md:     1rem;
+  --radius-lg:     1.5rem;
+  --radius-xl:     2rem;
+  --radius-full:   9999px;
 }
+
+/* Dark mode (optional) */
 .dark {
-    --dash-bg:            #09090b; /* zinc-950 */
-    --dash-surface:       #18181b; /* zinc-900 */
-    --dash-surface-2:     #27272a; /* zinc-800 */
-    --dash-border:        #3f3f46; /* zinc-700 */
-    --dash-border-subtle: rgba(63,63,70,0.6);
-    --dash-text-1:        #fafafa;
-    --dash-text-2:        #d4d4d8;
-    --dash-text-3:        #a1a1aa;
-    --dash-accent:        #ffffff;
-    --dash-accent-hover:  #e4e4e7;
-    --dash-accent-light:  rgba(255,255,255,0.12);
-    --dash-shadow-sm:     3px 3px 0 rgba(255,255,255,0.25);
-    --dash-shadow-md:     6px 6px 0 rgba(255,255,255,0.25);
+  --bg:            #09090B;
+  --surface:       #18181B;
+  --surface-2:     #27272A;
+  --border:        #3F3F46;
+  --accent:        #FFFFFF;
+  --text-1:        #FAFAFA;
+  --text-2:        #D4D4D8;
+  --text-3:        #A1A1AA;
+  --shadow-sm:     0 2px 4px rgba(0,0,0,0.3);
+  --shadow-md:     0 8px 24px rgba(0,0,0,0.4);
+  --shadow-lg:     0 16px 48px rgba(0,0,0,0.5);
 }
+
 /* ============================================================
-   SHARED: Custom Scrollbars
+   BASE
    ============================================================ */
-::-webkit-scrollbar         { width: 5px; height: 5px; }
-::-webkit-scrollbar-track   { background: transparent; }
-::-webkit-scrollbar-thumb   { background: rgba(113,113,122,0.5); border-radius: 0; }
-::-webkit-scrollbar-thumb:hover { background: rgba(113,113,122,0.8); }
-.dark ::-webkit-scrollbar-thumb       { background: rgba(161,161,170,0.4); }
-.dark ::-webkit-scrollbar-thumb:hover { background: rgba(161,161,170,0.7); }
-
-/* ============================================================
-   DASHBOARD: Form Elements
-   ============================================================ */
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.form-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 0.25rem;
-    color: var(--dash-text-2);
-}
-
-.form-input {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0;
-    border: 2px solid var(--dash-border);
-    background-color: var(--dash-surface);
-    color: var(--dash-text-1);
-    font-size: 0.875rem;
-    line-height: 1.5;
-    box-sizing: border-box;
-    transition: border-color 150ms ease, box-shadow 150ms ease;
-}
-.form-input::placeholder { color: var(--dash-text-3); }
-.form-input:focus {
-    outline: none;
-    border-color: var(--dash-accent);
-    box-shadow: 3px 3px 0 var(--dash-accent-light);
-}
-.form-input:disabled {
-    background-color: var(--dash-surface-2);
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-.field-error {
-    display: none;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #000;
-    align-items: center;
-    gap: 0.25rem;
-}
-.dark .field-error { color: #fff; }
-.field-error.visible { display: flex; }
-
-/* ============================================================
-    DASHBOARD: Buttons
-    ============================================================ */
-.btn-primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1.125rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #ffffff;
-    background-color: var(--dash-accent);
-    border-radius: 0;
-    border: 2px solid var(--dash-accent);
-    box-sizing: border-box;
-    cursor: pointer;
-    transition: background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
-    box-shadow: 3px 3px 0 #71717a;
-}
-.dark .btn-primary { color: #09090b; box-shadow: 3px 3px 0 #3f3f46; }
-.btn-primary:hover  { background-color: var(--dash-accent-hover); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #71717a; }
-.dark .btn-primary:hover { box-shadow: 4px 4px 0 #3f3f46; }
-.btn-primary:active { transform: translate(0, 0); box-shadow: none; }
-.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
-
-.btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--dash-text-2);
-    background-color: transparent;
-    border: 2px solid var(--dash-border);
-    border-radius: 0;
-    box-sizing: border-box;
-    cursor: pointer;
-    transition: background-color 150ms ease, border-color 150ms ease, transform 100ms ease;
-}
-.btn-ghost:hover {
-    background-color: var(--dash-surface-2);
-    border-color: var(--dash-accent);
-    color: var(--dash-text-1);
-    transform: translate(-1px, -1px);
-}
-
-.btn-danger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1.125rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #ffffff;
-    background-color: #27272a; /* zinc-800 — destrutivo monocromático */
-    border-radius: 0;
-    border: 2px solid #000;
-    box-sizing: border-box;
-    cursor: pointer;
-    transition: background-color 150ms ease, transform 100ms ease;
-}
-.dark .btn-danger { border-color: #fafafa; }
-.btn-danger:hover  { background-color: #000; }
-.dark .btn-danger:hover { background-color: #fafafa; color: #09090b; }
-.btn-danger:active { transform: translate(0, 0); }
-.btn-danger:disabled { opacity: 0.55; cursor: not-allowed; }
-
-body {
-    background-color: var(--dash-bg);
-}
-.dark body {
-    background-color: var(--dash-bg);
-}
-/* Força cards a não serem branco puro em dark — especificidade sem !important onde possível */
-.dark .metric-card,
-.dark .kanban-card,
-.dark .client-card {
-    background-color: var(--dash-surface);
-    color: var(--dash-text-1);
-}
-.dark .bg-white {
-    background-color: var(--dash-surface) !important;
-    color: var(--dash-text-1);
-}
-.dark .bg-zinc-50,
-.dark .bg-zinc-100 {
-    background-color: var(--dash-surface-2) !important;
-}
-
-/* ============================================================
-   DASHBOARD: Metric Cards
-   ============================================================ */
-.metric-card {
-    background-color: var(--dash-surface);
-    padding: 1.25rem 1.25rem 1rem;
-    border-radius: 0;
-    border: 2px solid var(--dash-accent);
-    box-sizing: border-box;
-    box-shadow: none;
-    transition: transform 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 108px;
-}
-@media (hover: hover) and (pointer: fine) {
-  .metric-card:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 5px 5px 0 var(--dash-accent);
-  }
-}
-
-.skeleton {
-    background: linear-gradient(90deg, #f4f4f5 25%, #d4d4d8 50%, #f4f4f5 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 0;
-}
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-}
-.dark .skeleton {
-    background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-}
-
-/* ============================================================
-   DASHBOARD: Toggle Switches
-   ============================================================ */
-.toggle-track {
-    width: 2.75rem; height: 1.5rem;
-    background-color: #d4d4d8;
-    border: 2px solid #000;
-    box-sizing: border-box;
-    border-radius: 9999px; position: relative;
-    transition: background-color 200ms ease;
-}
-.dark .toggle-track { background-color: #3f3f46; border-color: #fafafa; }
-.peer:checked ~ .toggle-track { background-color: var(--dash-accent); }
-.toggle-track::after {
-    content: ''; position: absolute;
-    top: 2px; left: 2px;
-    width: 1rem; height: 1rem;
-    background-color: #fff; border-radius: 9999px;
-    border: 1px solid #000;
-    transition: transform 200ms ease;
-}
-.peer:checked ~ .toggle-track::after { transform: translateX(1.25rem); }
-
-.plan-toggle-track {
-    width: 2.25rem; height: 1.125rem;
-    background-color: #d4d4d8;
-    border: 2px solid #000;
-    box-sizing: border-box;
-    border-radius: 9999px; position: relative;
-    transition: background-color 200ms ease;
-}
-.dark .plan-toggle-track { background-color: #3f3f46; border-color: #fafafa; }
-.peer:checked ~ .plan-toggle-track { background-color: var(--dash-accent); }
-.plan-toggle-track::after {
-    content: ''; position: absolute;
-    top: 1px; left: 1px;
-    width: 0.75rem; height: 0.75rem;
-    background-color: #fff; border-radius: 9999px;
-    border: 1px solid #000;
-    transition: transform 200ms ease;
-}
-.peer:checked ~ .plan-toggle-track::after { transform: translateX(1.125rem); }
-
-/* ============================================================
-   DASHBOARD: Color Dot Picker (para planos)
-   ============================================================ */
-.color-dot {
-    width: 1.5rem; height: 1.5rem;
-    border-radius: 9999px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: transform 150ms ease, border-color 150ms ease;
-    flex-shrink: 0;
-}
-.color-dot:hover { transform: scale(1.15); }
-.color-dot.selected {
-    border-color: var(--dash-text-1);
-    transform: scale(1.15);
-    box-shadow: 0 0 0 1px var(--dash-surface);
-}
-
-/* ============================================================
-   DASHBOARD: Modal
-   ============================================================ */
-.modal-box {
-    transition: transform 0.22s var(--ease-out),
-                opacity   0.22s var(--ease-out);
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
 }
 @media (max-width: 639px) {
-    .modal-container { align-items: flex-end; padding: 0; }
-    .modal-box {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-        max-height: 92vh;
-    }
+  input, select, textarea { font-size: 16px !important; }
+  .modal-box { max-height: 88vh; overscroll-behavior: contain; }
+  button, .btn-primary, .btn-ghost { min-height: 44px; }
+}
+body {
+  background-color: var(--bg);
+  color: var(--text-1);
+  font-family: 'Geist', sans-serif;
 }
 
 /* ============================================================
-   DASHBOARD: Client Cards (mobile) & Table
-   ============================================================ */
-/* .client-card removido — não usado (mobile usa kanban-card) */
-
-/* Plan cards no modal */
-.plan-card {
-    cursor: pointer;
-    border-radius: 0;
-    border: 2px solid var(--dash-border);
-    background-color: var(--dash-surface);
-    box-sizing: border-box;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.plan-card:hover { border-color: var(--dash-text-3); }
-.plan-card[aria-checked="true"] {
-    border-color: var(--dash-accent);
-    background-color: var(--dash-accent-light);
-    box-shadow: 3px 3px 0 var(--dash-accent);
-}
-.plan-check-icon {
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-.plan-section-open {
-    animation: planSectionOpen 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* ============================================================
-   KANBAN — Fase 1A
-   ============================================================ */
-.kanban-column {
-    min-width: 280px;
-    max-width: 320px;
-    flex: 1 0 280px;
-    background-color: var(--dash-surface-2);
-    border: 2px solid var(--dash-accent);
-    border-radius: 0;
-    display: flex;
-    flex-direction: column;
-    max-height: calc(100vh - 280px);
-}
-.kanban-column-header {
-    padding: 0.75rem 1rem;
-    border-bottom: 2px solid var(--dash-accent);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    background-color: var(--dash-surface);
-    border-radius: 0;
-}
-.kanban-column-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    min-height: 80px;
-}
-.kanban-card {
-    background-color: var(--dash-surface);
-    border: 2px solid var(--dash-border);
-    border-radius: 0;
-    padding: 0.75rem;
-    box-sizing: border-box;
-    cursor: grab;
-    transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out), transform 100ms var(--ease-out);
-}
-@media (hover: hover) and (pointer: fine) {
-  .kanban-card:hover {
-    border-color: var(--dash-accent);
-    box-shadow: 4px 4px 0 var(--dash-accent);
-    transform: translate(-1px, -1px);
-  }
-}
-.kanban-card:active { cursor: grabbing; }
-.sortable-ghost {
-    opacity: 0.4;
-    background-color: var(--dash-accent-light) !important;
-    border: 2px dashed var(--dash-accent) !important;
-}
-.sortable-chosen {
-    box-shadow: 6px 6px 0 var(--dash-accent);
-}
-.kanban-empty {
-    text-align: center;
-    padding: 1.5rem 1rem;
-    color: var(--dash-text-3);
-    font-size: 0.75rem;
-    border: 2px dashed var(--dash-border);
-    border-radius: 0;
-    background-color: var(--dash-surface);
-}
-
-/* ============================================================
-   DASHBOARD: Section colapsável (Contato, Endereço, etc.)
-   ============================================================ */
-.collapsible-chevron {
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* ============================================================
-   ANIMATIONS (shared)
-   ============================================================ */
-@keyframes planSectionOpen {
-    from { opacity: 0; transform: translateY(-6px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes toastProgress {
-    from { width: 100%; }
-    to   { width: 0%; }
-}
-@keyframes fieldShake {
-    0%,100% { transform: translateX(0); }
-    20%      { transform: translateX(-5px); }
-    40%      { transform: translateX(5px); }
-    60%      { transform: translateX(-3px); }
-    80%      { transform: translateX(3px); }
-}
-.input-error-shake {
-    animation: fieldShake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-}
-
-/* ============================================================
-   FOCUS VISIBLE — AA accessible focus ring
+   FOCUS VISIBLE (AA)
    ============================================================ */
 :focus-visible {
-    outline: 2px solid #000;
-    outline-offset: 2px;
-}
-.dark :focus-visible {
-    outline-color: #fff;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ============================================================
-   LANDING PAGE: Animations & Effects
+   REDUCED MOTION
    ============================================================ */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(28px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in-up { animation: fadeInUp 0.6s var(--ease-out) both; }
-.stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.12s; }
-.stagger-3 { animation-delay: 0.19s; }
-.stagger-4 { animation-delay: 0.26s; }
-.stagger-5 { animation-delay: 0.33s; }
-
-.reveal {
-    opacity: 0; transform: translateY(24px);
-    transition: opacity 0.6s var(--ease-out),
-                transform 0.6s var(--ease-out);
-}
-.reveal.visible { opacity: 1; transform: translateY(0); }
-
-.feature-card {
-    transition: box-shadow 0.15s var(--ease-out), transform 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
-}
-@media (hover: hover) and (pointer: fine) {
-  .feature-card:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 #000;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-  .dark .feature-card:hover {
-    box-shadow: 6px 6px 0 rgba(255, 255, 255, 0.25);
-  }
-}
-
-.navbar-scrolled {
-    background: #fafafa; /* zinc-50 — sólido, sem blur (neo-brutalista) */
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border-bottom: 2px solid #000;
-    box-shadow: none;
 }
 
 /* ============================================================
-   LANDING CLARA — Efeitos sutis profissionais
+   BUTTONS
    ============================================================ */
-@keyframes mockupRise {
-    from { opacity: 0; transform: translateY(32px) scale(0.98); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+.btn-primary,
+.btn-ghost,
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out),
+              background-color var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
 }
-.mockup-rise {
-    animation: mockupRise 0.8s var(--ease-out) 0.25s both;
+.btn-primary {
+  color: #fff;
+  background-color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 4px 0 0 var(--accent);
 }
-.mockup-frame {
-    transition: box-shadow 0.15s var(--ease-out), transform 0.15s var(--ease-out);
+.btn-primary:hover { background-color: color-mix(in srgb, var(--accent) 90%, transparent); }
+.btn-primary:active { transform: scale(0.97); box-shadow: none; }
+
+.btn-ghost {
+  color: var(--text-1);
+  background-color: transparent;
+  border-color: var(--border);
 }
 @media (hover: hover) and (pointer: fine) {
-  .mockup-frame:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 12px 12px 0 #000;
-  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 }
-.btn-lift {
-    transition: transform 0.1s var(--ease-out), box-shadow 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
+.btn-ghost:active { transform: scale(0.97); }
+
+.btn-danger {
+  color: #fff;
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+.btn-danger:active { transform: scale(0.97); }
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text-1);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  transition: border-color var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
+}
+.input::placeholder { color: var(--text-3); }
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card {
+  background-color: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
-  .btn-lift:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 #000;
-  }
-  .btn-lift:active {
-    transform: scale(0.97);
-    box-shadow: none;
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent);
   }
 }
+
+/* Feature card */
+.feature-card { padding: 1.5rem; }
+.feature-card .step-num { /* reused in steps */ }
+
+/* Step card */
+.step-card { padding: 1rem; }
 .step-num {
-    transition: transform 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
+  transition: transform var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
   .step-card:hover .step-num {
     transform: translate(-2px, -2px);
-    box-shadow: 3px 3px 0 #71717a;
+    box-shadow: 0 4px 0 0 color-mix(in srgb, var(--accent) 40%, transparent);
   }
 }
-.table-row-hi {
-    transition: background-color 0.1s var(--ease-out);
+
+/* ============================================================
+   MOCKUP FRAME
+   ============================================================ */
+.mockup-frame {
+  transition: transform var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
-  .table-row-hi:hover {
-    background-color: #f4f4f5; /* zinc-100 */
+  .mockup-frame:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
   }
 }
-.pulse-dot {
-    animation: pulseDot 2s ease-in-out infinite;
-}
-@keyframes pulseDot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.55; transform: scale(0.85); }
-}
-@media (prefers-reduced-motion: reduce) {
-    .mockup-rise, .animate-fade-in-up, .reveal {
-        animation: none;
-        opacity: 1;
-        transform: none;
-        transition: none;
-    }
-}
 
 /* ============================================================
-   DASHBOARD — Mesmos efeitos da landing (hover/transição)
+   MODAL (using <dialog>)
    ============================================================ */
-.sidebar-link, .sidebar-link-mobile {
-    transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+.modal {
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: none;
 }
-.sidebar-link:hover, .sidebar-link-mobile:hover {
-    transform: translateX(2px);
+.modal::backdrop {
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  animation: modalBackdropIn var(--dur-base) var(--ease-out) forwards;
 }
-#tabela-clientes-body tr {
-    transition: background-color 0.15s ease;
-}
-#tabela-clientes-body tr:hover {
-    background-color: var(--dash-surface-2);
-}
-.dark #tabela-clientes-body tr:hover {
-    background-color: rgba(63, 63, 70, 0.5);
-}
-.kanban-card {
-    transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-.kanban-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--dash-shadow-md);
+@keyframes modalBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .modal-box {
-    transition: transform 0.22s var(--ease-out), opacity 0.22s var(--ease-out);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  animation: modalBoxIn var(--dur-slow) var(--ease-out) forwards;
 }
-#api-status-dot {
-    animation: pulseDot 2s ease-in-out infinite;
+@keyframes modalBoxIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-#secao-overview .metric-card {
-    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+@media (prefers-reduced-motion: reduce) {
+  .modal::backdrop, .modal-box { animation: none; opacity: 1; transform: none; }
 }
-#secao-overview .metric-card:nth-child(2) { animation-delay: 0.05s; }
-#secao-overview .metric-card:nth-child(3) { animation-delay: 0.1s; }
-#secao-overview .metric-card:nth-child(4) { animation-delay: 0.15s; }
-#secao-overview .metric-card:nth-child(5) { animation-delay: 0.2s; }
-#secao-overview .metric-card:nth-child(6) { animation-delay: 0.25s; }
-#secao-overview .metric-card:nth-child(7) { animation-delay: 0.3s; }
-#secao-overview .metric-card:nth-child(8) { animation-delay: 0.35s; }
+.modal-backdrop { position: absolute; inset: 0; }
 
 /* ============================================================
-   DASHBOARD copia a LANDING (modo claro): zinc monocromático.
-   Escopo html:not(.dark) preserva o dark mode e os dots de plano.
+   NAVBAR
    ============================================================ */
-html:not(.dark) .bg-indigo-600 { background-color: #000000 !important; }
-html:not(.dark) .hover\:bg-indigo-700:hover { background-color: #27272a !important; }
-html:not(.dark) .hover\:bg-indigo-500:hover { background-color: #27272a !important; }
-html:not(.dark) .bg-indigo-50,
-html:not(.dark) .bg-indigo-100 { background-color: #f4f4f5 !important; }
-html:not(.dark) .text-indigo-600,
-html:not(.dark) .text-indigo-700 { color: #09090b !important; }
-html:not(.dark) .text-indigo-400 { color: #52525b !important; }
-html:not(.dark) .border-indigo-200,
-html:not(.dark) .border-indigo-100 { border-color: #000000 !important; }
-html:not(.dark) .bg-indigo-600\/15,
-html:not(.dark) .bg-indigo-500\/10,
-html:not(.dark) .bg-indigo-50\/40,
-html:not(.dark) .bg-indigo-950\/20,
-html:not(.dark) .bg-indigo-900\/20,
-html:not(.dark) .bg-indigo-900\/40,
-html:not(.dark) .bg-indigo-800\/40 { background-color: #f4f4f5 !important; }
-html:not(.dark) .border-indigo-500\/20,
-html:not(.dark) .border-indigo-200\/60 { border-color: #000000 !important; }
-html:not(.dark) .border-indigo-500\/60,
-html:not(.dark) .border-indigo-400 { border-color: #52525b !important; }
-html:not(.dark) .ring-indigo-500\/30 { --tw-ring-color: rgb(0 0 0 / 0.25) !important; }
-html:not(.dark) .hover\:bg-indigo-50:hover,
-html:not(.dark) .hover\:bg-indigo-100:hover { background-color: #f4f4f5 !important; }
-html:not(.dark) .focus\:border-indigo-500\/60:focus { border-color: #000000 !important; }
+#navbar {
+  transition: transform var(--dur-base) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out),
+              background-color var(--dur-base) var(--ease-out);
+}
+#navbar.scrolled {
+  box-shadow: var(--shadow-md);
+  background-color: color-mix(in srgb, var(--surface) 95%, transparent);
+}
+
+/* ============================================================
+   REVEAL ANIMATION (scroll)
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity var(--dur-marketing) var(--ease-out),
+              transform var(--dur-marketing) var(--ease-out);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.stagger-1 { transition-delay: 40ms; }
+.stagger-2 { transition-delay: 80ms; }
+.stagger-3 { transition-delay: 120ms; }
+.stagger-4 { transition-delay: 160ms; }
+.stagger-5 { transition-delay: 200ms; }
+.stagger-6 { transition-delay: 240ms; }
+
+/* ============================================================
+   COUNTER ANIMATION (WAAPI)
+   ============================================================ */
+.counter { /* animated via JS */ }
+
+/* ============================================================
+   MOBILE MENU
+   ============================================================ */
+#mobile-menu { animation: slideDown var(--dur-base) var(--ease-out); }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   SMOOTH SCROLL OFFSET (handled in JS)
+   ============================================================ */
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
