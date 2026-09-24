@@ -471,6 +471,17 @@ body {
 }
 
 /* ============================================================
+   FOCUS VISIBLE — AA accessible focus ring
+   ============================================================ */
+:focus-visible {
+    outline: 2px solid #000;
+    outline-offset: 2px;
+}
+.dark :focus-visible {
+    outline-color: #fff;
+}
+
+/* ============================================================
    LANDING PAGE: Animations & Effects
    ============================================================ */
 @keyframes fadeInUp {
