@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- DaviFlow — Obrigado (obrigado.html) — confirmação pós-cadastro -->
 <html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
@@ -6,18 +7,37 @@
     <title>Obrigado | DaviFlow</title>
     <meta name="description" content="Conta criada com sucesso no DaviFlow.">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+    <!-- Geist -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { fontFamily: { sans: ['Geist', 'sans-serif'] } } }
+        }
+    </script>
+
+    <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-[#0f172a] text-slate-100 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col bg-zinc-950 text-zinc-100 antialiased font-sans">
     <main class="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
-        <div class="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mb-6">
-            <svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <div class="w-16 h-16 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center mb-6 animate-fade-in-up">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"/></svg>
         </div>
-        <h1 class="text-3xl font-black text-white">Conta criada com sucesso!</h1>
-        <p class="text-slate-400 mt-3 max-w-md">Verifique seu e-mail para confirmar o cadastro. Enquanto isso, explore o painel.</p>
-        <a href="/dashboard.html" class="mt-8 inline-flex items-center gap-2 px-7 py-3.5 text-base font-bold text-white bg-indigo-600 rounded-2xl hover:bg-indigo-500">Acessar painel →</a>
-        <a href="/" class="mt-4 text-sm text-slate-400 hover:text-white">← Voltar ao site</a>
+        <h1 class="text-3xl font-bold text-white tracking-tight animate-fade-in-up stagger-1">Conta criada com sucesso!</h1>
+        <p class="text-zinc-400 mt-3 max-w-md leading-relaxed animate-fade-in-up stagger-2">Verifique seu e-mail para confirmar o cadastro. Enquanto isso, explore o painel.</p>
+        <a href="/dashboard.html" class="mt-8 inline-flex items-center gap-2 px-7 py-3.5 text-sm font-semibold text-zinc-950 bg-white border border-white rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)] active:scale-[0.97] transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] animate-fade-in-up stagger-3">Acessar painel
+            <span class="w-6 h-6 rounded-full bg-zinc-950/10 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7M17 7H8m9 0v9"/></svg>
+            </span>
+        </a>
+        <a href="/" class="mt-4 text-sm text-zinc-500 hover:text-white transition-colors duration-200">← Voltar ao site</a>
     </main>
 </body>
 </html>

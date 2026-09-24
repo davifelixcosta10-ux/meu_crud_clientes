@@ -1,651 +1,246 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DaviFlow | Gestão de Clientes sem Planilhas</title>
-    <meta name="description" content="O DaviFlow centraliza cadastros, métricas e planos em um painel intuitivo. Perfeito para freelancers, autônomos e pequenos negócios. Comece gratuitamente.">
-    <meta name="keywords" content="gestão de clientes, CRM, freelancer, pequenos negócios, painel de métricas, DaviFlow">
-    <link rel="canonical" href="https://daviflow.vercel.app/">
-    <meta name="robots" content="index, follow">
-    <meta property="og:title" content="DaviFlow | Gestão de Clientes sem Planilhas">
-    <meta property="og:description" content="Cadastre clientes, controle cobranças e receba lembretes de retorno.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://daviflow.vercel.app/">
-    <meta property="og:image" content="https://daviflow.vercel.app/og-image.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:locale" content="pt_BR">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="DaviFlow | Gestão de Clientes sem Planilhas">
-    <meta name="twitter:description" content="Cadastre clientes, controle cobranças e receba lembretes de retorno.">
-    <meta name="twitter:image" content="https://daviflow.vercel.app/og-image.png">
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: { slate: { 950: '#020617' } }
-                }
-            }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DaviFlow | Gestão de Clientes sem Planilhas</title>
+  <meta name="description" content="Cadastre clientes, controle cobranças e receba lembretes de retorno. Leva 30 segundos para criar a conta.">
+  <link rel="canonical" href="https://daviflow.vercel.app/">
+  <meta property="og:title" content="DaviFlow | Gestão de Clientes sem Planilhas">
+  <meta property="og:description" content="Cadastre, cobre e acompanhe clientes em 1 painel.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://daviflow.vercel.app/">
+  <meta property="og:image" content="https://daviflow.vercel.app/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Geist', 'sans-serif'] }
         }
-        const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://127.0.0.1:8000/api' : `${window.location.origin}/api`;
-    </script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="style.css">
-    <script>
-        window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/speed-insights/script.js"></script>
+      }
+    }
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://127.0.0.1:8000/api' : `${window.location.origin}/api`;
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="landing.js" defer></script>
 </head>
-<body class="bg-zinc-50 text-zinc-800 antialiased font-sans">
-    <header class="sticky top-0 z-40 bg-zinc-50 border-b-2 border-black">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-            <a href="#" class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-none bg-black flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div>
-                <span class="text-sm font-bold tracking-tight font-mono uppercase">DaviFlow</span>
-            </a>
-            <nav class="hidden md:flex items-center gap-6 text-sm">
-                <a href="#features" class="text-zinc-600 hover:text-black hover:underline underline-offset-4">Recursos</a>
-                <a href="#how-it-works" class="text-zinc-600 hover:text-black hover:underline underline-offset-4">Como funciona</a>
-                <a href="#about" class="text-zinc-600 hover:text-black hover:underline underline-offset-4">Sobre</a>
-            </nav>
-            <div class="flex items-center gap-2">
-                <button onclick="openModal('modal-login')" class="hidden sm:inline-flex px-3 py-1.5 text-sm font-medium text-zinc-800 hover:text-black hover:underline underline-offset-4">Entrar</button>
-                <button onclick="openModal('modal-register')" class="inline-flex px-4 py-1.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none hover:bg-zinc-800">Criar conta</button>
-                <button id="mobile-menu-btn" class="md:hidden p-2 text-zinc-800" aria-label="Menu"><i data-lucide="menu" class="w-5 h-5" id="menu-icon-open"></i><i data-lucide="x" class="w-5 h-5 hidden" id="menu-icon-close"></i></button>
-            </div>
+<body class="bg-[var(--bg)] text-[var(--text-1)] antialiased font-sans">
+  <header id="navbar" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-max px-6 py-3 rounded-full bg-[var(--surface)]/80 backdrop-blur-2xl border border-[var(--border)]/50 shadow-[0_4px_24px_rgba(0,0,0,0.08)] transition-all duration-500 ease-[var(--ease-out)]">
+    <nav class="flex items-center gap-8">
+      <a href="#" class="flex items-center gap-2" aria-label="DaviFlow home">
+        <div class="w-8 h-8 rounded-[1rem] bg-[var(--accent)] flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         </div>
-        <div id="mobile-menu" class="hidden md:hidden border-t-2 border-black bg-zinc-50 px-4 py-3 space-y-2">
-            <a href="#features" onclick="closeMobileMenu()" class="block py-2 text-sm text-zinc-600">Recursos</a>
-            <a href="#how-it-works" onclick="closeMobileMenu()" class="block py-2 text-sm text-zinc-600">Como funciona</a>
-            <a href="#about" onclick="closeMobileMenu()" class="block py-2 text-sm text-zinc-600">Sobre</a>
-        </div>
-    </header>
-
-    <main>
-        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-12">
-            <div class="max-w-2xl">
-                <p class="inline-block text-[11px] font-mono font-semibold tracking-widest uppercase bg-black text-white px-2 py-1 mb-4 animate-fade-in-up stagger-1">CRM para freelancers e pequenas equipes</p>
-                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight text-black animate-fade-in-up stagger-2">Todos os seus clientes,<br>cobranças e follow-ups em um painel.</h1>
-                <p class="mt-4 text-base text-zinc-600 leading-relaxed animate-fade-in-up stagger-3">Cadastre clientes, defina planos e vencimentos, acompanhe quem pagou e receba lembretes de retorno. Leva 30 segundos para criar a conta.</p>
-                <div class="mt-7 flex flex-col sm:flex-row gap-3 animate-fade-in-up stagger-4">
-                    <button onclick="openModal('modal-register')" class="btn-lift inline-flex justify-center px-5 py-2.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none shadow-[4px_4px_0_0_#71717a]">Criar conta em 30 segundos</button>
-                    <a href="#how-it-works" class="btn-lift inline-flex justify-center px-5 py-2.5 text-sm font-semibold text-black bg-white border-2 border-black rounded-none shadow-[4px_4px_0_0_#000]">Ver em 60 segundos</a>
-                </div>
-                <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500 animate-fade-in-up stagger-5">
-                    <span>Sem cartão de crédito</span>
-                    <span>Cancele quando quiser</span>
-                    <span>Seus dados isolados por conta</span>
-                </div>
-            </div>
-            <div class="mockup-rise mockup-frame mt-10 border-2 border-black rounded-none overflow-hidden bg-white box-border shadow-[8px_8px_0_0_#000]">
-                <div class="flex items-center gap-1.5 px-3 py-2 border-b-2 border-black bg-zinc-100">
-                    <span class="w-2.5 h-2.5 rounded-none bg-black"></span><span class="w-2.5 h-2.5 rounded-none border border-black bg-white"></span><span class="w-2.5 h-2.5 rounded-none border border-black bg-white"></span>
-                    <span class="ml-3 text-xs text-zinc-600 font-mono">dashboard.daviflow.com</span>
-                </div>
-                <div class="p-4 grid grid-cols-4 gap-3 text-center">
-                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Total</div><div class="text-lg font-bold font-mono text-black">48</div></div>
-                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Ativos</div><div class="text-lg font-bold font-mono text-black">36</div></div>
-                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Inativos</div><div class="text-lg font-bold font-mono text-black">12</div></div>
-                    <div class="border-2 border-black rounded-none p-3 bg-white box-border"><div class="text-[10px] uppercase tracking-widest text-zinc-500">Planos</div><div class="text-xs font-mono mt-1 text-black">VIP 12 • Básico 20</div></div>
-                </div>
-                <div class="px-4 pb-4">
-                    <div class="border-2 border-black rounded-none overflow-hidden bg-white box-border">
-                        <div class="grid grid-cols-4 gap-3 px-3 py-2 border-b-2 border-black bg-zinc-100 text-[10px] font-mono font-semibold uppercase tracking-widest text-zinc-600"><span>Nome</span><span>Email</span><span>Plano</span><span>Status</span></div>
-                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs border-b border-zinc-300"><span>Ana Lima</span><span class="text-zinc-500 font-mono">ana@mail.com</span><span>Ouro</span><span class="font-mono bg-black text-white px-1 w-fit">Ativo</span></div>
-                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs border-b border-zinc-300"><span>Carlos M.</span><span class="text-zinc-500 font-mono">carlos@mail.com</span><span>Prata</span><span class="font-mono bg-black text-white px-1 w-fit">Ativo</span></div>
-                        <div class="table-row-hi grid grid-cols-4 gap-3 px-3 py-2 text-xs"><span>Juliana R.</span><span class="text-zinc-500 font-mono">ju@mail.com</span><span>Pro</span><span class="font-mono border border-black text-zinc-600 px-1 w-fit">Inativo</span></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="features" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t-2 border-black">
-            <div class="max-w-2xl reveal">
-                <h2 class="text-xl font-bold tracking-tight text-black">Cadastro, cobrança e acompanhamento em um lugar.</h2>
-                <p class="mt-2 text-sm text-zinc-600">Três recursos que cobrem a rotina: registrar clientes, controlar pagamentos e ver números.</p>
-            </div>
-            <div class="mt-6 grid md:grid-cols-3 gap-4">
-                <div class="feature-card reveal border-2 border-black rounded-none p-5 bg-white box-border">
-                    <div class="w-8 h-8 rounded-none border-2 border-black flex items-center justify-center mb-3"><i data-lucide="users" class="w-4 h-4"></i></div>
-                    <h3 class="text-sm font-semibold text-black">Cadastro com filtros</h3>
-                    <p class="mt-1 text-sm text-zinc-600 leading-relaxed">Registre nome, contato, plano e etapa. Filtre por status, plano, etapa ou tag.</p>
-                </div>
-                <div class="feature-card reveal border-2 border-black rounded-none p-5 bg-black text-white box-border">
-                    <div class="w-8 h-8 rounded-none border-2 border-white flex items-center justify-center mb-3"><i data-lucide="bar-chart-3" class="w-4 h-4"></i></div>
-                    <h3 class="text-sm font-semibold">Cobrança e métricas</h3>
-                    <p class="mt-1 text-sm text-zinc-300 leading-relaxed">Defina valor e vencimento por cliente. Veja receita prevista, inadimplentes, churn e LTV.</p>
-                </div>
-                <div class="feature-card reveal border-2 border-black rounded-none p-5 bg-white box-border">
-                    <div class="w-8 h-8 rounded-none border-2 border-black flex items-center justify-center mb-3"><i data-lucide="shield-check" class="w-4 h-4"></i></div>
-                    <h3 class="text-sm font-semibold text-black">Equipe com permissões</h3>
-                    <p class="mt-1 text-sm text-zinc-600 leading-relaxed">Convide membros por email. Administradores gerenciam tudo, membros operam o dia a dia.</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="how-it-works" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t-2 border-black">
-            <h2 class="text-xl font-bold text-black reveal">Comece em 3 passos.</h2>
-            <div class="mt-6 grid md:grid-cols-3 gap-6">
-                <div class="step-card reveal flex gap-3">
-                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">1</span>
-                    <div><h3 class="text-sm font-semibold text-black">Crie a conta</h3><p class="text-sm text-zinc-600 mt-1">30 segundos, sem cartão.</p></div>
-                </div>
-                <div class="step-card reveal flex gap-3">
-                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">2</span>
-                    <div><h3 class="text-sm font-semibold text-black">Cadastre clientes</h3><p class="text-sm text-zinc-600 mt-1">Nome, email, plano, etapa.</p></div>
-                </div>
-                <div class="step-card reveal flex gap-3">
-                    <span class="step-num w-6 h-6 rounded-none bg-black text-white border-2 border-black flex items-center justify-center text-xs font-bold font-mono flex-shrink-0">3</span>
-                    <div><h3 class="text-sm font-semibold text-black">Acompanhe</h3><p class="text-sm text-zinc-600 mt-1">Kanban e relatórios com período.</p></div>
-                </div>
-            </div>
-            <div class="mt-8 reveal">
-                <button onclick="openModal('modal-register')" class="btn-lift inline-flex px-5 py-2.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none shadow-[4px_4px_0_0_#71717a]">Começar gratuitamente agora</button>
-            </div>
-        </section>
-
-        <section id="about" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t-2 border-black">
-            <div class="feature-card reveal border-2 border-black rounded-none p-6 sm:p-8 bg-white box-border shadow-[8px_8px_0_0_#000]">
-                <h2 class="text-lg font-bold text-black">Feito para quem atende cliente todo dia.</h2>
-                <p class="mt-2 text-sm text-zinc-600 leading-relaxed">Clínicas, oficinas, dentistas, academias e freelancers usam o DaviFlow para manter cadastro, pagamento e retorno em dia, com campos próprios para cada tipo de negócio.</p>
-                <div class="mt-4 grid sm:grid-cols-3 gap-4 text-xs">
-                    <div class="border-2 border-black rounded-none p-3 bg-zinc-50 box-border"><div class="font-semibold text-black">Acesso controlado</div><div class="text-zinc-600 mt-1">Cada conta vê só os próprios dados. Convites por email.</div></div>
-                    <div class="border-2 border-black rounded-none p-3 bg-zinc-50 box-border"><div class="font-semibold text-black">Lembretes automáticos</div><div class="text-zinc-600 mt-1">Avisos de vencimento e clientes sem retorno.</div></div>
-                    <div class="border-2 border-black rounded-none p-3 bg-zinc-50 box-border"><div class="font-semibold text-black">Funciona no celular</div><div class="text-zinc-600 mt-1">Painel adaptado para atender entre um cliente e outro.</div></div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="border-t-2 border-black py-8 px-4 bg-zinc-50">
-        <div class="max-w-6xl mx-auto grid md:grid-cols-4 gap-6">
-            <div class="md:col-span-2">
-                <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-none bg-black flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-white"></i></div><span class="text-sm font-bold font-mono uppercase">DaviFlow</span></div>
-                <p class="mt-2 text-sm text-zinc-600 max-w-xs">Cadastro, cobrança e acompanhamento de clientes para pequenos negócios.</p>
-                <address class="not-italic text-xs text-zinc-500 mt-2 font-mono">CNPJ 00.000.000/0001-00 • Rua Example 123 • São Paulo, SP<br><a href="mailto:contato@daviflow.com.br" class="underline">contato@daviflow.com.br</a> • <a href="tel:+5511999999999" class="underline">(11) 99999-9999</a></address>
-            </div>
-            <div><h4 class="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-2">Produto</h4><ul class="space-y-1 text-sm"><li><a href="#features" class="text-zinc-600 hover:text-black">Recursos</a></li><li><a href="#how-it-works" class="text-zinc-600 hover:text-black">Como funciona</a></li><li><a href="/dashboard.html" class="text-zinc-600 hover:text-black">Painel</a></li></ul></div>
-            <div><h4 class="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-2">Legal</h4><ul class="space-y-1 text-sm"><li><a href="/privacidade.html" class="text-zinc-600 hover:text-black">Privacidade</a></li><li><a href="/termos.html" class="text-zinc-600 hover:text-black">Termos</a></li></ul></div>
-        </div>
-        <div class="max-w-6xl mx-auto mt-6 pt-4 border-t-2 border-black flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p class="text-xs text-zinc-500 font-mono">© 2026 DaviFlow. Feito no Brasil.</p>
-            <span class="text-xs text-zinc-500 font-mono">FastAPI + Supabase + Vercel</span>
-        </div>
-    </footer>
-
-    <div class="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-zinc-50 border-t-2 border-black px-4 py-3 flex items-center gap-3">
-        <div class="flex-1 min-w-0"><p class="text-xs font-semibold leading-tight text-black">Pronto para começar?</p><p class="text-xs text-zinc-500">Sem cartão • Cancele quando quiser</p></div>
-        <button onclick="openModal('modal-register')" class="px-4 py-2 text-sm font-semibold text-white bg-black border-2 border-black rounded-none">Criar conta</button>
+        <span class="text-sm font-bold tracking-tight font-mono uppercase">DaviFlow</span>
+      </a>
+      <div class="hidden md:flex items-center gap-6 text-sm">
+        <a href="#features" class="text-[var(--text-2)] hover:text-[var(--accent)] transition-colors duration-200">Recursos</a>
+        <a href="#how-it-works" class="text-[var(--text-2)] hover:text-[var(--accent)] transition-colors duration-200">Como funciona</a>
+        <a href="#about" class="text-[var(--text-2)] hover:text-[var(--accent)] transition-colors duration-200">Sobre</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <button data-action="open-modal" data-modal="modal-login" class="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-[var(--text-1)] hover:text-[var(--accent)] transition-colors">Entrar</button>
+        <button data-action="open-modal" data-modal="modal-register" class="inline-flex px-5 py-2 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Criar conta</button>
+        <button id="mobile-menu-btn" class="md:hidden p-2 text-[var(--text-1)]" aria-label="Menu" aria-expanded="false"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      </div>
+    </nav>
+    <div id="mobile-menu" class="hidden md:hidden mt-4 px-4 py-3 space-y-2 border-t border-[var(--border)]">
+      <a href="#features" data-action="close-mobile-menu" class="block py-2 text-sm text-[var(--text-2)]">Recursos</a>
+      <a href="#how-it-works" data-action="close-mobile-menu" class="block py-2 text-sm text-[var(--text-2)]">Como funciona</a>
+      <a href="#about" data-action="close-mobile-menu" class="block py-2 text-sm text-[var(--text-2)]">Sobre</a>
     </div>
+  </header>
 
-    <div id="modal-login" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/70" onclick="closeModal('modal-login')"></div>
-        <div class="relative w-full max-w-md bg-white rounded-none border-2 border-black box-border shadow-[8px_8px_0_0_#000] p-6">
-            <div class="flex items-start justify-between mb-4"><div><h2 class="text-lg font-bold">Bem-vindo de volta</h2><p class="text-sm text-zinc-600">Entre na sua conta.</p></div><button onclick="closeModal('modal-login')" class="p-2 text-zinc-500 hover:text-black"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-            <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4" novalidate>
-                <div><label for="login-email" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">E-mail</label><input type="email" id="login-email" required autocomplete="email" placeholder="seu@email.com" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
-                <div><div class="flex items-center justify-between"><label for="login-password" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">Senha</label><a href="#" onclick="handleForgotPassword(event)" class="text-xs text-black underline">Esqueci a senha</a></div><input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
-                <div id="login-error" class="hidden px-3 py-2 rounded-none bg-zinc-100 border-2 border-black text-zinc-800 text-sm items-center gap-2 box-border"><span id="login-error-text" class="font-mono text-xs"></span></div>
-                <button type="submit" id="btn-login-submit" class="w-full py-2.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none shadow-[4px_4px_0_0_#71717a] hover:bg-zinc-800">Entrar na minha conta</button>
-            </form>
-            <p class="mt-4 text-center text-sm text-zinc-600">Não tem conta? <button onclick="closeModal('modal-login'); openModal('modal-register')" class="font-semibold text-black underline">Criar conta grátis</button></p>
+  <main class="overflow-x-hidden w-full max-w-full">
+    <section class="relative min-h-[100dvh] flex flex-col items-center justify-center px-4 py-32 md:py-48" aria-labelledby="hero-title">
+      <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_var(--accent)_0%,_transparent_70%)] opacity-10"></div>
+      <div class="max-w-6xl w-full text-center">
+        <span class="inline-block rounded-full bg-[var(--accent)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)] mb-6 animate-fade-in-up stagger-1">CRM para freelancers e pequenas equipes</span>
+        <h1 id="hero-title" class="text-[clamp(2.5rem,5vw,4.5rem)] font-bold tracking-tight leading-tight text-[var(--text-1)] animate-fade-in-up stagger-2">Cadastre, cobre e acompanhe clientes em 1 painel.</h1>
+        <p class="mt-5 text-lg text-[var(--text-2)] leading-relaxed max-w-2xl mx-auto animate-fade-in-up stagger-3">Cadastre clientes, defina planos e vencimentos, acompanhe quem pagou e receba lembretes de retorno. Leva 30 segundos para criar a conta.</p>
+        <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up stagger-4">
+          <button data-action="open-modal" data-modal="modal-register" class="btn-primary px-7 py-3.5 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Criar conta em 30 segundos</button>
+          <a href="#how-it-works" class="btn-ghost inline-flex justify-center px-7 py-3.5 text-sm font-semibold text-[var(--text-1)] bg-transparent border border-[var(--border)] rounded-full hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Ver em 60 segundos</a>
         </div>
-    </div>
-
-    <div id="modal-register" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/70" onclick="closeModal('modal-register')"></div>
-        <div class="relative w-full max-w-md bg-white rounded-none border-2 border-black box-border shadow-[8px_8px_0_0_#000] p-6">
-            <div class="flex items-start justify-between mb-4"><div><h2 class="text-lg font-bold">Crie sua conta grátis</h2><p class="text-sm text-zinc-600">Sem cartão. Cancele quando quiser.</p></div><button onclick="closeModal('modal-register')" class="p-2 text-zinc-500 hover:text-black"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-            <form id="form-register" onsubmit="cadastrarUsuarioPelaModal(event)" class="space-y-3" novalidate>
-                <div><label for="signup-nome" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">Nome</label><input type="text" id="signup-nome" required autocomplete="name" placeholder="Seu nome" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
-                <div><label for="signup-email" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">E-mail</label><input type="email" id="signup-email" required autocomplete="email" placeholder="seu@email.com" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
-                <div><label for="signup-senha" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">Senha</label><input type="password" id="signup-senha" required autocomplete="new-password" placeholder="Mínimo 8 caracteres" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
-                <div><label for="signup-confirm-senha" class="text-xs font-semibold uppercase tracking-widest text-zinc-600">Confirmar senha</label><input type="password" id="signup-confirm-senha" required autocomplete="new-password" placeholder="Repita a senha" class="mt-1 w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm"></div>
-                <label class="flex items-start gap-2 text-xs text-zinc-600"><input type="checkbox" id="register-terms" required class="mt-0.5"> Concordo com <a href="/termos.html" class="underline">Termos</a> e <a href="/privacidade.html" class="underline">Privacidade</a></label>
-                <button type="submit" class="w-full py-2.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none shadow-[4px_4px_0_0_#71717a] hover:bg-zinc-800">Criar conta grátis</button>
-            </form>
-            <p class="mt-4 text-center text-sm text-zinc-600">Já tem conta? <button onclick="closeModal('modal-register'); openModal('modal-login')" class="font-semibold text-black underline">Entrar</button></p>
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[var(--text-3)] animate-fade-in-up stagger-5">
+          <span>Sem cartão de crédito</span>
+          <span>Cancele quando quiser</span>
+          <span>Seus dados isolados por conta</span>
         </div>
-    </div>
+      </div>
 
-    <div id="modal-recovery" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/70" onclick="closeModal('modal-recovery')"></div>
-        <div class="relative w-full max-w-md bg-white rounded-none border-2 border-black box-border shadow-[8px_8px_0_0_#000] p-6">
-            <h2 class="text-lg font-bold">Definir nova senha</h2>
-            <p class="text-sm text-zinc-600 mt-1">Token de recuperação detectado.</p>
-            <form id="form-recovery" onsubmit="handleRecoverySubmit(event)" class="mt-4 space-y-3">
-                <input type="password" id="recovery-password" placeholder="Nova senha (mín 8)" required class="w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm">
-                <input type="password" id="recovery-confirm" placeholder="Confirmar" required class="w-full px-3 py-2.5 rounded-none border-2 border-zinc-400 focus:border-black focus:outline-none text-sm">
-                <button type="submit" class="w-full py-2.5 text-sm font-semibold text-white bg-black border-2 border-black rounded-none shadow-[4px_4px_0_0_#71717a] hover:bg-zinc-800">Atualizar senha</button>
-            </form>
+      <div class="mockup-frame relative mt-16 mx-auto max-w-5xl animate-fade-in-up stagger-6" role="img" aria-label="Dashboard mockup">
+        <div class="absolute top-3 right-3 rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase text-white">30s para criar</div>
+        <div class="absolute bottom-3 left-3 rounded-full bg-[var(--surface)]/90 backdrop-blur px-2.5 py-0.5 text-[10px] font-mono text-[var(--text-3)]">Dados de exemplo</div>
+        <div class="border border-[var(--border)] rounded-[1.5rem] overflow-hidden bg-[var(--surface)] shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
+          <div class="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)] bg-[var(--surface-2)]">
+            <span class="w-3 h-3 rounded-[0.5rem] bg-[var(--accent)]"></span><span class="w-3 h-3 rounded-[0.5rem] border border-[var(--border)] bg-transparent"></span><span class="w-3 h-3 rounded-[0.5rem] border border-[var(--border)] bg-transparent"></span>
+            <span class="ml-3 text-xs text-[var(--text-3)] font-mono">dashboard.daviflow.com</span>
+          </div>
+          <div class="p-6 grid grid-cols-4 gap-4 text-center">
+            <div class="border border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Total</div><div class="text-2xl font-bold font-mono text-[var(--text-1)] counter" data-target="48">0</div></div>
+            <div class="border border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Ativos</div><div class="text-2xl font-bold font-mono text-[var(--text-1)] counter" data-target="36">0</div></div>
+            <div class="border border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Inativos</div><div class="text-2xl font-bold font-mono text-[var(--text-1)] counter" data-target="12">0</div></div>
+            <div class="border border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Planos</div><div class="text-sm font-mono mt-1 text-[var(--text-1)]">VIP 12 • Básico 20</div></div>
+          </div>
+          <div class="px-6 pb-6">
+            <div class="border border-[var(--border)] rounded-[1rem] overflow-hidden bg-[var(--surface)]">
+              <div class="grid grid-cols-4 gap-4 px-4 py-3 border-b border-[var(--border)] bg-[var(--surface-2)] text-[10px] font-mono font-semibold uppercase tracking-widest text-[var(--text-3)]"><span>Nome</span><span>Email</span><span>Plano</span><span>Status</span></div>
+              <div class="divide-y divide-[var(--border)]">
+                <div class="grid grid-cols-4 gap-4 px-4 py-3 text-sm"><span>Ana Lima</span><span class="text-[var(--text-3)] font-mono">ana.exemplo@</span><span>Ouro</span><span class="font-mono bg-[var(--accent)] text-white px-2 rounded-[0.5rem] w-fit">Ativo</span></div>
+                <div class="grid grid-cols-4 gap-4 px-4 py-3 text-sm"><span>Carlos M.</span><span class="text-[var(--text-3)] font-mono">carlos.exemplo@</span><span>Prata</span><span class="font-mono bg-[var(--accent)] text-white px-2 rounded-[0.5rem] w-fit">Ativo</span></div>
+                <div class="grid grid-cols-4 gap-4 px-4 py-3 text-sm"><span>Juliana R.</span><span class="text-[var(--text-3)] font-mono">ju.exemplo@</span><span>Pro</span><span class="font-mono border border-[var(--border)] text-[var(--text-3)] px-2 rounded-[0.5rem] w-fit">Inativo</span></div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+    </section>
+
+    <section id="features" class="py-24 md:py-32 px-4 border-t border-[var(--border)]" aria-labelledby="features-title">
+      <div class="max-w-6xl mx-auto">
+        <header class="max-w-2xl mx-auto text-center mb-16 reveal">
+          <h2 id="features-title" class="text-[clamp(1.75rem,3vw,2.5rem)] font-bold tracking-tight text-[var(--text-1)]">Cadastro, cobrança e acompanhamento em um lugar.</h2>
+          <p class="mt-3 text-[var(--text-2)]">Três recursos que cobrem a rotina: registrar clientes, controlar pagamentos e ver números.</p>
+        </header>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 grid-auto-flow-dense">
+          <article class="feature-card reveal border border-[var(--border)] rounded-[1.5rem] p-6 bg-[var(--surface)]">
+            <div class="w-10 h-10 rounded-[1rem] border border-[var(--border)] flex items-center justify-center mb-4"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>
+            <h3 class="text-sm font-semibold text-[var(--text-1)]">Cadastro com filtros</h3>
+            <p class="mt-2 text-sm text-[var(--text-2)] leading-relaxed">Registre nome, contato, plano e etapa. Filtre por status, plano, etapa ou tag.</p>
+          </article>
+          <article class="feature-card reveal border border-[var(--border)] rounded-[1.5rem] p-6 bg-[var(--accent)] text-white">
+            <div class="w-10 h-10 rounded-[1rem] border border-white/20 flex items-center justify-center mb-4"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
+            <h3 class="text-sm font-semibold">Cobrança e métricas</h3>
+            <p class="mt-2 text-sm text-white/80 leading-relaxed">Defina valor e vencimento por cliente. Veja receita prevista, inadimplentes, churn e LTV.</p>
+          </article>
+          <article class="feature-card reveal border border-[var(--border)] rounded-[1.5rem] p-6 bg-[var(--surface)]">
+            <div class="w-10 h-10 rounded-[1rem] border border-[var(--border)] flex items-center justify-center mb-4"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+            <h3 class="text-sm font-semibold text-[var(--text-1)]">Equipe com permissões</h3>
+            <p class="mt-2 text-sm text-[var(--text-2)] leading-relaxed">Convide membros por email. Administradores gerenciam tudo, membros operam o dia a dia.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="py-24 md:py-32 px-4 border-t border-[var(--border)]" aria-labelledby="how-title">
+      <div class="max-w-6xl mx-auto">
+        <header class="text-center mb-16 reveal">
+          <h2 id="how-title" class="text-[clamp(1.75rem,3vw,2.5rem)] font-bold tracking-tight text-[var(--text-1)]">Comece em 3 passos.</h2>
+        </header>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 grid-auto-flow-dense">
+          <article class="step-card reveal flex gap-4">
+            <span class="step-num w-12 h-12 flex-shrink-0 rounded-full bg-[var(--accent)] text-white border border-[var(--accent)] flex items-center justify-center text-base font-bold font-mono">01</span>
+            <div>
+              <h3 class="text-sm font-semibold text-[var(--text-1)]">Crie a conta</h3>
+              <p class="text-sm text-[var(--text-2)] mt-1">30 segundos, sem cartão.</p>
+            </div>
+          </article>
+          <article class="step-card reveal flex gap-4">
+            <span class="step-num w-12 h-12 flex-shrink-0 rounded-full bg-[var(--accent)] text-white border border-[var(--accent)] flex items-center justify-center text-base font-bold font-mono">02</span>
+            <div>
+              <h3 class="text-sm font-semibold text-[var(--text-1)]">Cadastre clientes</h3>
+              <p class="text-sm text-[var(--text-2)] mt-1">Nome, email, plano, etapa.</p>
+            </div>
+          </article>
+          <article class="step-card reveal flex gap-4">
+            <span class="step-num w-12 h-12 flex-shrink-0 rounded-full bg-[var(--accent)] text-white border border-[var(--accent)] flex items-center justify-center text-base font-bold font-mono">03</span>
+            <div>
+              <h3 class="text-sm font-semibold text-[var(--text-1)]">Acompanhe</h3>
+              <p class="text-sm text-[var(--text-2)] mt-1">Kanban e relatórios com período.</p>
+            </div>
+          </article>
+        </div>
+        <div class="mt-12 text-center reveal">
+          <button data-action="open-modal" data-modal="modal-register" class="btn-primary px-7 py-3.5 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Começar gratuitamente agora</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="py-24 md:py-32 px-4 border-t border-[var(--border)]" aria-labelledby="about-title">
+      <div class="max-w-6xl mx-auto">
+        <article class="reveal border border-[var(--border)] rounded-[2rem] p-8 md:p-12 bg-[var(--surface)] shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
+          <h2 id="about-title" class="text-[clamp(1.5rem,2.5vw,2rem)] font-bold text-[var(--text-1)]">Feito para quem atende cliente todo dia.</h2>
+          <div class="mt-6 space-y-3 text-sm text-[var(--text-2)] leading-relaxed font-mono">
+            <p>Clínica: retorno em 30 dias.</p>
+            <p>Oficina: revisão por km.</p>
+            <p>Academia: mensalidade vencida.</p>
+          </div>
+          <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="border border-[var(--border)] rounded-[1.5rem] p-5 bg-[var(--surface-2)]"><div class="font-semibold text-[var(--text-1)]">Acesso controlado</div><div class="text-[var(--text-2)] mt-2 text-sm">Cada conta vê só os próprios dados. Convites por email.</div></div>
+            <div class="border border-[var(--border)] rounded-[1.5rem] p-5 bg-[var(--surface-2)]"><div class="font-semibold text-[var(--text-1)]">Lembretes automáticos</div><div class="text-[var(--text-2)] mt-2 text-sm">Avisos de vencimento e clientes sem retorno.</div></div>
+            <div class="border border-[var(--border)] rounded-[1.5rem] p-5 bg-[var(--surface-2)]"><div class="font-semibold text-[var(--text-1)]">Funciona no celular</div><div class="text-[var(--text-2)] mt-2 text-sm">Painel adaptado para atender entre um cliente e outro.</div></div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-[var(--border)] py-16 px-4 bg-[var(--surface-2)]" role="contentinfo">
+    <div class="max-w-6xl mx-auto grid md:grid-cols-4 gap-8">
+      <div class="md:col-span-2">
+        <div class="flex items-center gap-2"><div class="w-8 h-8 rounded-[1rem] bg-[var(--accent)] flex items-center justify-center"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div><span class="text-sm font-bold font-mono uppercase">DaviFlow</span></div>
+        <p class="mt-3 text-sm text-[var(--text-2)] max-w-xs">Cadastro, cobrança e acompanhamento de clientes para pequenos negócios.</p>
+        <address class="not-italic mt-4 text-xs text-[var(--text-3)] font-mono"><a href="mailto:contato@daviflow.com.br" class="underline hover:text-[var(--accent)]">contato@daviflow.com.br</a> • <a href="https://wa.me/5511999999999" target="_blank" rel="noopener" class="underline hover:text-[var(--accent)]">Falar no WhatsApp</a></address>
+      </div>
+      <nav><h4 class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)] mb-3">Produto</h4><ul class="space-y-2 text-sm"><li><a href="#features" class="text-[var(--text-2)] hover:text-[var(--accent)]">Recursos</a></li><li><a href="#how-it-works" class="text-[var(--text-2)] hover:text-[var(--accent)]">Como funciona</a></li><li><a href="/dashboard.html" class="text-[var(--text-2)] hover:text-[var(--accent)]">Painel</a></li></ul></nav>
+      <nav><h4 class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)] mb-3">Legal</h4><ul class="space-y-2 text-sm"><li><a href="/privacidade.html" class="text-[var(--text-2)] hover:text-[var(--accent)]">Privacidade</a></li><li><a href="/termos.html" class="text-[var(--text-2)] hover:text-[var(--accent)]">Termos</a></li></ul></nav>
     </div>
+    <div class="max-w-6xl mx-auto mt-10 pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p class="text-xs text-[var(--text-3)] font-mono">© 2026 DaviFlow. Feito no Brasil.</p>
+    </div>
+  </footer>
 
-    <script>
-        // --- Initialize Lucide Icons ---
-        lucide.createIcons();
+  <div class="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[var(--surface)] border-t border-[var(--border)] px-4 py-3 flex items-center justify-between gap-3">
+    <div><p class="text-xs font-semibold text-[var(--text-1)]">Pronto para começar?</p><p class="text-xs text-[var(--text-3)]">Sem cartão • Cancele quando quiser</p></div>
+    <button data-action="open-modal" data-modal="modal-register" class="px-5 py-2 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full active:scale-[0.97] transition-transform duration-160 ease-[var(--ease-out)]">Criar conta</button>
+  </div>
 
-        // =====================================================
-        // NAVBAR: Scroll shadow + mobile menu
-        // =====================================================
-        const navbar = document.getElementById('navbar');
-        const mobileMenu = document.getElementById('mobile-menu');
-        const menuIconOpen = document.getElementById('menu-icon-open');
-        const menuIconClose = document.getElementById('menu-icon-close');
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  <dialog id="modal-login" class="modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <div class="modal-backdrop" data-action="close-modal"></div>
+    <div class="modal-box rounded-[2rem] p-6 md:p-8 max-w-md w-full mx-4">
+      <header class="flex items-start justify-between mb-6"><div><h2 id="login-title" class="text-lg font-bold text-[var(--text-1)]">Bem-vindo de volta</h2><p class="text-sm text-[var(--text-2)]">Entre na sua conta.</p></div><button data-action="close-modal" class="p-2 text-[var(--text-3)] hover:text-[var(--accent)] rounded-full transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></header>
+      <form id="form-login" class="space-y-4" novalidate>
+        <div><label for="login-email" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">E-mail</label><input type="email" id="login-email" required autocomplete="email" placeholder="seu@email.com" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <div><div class="flex items-center justify-between"><label for="login-password" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Senha</label><a href="#" data-action="forgot-password" class="text-xs text-[var(--accent)] underline">Esqueci a senha</a></div><input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <div id="login-error" class="hidden px-4 py-3 rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-1)] text-sm items-center gap-2"><span id="login-error-text" class="font-mono text-xs"></span></div>
+        <button type="submit" class="btn-primary w-full py-3 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Entrar na minha conta</button>
+      </form>
+      <p class="mt-5 text-center text-sm text-[var(--text-2)]">Não tem conta? <button data-action="switch-modal" data-target="modal-register" class="font-semibold text-[var(--accent)] underline">Criar conta grátis</button></p>
+    </div>
+  </dialog>
 
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 20) {
-                navbar.classList.add('navbar-scrolled');
-            } else {
-                navbar.classList.remove('navbar-scrolled');
-            }
-        }, { passive: true });
+  <dialog id="modal-register" class="modal" role="dialog" aria-modal="true" aria-labelledby="register-title">
+    <div class="modal-backdrop" data-action="close-modal"></div>
+    <div class="modal-box rounded-[2rem] p-6 md:p-8 max-w-md w-full mx-4">
+      <header class="flex items-start justify-between mb-6"><div><h2 id="register-title" class="text-lg font-bold text-[var(--text-1)]">Crie sua conta grátis</h2><p class="text-sm text-[var(--text-2)]">Sem cartão. Cancele quando quiser.</p></div><button data-action="close-modal" class="p-2 text-[var(--text-3)] hover:text-[var(--accent)] rounded-full transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></header>
+      <form id="form-register" class="space-y-3" novalidate>
+        <div><label for="signup-nome" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Nome</label><input type="text" id="signup-nome" required autocomplete="name" placeholder="Seu nome" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <div><label for="signup-email" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">E-mail</label><input type="email" id="signup-email" required autocomplete="email" placeholder="seu@email.com" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <div><label for="signup-senha" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Senha</label><input type="password" id="signup-senha" required autocomplete="new-password" placeholder="Mínimo 8 caracteres" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <div><label for="signup-confirm-senha" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Confirmar senha</label><input type="password" id="signup-confirm-senha" required autocomplete="new-password" placeholder="Repita a senha" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <label class="flex items-start gap-2 text-xs text-[var(--text-3)]"><input type="checkbox" id="register-terms" required class="mt-1 w-4 h-4 accent-[var(--accent)]"> Concordo com <a href="/termos.html" class="underline hover:text-[var(--accent)]">Termos</a> e <a href="/privacidade.html" class="underline hover:text-[var(--accent)]">Privacidade</a></label>
+        <button type="submit" class="btn-primary w-full py-3 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Criar conta grátis</button>
+      </form>
+      <p class="mt-5 text-center text-sm text-[var(--text-2)]">Já tem conta? <button data-action="switch-modal" data-target="modal-login" class="font-semibold text-[var(--accent)] underline">Entrar</button></p>
+    </div>
+  </dialog>
 
-        mobileMenuBtn.addEventListener('click', () => {
-            const isHidden = mobileMenu.classList.contains('hidden');
-            mobileMenu.classList.toggle('hidden', !isHidden);
-            menuIconOpen.classList.toggle('hidden', isHidden);
-            menuIconClose.classList.toggle('hidden', !isHidden);
-        });
-
-        function closeMobileMenu() {
-            mobileMenu.classList.add('hidden');
-            menuIconOpen.classList.remove('hidden');
-            menuIconClose.classList.add('hidden');
-        }
-
-        // =====================================================
-        // MODALS: Open / Close
-        // =====================================================
-        function openModal(id) {
-            const modal = document.getElementById(id);
-            if (!modal) return;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-            // Re-run lucide for any icons inside modal
-            lucide.createIcons();
-        }
-
-        function closeModal(id) {
-            const modal = document.getElementById(id);
-            if (!modal) return;
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = '';
-        }
-
-        // Close modals on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeModal('modal-login');
-                closeModal('modal-register');
-                closeModal('modal-recovery');
-            }
-        });
-
-        // =====================================================
-        // AUTH: Placeholder handlers (wire up Supabase here)
-        // =====================================================
-        function setButtonLoading(btnId, arrowId, spinnerId, loading) {
-            const btn = document.getElementById(btnId);
-            const arrow = document.getElementById(arrowId);
-            const spinner = document.getElementById(spinnerId);
-            if (!btn) return;
-            btn.disabled = loading;
-            btn.style.opacity = loading ? '0.7' : '1';
-            if (arrow) arrow.classList.toggle('hidden', loading);
-            if (spinner) spinner.classList.toggle('hidden', !loading);
-        }
-
-        function showAuthError(containerId, textId, message) {
-            const container = document.getElementById(containerId);
-            const text = document.getElementById(textId);
-            if (container && text) {
-                text.textContent = message;
-                container.classList.remove('hidden');
-            }
-        }
-
-        function hideAuthError(containerId) {
-            const container = document.getElementById(containerId);
-            if (container) container.classList.add('hidden');
-        }
-
-        
-        // Recovery / Invite: detecta token do Supabase (hash, query, code PKCE) e abre modal de definir senha
-        document.addEventListener("DOMContentLoaded", () => {
-            const href = window.location.href || "";
-            const qs = window.location.search || "";
-            const hash = window.location.hash || "";
-            // [recovery] href logged only in dev
-            // Supabase pode redirecionar com ?code= (PKCE) ou #access_token= ou ?token=
-            const hasToken = hash.includes("access_token") || hash.includes("refresh_token") || qs.includes("access_token") || qs.includes("code=") || qs.includes("token=") || hash.includes("type=recovery") || hash.includes("type=invite") || qs.includes("type=recovery") || qs.includes("type=invite");
-            const isRecoveryQS = qs.includes("recovery") || hash.includes("recovery");
-            const isLoginQS = qs.includes("login=true");
-            // se tem token/code em qualquer lugar, abre recovery
-            if (hasToken || isRecoveryQS) {
-                // token detectado
-                openModal("modal-recovery");
-                try {
-                    // tenta extrair access_token de hash ou query
-                    let at = null, rt = null;
-                    if (hash.includes("access_token")) {
-                        const p = new URLSearchParams(hash.substring(1));
-                        at = p.get("access_token"); rt = p.get("refresh_token");
-                    }
-                    if (!at && qs.includes("access_token")) {
-                        const p = new URLSearchParams(qs);
-                        at = p.get("access_token"); rt = p.get("refresh_token");
-                    }
-                    // PKCE code -> tenta trocar por sessão via Supabase JS se disponível
-                    const code = new URLSearchParams(qs).get("code");
-                    if (code && window.supabaseRecovery && window.supabaseRecovery.auth && window.supabaseRecovery.auth.exchangeCodeForSession) {
-                        window.supabaseRecovery.auth.exchangeCodeForSession(code).then(({data, error}) => {
-                            if (data && data.session && data.session.access_token) {
-                                localStorage.setItem("df_recovery_token", data.session.access_token);
-                                // PKCE code trocado
-                            }
-                            if (error) console.warn("[recovery] exchangeCodeForSession erro", error);
-                        });
-                    }
-                    if (at) localStorage.setItem("df_recovery_token", at);
-                    if (rt) localStorage.setItem("df_recovery_refresh", rt);
-                    // fallback: se veio ?token= (hashed_token) sem access_token, guarda para backend tentar
-                    if (!at) {
-                        const t = new URLSearchParams(qs).get("token") || new URLSearchParams(hash.substring(1)).get("token");
-                        if (t) localStorage.setItem("df_recovery_token", t);
-                    }
-                } catch(e) { console.warn(e); }
-                return;
-            }
-            if (isLoginQS) {
-                openModal("modal-login");
-            }
-        });
-
-        function fecharModalCadastro() {
-            closeModal('modal-register');
-        }
-
-        async function handleLogin(e) {
-            if (e) e.preventDefault();
-            hideAuthError('login-error');
-            const email = (document.getElementById('login-email')?.value || '').trim();
-            const password = document.getElementById('login-password')?.value || '';
-
-            if (!email || !password) {
-                showAuthError('login-error', 'login-error-text', 'Por favor, preencha todos os campos.');
-                return;
-            }
-
-            setButtonLoading('btn-login-submit', 'btn-login-arrow', 'btn-login-spinner', true);
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-
-                // SAFE JSON PARSE - não quebra em HTML/texto
-                let data;
-                const contentType = response.headers.get('content-type') || '';
-                if (contentType.includes('application/json')) {
-                    data = await response.json();
-                } else {
-                    const text = await response.text();
-                    throw new Error(text.slice(0, 200) || 'Resposta inválido do servidor');
-                }
-                if (!response.ok) {
-                    throw new Error(data.detail || 'Email ou senha incorretos.');
-                }
-
-                if (data.user_id) {
-                    localStorage.setItem('df_user_id', data.user_id);
-                    if (data.access_token) {
-                        localStorage.setItem('df_token', data.access_token);
-                    }
-                    window.location.href = 'dashboard.html';
-                } else {
-                    throw new Error('Erro no login: ID de usuário não retornado.');
-                }
-            } catch (error) {
-                showAuthError('login-error', 'login-error-text', error.message || 'Erro ao realizar login.');
-            } finally {
-                setButtonLoading('btn-login-submit', 'btn-login-arrow', 'btn-login-spinner', false);
-            }
-        }
-
-        async function handleForgotPassword(e) {
-            if (e) e.preventDefault();
-            const emailInput = document.getElementById('login-email');
-            let email = (emailInput?.value || '').trim();
-            if (!email) {
-                email = prompt('Digite seu e-mail para redefinir a senha:');
-                if (!email) return;
-                email = email.trim();
-            } else {
-                // confirma com o email já preenchido
-                if (!confirm(`Enviar link de redefinição para ${email}?`)) {
-                    const novo = prompt('Digite o e-mail para redefinir:', email);
-                    if (!novo) return;
-                    email = novo.trim();
-                }
-            }
-            if (!email || !email.includes('@')) {
-                showAuthError('login-error', 'login-error-text', 'Informe um e-mail válido.');
-                return;
-            }
-            setButtonLoading('btn-login-submit', 'btn-login-arrow', 'btn-login-spinner', true);
-            try {
-                const resp = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-                const data = await resp.json().catch(() => ({}));
-                // sempre mostra sucesso para não enumerar emails (privacidade)
-                showAuthError('login-error', 'login-error-text', data.mensagem || 'Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha. Verifique spam.');
-                // troca para visual de sucesso (invertido, monocromático) temporariamente
-                const errEl = document.getElementById('login-error');
-                if (errEl) {
-                    errEl.classList.remove('bg-zinc-100','text-zinc-800');
-                    errEl.classList.add('bg-black','text-white');
-                    errEl.classList.remove('hidden');
-                }
-                // também toast se existir
-                if (window.exibirToast) exibirToast('Se o e-mail estiver cadastrado, link enviado! Verifique spam.', 'sucesso');
-                else alert('Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha. Verifique spam.');
-            } catch (err) {
-                showAuthError('login-error', 'login-error-text', 'Erro ao enviar email. Tente novamente.');
-            } finally {
-                setButtonLoading('btn-login-submit', 'btn-login-arrow', 'btn-login-spinner', false);
-            }
-        }
-
-        async function cadastrarUsuarioPelaModal(event) {
-            if (event) event.preventDefault();
-            hideAuthError('register-error');
-
-            const nomeCompleto = document.getElementById('signup-nome')?.value || document.getElementById('register-name')?.value || document.querySelector('input[placeholder*="Davi"]')?.value;
-            const email = document.getElementById('signup-email')?.value || document.getElementById('register-email')?.value || document.querySelector('input[type="email"]')?.value;
-            const password = document.getElementById('signup-senha')?.value || document.getElementById('register-password')?.value;
-            const confirmPassword = document.getElementById('signup-confirm-senha')?.value || document.getElementById('register-confirm')?.value;
-
-            // Validação rápida de senha
-            if (password !== confirmPassword) {
-                showAuthError('register-error', 'register-error-text', 'As senhas não coincidem!');
-                alert('As senhas não coincidem!');
-                return;
-            }
-
-            if (!password || password.length < 6) {
-                showAuthError('register-error', 'register-error-text', 'A senha deve ter pelo menos 6 caracteres.');
-                alert('A senha deve ter pelo menos 6 caracteres.');
-                return;
-            }
-
-            setButtonLoading('btn-register-submit', 'btn-register-arrow', 'btn-register-spinner', true);
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: email ? email.trim() : '',
-                        password: password,
-                        nome_completo: nomeCompleto ? nomeCompleto.trim() : '',
-                        nome_empresa: ''
-                    })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.detail || 'Erro ao criar conta.');
-                }
-
-                alert('Conta criada com sucesso! Faça login para acessar o painel.');
-                
-                // Redirecionar ou fechar modal
-                fecharModalCadastro();
-                openModal('modal-login');
-            } catch (error) {
-                showAuthError('register-error', 'register-error-text', `Erro no cadastro: ${error.message}`);
-                alert(`Erro no cadastro: ${error.message}`);
-            } finally {
-                setButtonLoading('btn-register-submit', 'btn-register-arrow', 'btn-register-spinner', false);
-            }
-        }
-
-        function handleRegister(event) {
-            return cadastrarUsuarioPelaModal(event);
-        }
-
-        // =====================================================
-        // PASSWORD VISIBILITY TOGGLE
-        // =====================================================
-        function togglePassword(inputId, iconId) {
-            const input = document.getElementById(inputId);
-            const icon = document.getElementById(iconId);
-            if (!input) return;
-            const isPassword = input.type === 'password';
-            input.type = isPassword ? 'text' : 'password';
-            if (icon) {
-                icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
-                lucide.createIcons();
-            }
-        }
-
-        async function handleRecoverySubmit(e) {
-            if (e) e.preventDefault();
-            const pwd = document.getElementById('recovery-password')?.value || '';
-            const confirm = document.getElementById('recovery-confirm')?.value || '';
-            const errEl = document.getElementById('recovery-error');
-            const errText = document.getElementById('recovery-error-text');
-            const okEl = document.getElementById('recovery-success');
-            const btn = document.getElementById('btn-recovery-submit');
-            const btnText = document.getElementById('btn-recovery-text');
-            const spinner = document.getElementById('btn-recovery-spinner');
-            const icon = document.getElementById('btn-recovery-icon');
-            if (errEl) errEl.classList.add('hidden');
-            if (okEl) okEl.classList.add('hidden');
-            if (pwd !== confirm) {
-                if (errEl && errText) { errText.textContent = 'As senhas não coincidem.'; errEl.classList.remove('hidden'); }
-                return;
-            }
-            if (!pwd || pwd.length < 6) {
-                if (errEl && errText) { errText.textContent = 'Senha deve ter pelo menos 6 caracteres.'; errEl.classList.remove('hidden'); }
-                return;
-            }
-            // pega token do hash (Supabase recovery) ou do localStorage
-            let token = '';
-            try {
-                const hash = window.location.hash || '';
-                if (hash.includes('access_token')) {
-                    const p = new URLSearchParams(hash.substring(1));
-                    token = p.get('access_token') || '';
-                }
-                if (!token) token = localStorage.getItem('df_recovery_token') || '';
-                // fallback: tenta pegar ?token= na query (Resend link direto)
-                if (!token) {
-                    const qs = new URLSearchParams(window.location.search);
-                    token = qs.get('token') || qs.get('access_token') || '';
-                }
-            } catch(e) {}
-            if (!token) {
-                if (errEl && errText) { errText.textContent = 'Token ausente. Abra o link do email novamente ou peça novo link em Esqueci a senha.'; errEl.classList.remove('hidden'); }
-                return;
-            }
-            if (btn) btn.disabled = true;
-            if (btnText) btnText.textContent = 'Salvando...';
-            if (spinner) spinner.classList.remove('hidden');
-            if (icon) icon.classList.add('hidden');
-            try {
-                // tenta via backend primeiro (funciona mesmo sem supabase-js anon)
-                const resp = await fetch(`${API_BASE_URL}/auth/update-password`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ access_token: token, password: pwd })
-                });
-                const data = await resp.json().catch(() => ({}));
-                if (!resp.ok) throw new Error(data.detail || 'Falha ao atualizar senha');
-                if (okEl) { okEl.textContent = data.mensagem || 'Senha atualizada! Redirecionando para login...'; okEl.classList.remove('hidden'); }
-                setTimeout(() => { closeModal('modal-recovery'); openModal('modal-login'); if (errText) errText.textContent=''; try{ history.replaceState(null,'', window.location.pathname); localStorage.removeItem('df_recovery_token'); }catch(e){} }, 1800);
-            } catch (err) {
-                if (errEl && errText) { errText.textContent = err.message || 'Erro ao atualizar senha. Solicite novo link.'; errEl.classList.remove('hidden'); }
-            } finally {
-                if (btn) btn.disabled = false;
-                if (btnText) btnText.textContent = 'Salvar nova senha';
-                if (spinner) spinner.classList.add('hidden');
-                if (icon) icon.classList.remove('hidden');
-            }
-        }
-
-        // =====================================================
-        // SCROLL REVEAL (Intersection Observer)
-        // =====================================================
-        const revealObserver = new IntersectionObserver((entries) => {
-            entries.forEach((entry, index) => {
-                if (entry.isIntersecting) {
-                    // Stagger based on position among siblings
-                    const siblings = Array.from(entry.target.parentElement?.children || []);
-                    const idx = siblings.indexOf(entry.target);
-                    const delay = Math.min(idx * 70, 300);
-                    setTimeout(() => {
-                        entry.target.classList.add('visible');
-                    }, delay);
-                    revealObserver.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-
-        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
-
-        // =====================================================
-        // SMOOTH SCROLL for anchor links
-        // =====================================================
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', (e) => {
-                const target = document.querySelector(anchor.getAttribute('href'));
-                if (target) {
-                    e.preventDefault();
-                    const offset = 72; // navbar height
-                    const top = target.getBoundingClientRect().top + window.scrollY - offset;
-                    window.scrollTo({ top, behavior: 'smooth' });
-                }
-            });
-        });
-    </script>
-    </script>
+  <dialog id="modal-recovery" class="modal" role="dialog" aria-modal="true" aria-labelledby="recovery-title">
+    <div class="modal-backdrop" data-action="close-modal"></div>
+    <div class="modal-box rounded-[2rem] p-6 md:p-8 max-w-md w-full mx-4">
+      <header class="mb-6"><h2 id="recovery-title" class="text-lg font-bold text-[var(--text-1)]">Definir nova senha</h2><p class="text-sm text-[var(--text-2)] mt-1">Token de recuperação detectado.</p></header>
+      <form id="form-recovery" class="space-y-3" novalidate>
+        <input type="password" id="recovery-password" placeholder="Nova senha (mín 8)" required class="input w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200">
+        <input type="password" id="recovery-confirm" placeholder="Confirmar" required class="input w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200">
+        <button type="submit" class="btn-primary w-full py-3 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Atualizar senha</button>
+      </form>
+    </div>
+  </dialog>
 </body>
 </html>

@@ -1,101 +1,137 @@
 /**
  * ===================================================================
- * DaviFlow — Design System (style.css)
+ * DaviFlow — Unified Design System (style.css)
  * ===================================================================
- * Folha única para Landing Page (index.html) + Dashboard (dashboard.html).
+ * Folha única: Landing (index.html) + Dashboard (dashboard.html) + Legais.
  *
- * Estrutura:
- *  1. Base (scroll, tap-highlight, iOS 16px anti-zoom, modal mobile)
- *  2. Tokens CSS vars (:root light / .dark) — cores, sombras, radius
- *  3. Scrollbars customizadas
- *  4. Dashboard: form, botões, metric cards, toggles, color dots, modais, cards
- *  5. Landing: animações fadeInUp, reveal, feature-card hover, navbar
- *
- * Tokens principais:
- *  --dash-accent (#000 preto light / #fff dark) — neo-brutalista monocromático
- *  --dash-surface / --dash-border / --dash-text-*
- *  --dash-shadow-sm/md e --dash-radius (0.75rem)
- *
- * Notas:
- * - Evita @apply para manter compatibilidade com CDN Tailwind
- * - Animações usam cubic-bezier(0.16,1,0.3,1) (easeOutExpo-like)
- * - Mobile: 16px em inputs evita zoom iOS; modais viram bottom-sheet
+ * Princípios (emil-design-eng):
+ *  - Custom easings (--ease-out / --ease-in-out / --ease-drawer)
+ *  - Hover apenas em @media (hover: hover) and (pointer: fine)
+ *  - :active { transform: scale(0.97) } em todo elemento pressionável
+ *  - Entradas começam em scale(0.95)+opacity — nunca scale(0)
+ *  - Transitions específicas (nunca `all`), duration UI ≤ 300ms
+ *  - prefers-reduced-motion respeitado em tudo
+ *  - Focus-visible AA (2px + offset 2px)
+ *  - Só transform/opacity animam (GPU)
+ *  - Sem @apply (compat Tailwind CDN)
  */
 
-/* --- Smooth Scroll & Touch Optimizations --- */
+/* ============================================================
+   1. TOKENS
+   ============================================================ */
+:root {
+    /* Colors — premium mono (zinc) */
+    --bg:            #FAFAFA;
+    --surface:       #FFFFFF;
+    --surface-2:     #F4F4F5;
+    --border:        #E4E4E7;
+    --border-strong: #D4D4D8;
+    --accent:        #000000;
+    --accent-hover:  #27272A;
+    --text-1:        #09090B;
+    --text-2:        #3F3F46;
+    --text-3:        #71717A;
+
+    /* Shadows — soft, diffused (nada de sombra dura) */
+    --shadow-sm:     0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md:     0 4px 16px rgba(0,0,0,0.06);
+    --shadow-lg:     0 8px 24px rgba(0,0,0,0.08);
+    --shadow-xl:     0 12px 32px rgba(0,0,0,0.10);
+
+    /* Easing — custom curves */
+    --ease-out:      cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out:   cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer:   cubic-bezier(0.32, 0.72, 0, 1);
+
+    /* Motion */
+    --dur-fast:      160ms;
+    --dur-base:      200ms;
+    --dur-slow:      300ms;
+    --dur-marketing: 500ms;
+
+    /* Radius */
+    --radius-sm:     0.5rem;
+    --radius-md:     0.75rem;
+    --radius-lg:     1rem;
+    --radius-xl:     1.5rem;
+    --radius-full:   9999px;
+}
+
+.dark {
+    --bg:            #09090B;
+    --surface:       #18181B;
+    --surface-2:     #27272A;
+    --border:        #27272A;
+    --border-strong: #3F3F46;
+    --accent:        #FFFFFF;
+    --accent-hover:  #E4E4E7;
+    --text-1:        #FAFAFA;
+    --text-2:        #D4D4D8;
+    --text-3:        #A1A1AA;
+    --shadow-sm:     0 1px 2px rgba(0,0,0,0.4);
+    --shadow-md:     0 4px 16px rgba(0,0,0,0.4);
+    --shadow-lg:     0 8px 24px rgba(0,0,0,0.5);
+    --shadow-xl:     0 12px 32px rgba(0,0,0,0.6);
+}
+
+/* ============================================================
+   2. BASE
+   ============================================================ */
 html {
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
 }
-
-/* Previne auto-zoom desagradável no iOS ao focar em inputs em telas pequenas */
+body {
+    background-color: var(--bg);
+    color: var(--text-1);
+    font-family: 'Geist', 'Inter', sans-serif;
+}
 @media (max-width: 639px) {
-    .form-input, input, select, textarea {
-        font-size: 16px !important;
-    }
-    .modal-box {
-        max-height: 88vh;
-        overscroll-behavior: contain;
-    }
-    .btn-primary, .btn-ghost, .btn-danger {
-        min-height: 42px;
+    /* iOS anti-zoom */
+    .form-input, input, select, textarea { font-size: 16px !important; }
+    .modal-box { max-height: 88vh; overscroll-behavior: contain; }
+    .btn-primary, .btn-ghost, .btn-danger { min-height: 44px; }
+}
+
+/* ============================================================
+   3. FOCUS VISIBLE (AA)
+   ============================================================ */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.dark :focus-visible { outline-color: #fff; }
+
+/* ============================================================
+   4. REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }
 
 /* ============================================================
-   DESIGN TOKENS — Neo-Brutalista Monocromático
-   Regra 60-30-10: zinc-50 fundo / zinc-800 estrutura / preto destaque
-   ============================================================ */
-:root {
-    --dash-bg:            #fafafa; /* zinc-50 */
-    --dash-surface:       #ffffff;
-    --dash-border:        #d4d4d8; /* zinc-300 — divisórias internas */
-    --dash-accent:        #000000; /* preto puro — destaque/CTA */
-    --dash-surface-2:     #f4f4f5; /* zinc-100 */
-    --dash-border-subtle: rgba(212,212,216,0.8);
-    --dash-text-1:        #09090b; /* zinc-950 */
-    --dash-text-2:        #3f3f46; /* zinc-700 */
-    --dash-text-3:        #71717a; /* zinc-500 */
-    --dash-accent-hover:  #27272a; /* zinc-800 */
-    --dash-accent-light:  #e4e4e7; /* zinc-200 */
-    --dash-shadow-sm:     3px 3px 0 #000000;  /* sombra dura pequena */
-    --dash-shadow-md:     6px 6px 0 #000000;  /* sombra dura média */
-    --dash-radius:        0px;     /* rounded-none */
-}
-.dark {
-    --dash-bg:            #09090b; /* zinc-950 */
-    --dash-surface:       #18181b; /* zinc-900 */
-    --dash-surface-2:     #27272a; /* zinc-800 */
-    --dash-border:        #3f3f46; /* zinc-700 */
-    --dash-border-subtle: rgba(63,63,70,0.6);
-    --dash-text-1:        #fafafa;
-    --dash-text-2:        #d4d4d8;
-    --dash-text-3:        #a1a1aa;
-    --dash-accent:        #ffffff;
-    --dash-accent-hover:  #e4e4e7;
-    --dash-accent-light:  rgba(255,255,255,0.12);
-    --dash-shadow-sm:     3px 3px 0 rgba(255,255,255,0.25);
-    --dash-shadow-md:     6px 6px 0 rgba(255,255,255,0.25);
-}
-/* ============================================================
-   SHARED: Custom Scrollbars
+   5. SCROLLBARS
    ============================================================ */
 ::-webkit-scrollbar         { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track   { background: transparent; }
-::-webkit-scrollbar-thumb   { background: rgba(113,113,122,0.5); border-radius: 0; }
-::-webkit-scrollbar-thumb:hover { background: rgba(113,113,122,0.8); }
-.dark ::-webkit-scrollbar-thumb       { background: rgba(161,161,170,0.4); }
-.dark ::-webkit-scrollbar-thumb:hover { background: rgba(161,161,170,0.7); }
+::-webkit-scrollbar-thumb   { background: rgba(113,113,122,0.4); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: rgba(113,113,122,0.7); }
+.dark ::-webkit-scrollbar-thumb       { background: rgba(161,161,170,0.3); }
+.dark ::-webkit-scrollbar-thumb:hover { background: rgba(161,161,170,0.6); }
 
 /* ============================================================
-   DASHBOARD: Form Elements
+   6. FORM ELEMENTS
    ============================================================ */
 .form-group {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
 }
-
 .form-label {
     display: block;
     font-size: 11px;
@@ -103,29 +139,29 @@ html {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 0.25rem;
-    color: var(--dash-text-2);
+    color: var(--text-2);
 }
-
 .form-input {
     width: 100%;
     padding: 0.5rem 0.75rem;
-    border-radius: 0;
-    border: 2px solid var(--dash-border);
-    background-color: var(--dash-surface);
-    color: var(--dash-text-1);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-strong);
+    background-color: var(--surface);
+    color: var(--text-1);
     font-size: 0.875rem;
     line-height: 1.5;
     box-sizing: border-box;
-    transition: border-color 150ms ease, box-shadow 150ms ease;
+    transition: border-color var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out);
 }
-.form-input::placeholder { color: var(--dash-text-3); }
+.form-input::placeholder { color: var(--text-3); }
 .form-input:focus {
     outline: none;
-    border-color: var(--dash-accent);
-    box-shadow: 3px 3px 0 var(--dash-accent-light);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(113,113,122,0.15);
 }
 .form-input:disabled {
-    background-color: var(--dash-surface-2);
+    background-color: var(--surface-2);
     cursor: not-allowed;
     opacity: 0.7;
 }
@@ -134,270 +170,198 @@ html {
     display: none;
     font-size: 0.75rem;
     font-weight: 700;
-    color: #000;
+    color: #DC2626;
     align-items: center;
     gap: 0.25rem;
 }
-.dark .field-error { color: #fff; }
+.dark .field-error { color: #F87171; }
 .field-error.visible { display: flex; }
 
+/* Landing inputs (pill) */
+.input {
+    transition: border-color var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out);
+}
+.input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(113,113,122,0.15);
+}
+
 /* ============================================================
-    DASHBOARD: Buttons
-    ============================================================ */
-.btn-primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1.125rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #ffffff;
-    background-color: var(--dash-accent);
-    border-radius: 0;
-    border: 2px solid var(--dash-accent);
-    box-sizing: border-box;
-    cursor: pointer;
-    transition: background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
-    box-shadow: 3px 3px 0 #71717a;
-}
-.dark .btn-primary { color: #09090b; box-shadow: 3px 3px 0 #3f3f46; }
-.btn-primary:hover  { background-color: var(--dash-accent-hover); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #71717a; }
-.dark .btn-primary:hover { box-shadow: 4px 4px 0 #3f3f46; }
-.btn-primary:active { transform: translate(0, 0); box-shadow: none; }
-.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
-
-.btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--dash-text-2);
-    background-color: transparent;
-    border: 2px solid var(--dash-border);
-    border-radius: 0;
-    box-sizing: border-box;
-    cursor: pointer;
-    transition: background-color 150ms ease, border-color 150ms ease, transform 100ms ease;
-}
-.btn-ghost:hover {
-    background-color: var(--dash-surface-2);
-    border-color: var(--dash-accent);
-    color: var(--dash-text-1);
-    transform: translate(-1px, -1px);
-}
-
+   7. BUTTONS
+   ============================================================ */
+.btn-primary,
+.btn-ghost,
 .btn-danger {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.5rem 1.125rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #ffffff;
-    background-color: #27272a; /* zinc-800 — destrutivo monocromático */
-    border-radius: 0;
-    border: 2px solid #000;
-    box-sizing: border-box;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
     cursor: pointer;
-    transition: background-color 150ms ease, transform 100ms ease;
+    box-sizing: border-box;
+    transition: transform var(--dur-fast) var(--ease-out),
+                background-color var(--dur-base) var(--ease-out),
+                border-color var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out),
+                color var(--dur-base) var(--ease-out);
 }
-.dark .btn-danger { border-color: #fafafa; }
-.btn-danger:hover  { background-color: #000; }
-.dark .btn-danger:hover { background-color: #fafafa; color: #09090b; }
-.btn-danger:active { transform: translate(0, 0); }
-.btn-danger:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-primary:active,
+.btn-ghost:active,
+.btn-danger:active { transform: scale(0.97); }
+.btn-primary:disabled,
+.btn-ghost:disabled,
+.btn-danger:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
-body {
-    background-color: var(--dash-bg);
+.btn-primary {
+    color: #fff;
+    background-color: #000;
+    border-color: #000;
+    box-shadow: var(--shadow-md);
 }
-.dark body {
-    background-color: var(--dash-bg);
+.dark .btn-primary { color: #09090b; background-color: #fff; border-color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover { background-color: #27272A; transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+    .dark .btn-primary:hover { background-color: #E4E4E7; }
 }
-/* Força cards a não serem branco puro em dark — especificidade sem !important onde possível */
-.dark .metric-card,
-.dark .kanban-card,
-.dark .client-card {
-    background-color: var(--dash-surface);
-    color: var(--dash-text-1);
+
+.btn-ghost {
+    color: var(--text-2);
+    background-color: transparent;
+    border-color: var(--border-strong);
 }
-.dark .bg-white {
-    background-color: var(--dash-surface) !important;
-    color: var(--dash-text-1);
+@media (hover: hover) and (pointer: fine) {
+    .btn-ghost:hover {
+        background-color: var(--surface-2);
+        border-color: var(--accent);
+        color: var(--text-1);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
 }
-.dark .bg-zinc-50,
-.dark .bg-zinc-100 {
-    background-color: var(--dash-surface-2) !important;
+
+.btn-danger {
+    color: #fff;
+    background-color: #18181B;
+    border-color: #18181B;
 }
+.dark .btn-danger { background-color: #FAFAFA; color: #09090B; border-color: #FAFAFA; }
+@media (hover: hover) and (pointer: fine) {
+    .btn-danger:hover { background-color: #000; }
+    .dark .btn-danger:hover { background-color: #E4E4E7; }
+}
+
+/* Landing CTA (pill + lift) */
+.btn-lift {
+    transition: transform var(--dur-fast) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out),
+                background-color var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+    .btn-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+}
+.btn-lift:active { transform: scale(0.97); box-shadow: none; }
 
 /* ============================================================
-   DASHBOARD: Metric Cards
+   8. CARDS
    ============================================================ */
+.card,
+.feature-card {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out),
+                border-color var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+    .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--border-strong);
+    }
+}
+
 .metric-card {
-    background-color: var(--dash-surface);
+    background-color: var(--surface);
     padding: 1.25rem 1.25rem 1rem;
-    border-radius: 0;
-    border: 2px solid var(--dash-accent);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
     box-sizing: border-box;
-    box-shadow: none;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out),
+                border-color var(--dur-base) var(--ease-out);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     min-height: 108px;
 }
-.metric-card:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 5px 5px 0 var(--dash-accent);
+@media (hover: hover) and (pointer: fine) {
+    .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--border-strong);
+    }
 }
 
+.step-card { transition: transform var(--dur-base) var(--ease-out); }
+.step-num {
+    transition: transform var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+    .step-card:hover .step-num {
+        transform: translate(-2px, -2px);
+        box-shadow: var(--shadow-md);
+    }
+}
+
+/* Skeleton */
 .skeleton {
-    background: linear-gradient(90deg, #f4f4f5 25%, #d4d4d8 50%, #f4f4f5 75%);
+    background: linear-gradient(90deg, #F4F4F5 25%, #E4E4E7 50%, #F4F4F5 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
-    border-radius: 0;
+    border-radius: var(--radius-md);
 }
 @keyframes shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
 }
 .dark .skeleton {
-    background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
+    background: linear-gradient(90deg, #27272A 25%, #3F3F46 50%, #27272A 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 }
 
 /* ============================================================
-   DASHBOARD: Toggle Switches
-   ============================================================ */
-.toggle-track {
-    width: 2.75rem; height: 1.5rem;
-    background-color: #d4d4d8;
-    border: 2px solid #000;
-    box-sizing: border-box;
-    border-radius: 9999px; position: relative;
-    transition: background-color 200ms ease;
-}
-.dark .toggle-track { background-color: #3f3f46; border-color: #fafafa; }
-.peer:checked ~ .toggle-track { background-color: var(--dash-accent); }
-.toggle-track::after {
-    content: ''; position: absolute;
-    top: 2px; left: 2px;
-    width: 1rem; height: 1rem;
-    background-color: #fff; border-radius: 9999px;
-    border: 1px solid #000;
-    transition: transform 200ms ease;
-}
-.peer:checked ~ .toggle-track::after { transform: translateX(1.25rem); }
-
-.plan-toggle-track {
-    width: 2.25rem; height: 1.125rem;
-    background-color: #d4d4d8;
-    border: 2px solid #000;
-    box-sizing: border-box;
-    border-radius: 9999px; position: relative;
-    transition: background-color 200ms ease;
-}
-.dark .plan-toggle-track { background-color: #3f3f46; border-color: #fafafa; }
-.peer:checked ~ .plan-toggle-track { background-color: var(--dash-accent); }
-.plan-toggle-track::after {
-    content: ''; position: absolute;
-    top: 1px; left: 1px;
-    width: 0.75rem; height: 0.75rem;
-    background-color: #fff; border-radius: 9999px;
-    border: 1px solid #000;
-    transition: transform 200ms ease;
-}
-.peer:checked ~ .plan-toggle-track::after { transform: translateX(1.125rem); }
-
-/* ============================================================
-   DASHBOARD: Color Dot Picker (para planos)
-   ============================================================ */
-.color-dot {
-    width: 1.5rem; height: 1.5rem;
-    border-radius: 9999px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: transform 150ms ease, border-color 150ms ease;
-    flex-shrink: 0;
-}
-.color-dot:hover { transform: scale(1.15); }
-.color-dot.selected {
-    border-color: var(--dash-text-1);
-    transform: scale(1.15);
-    box-shadow: 0 0 0 1px var(--dash-surface);
-}
-
-/* ============================================================
-   DASHBOARD: Modal
-   ============================================================ */
-.modal-box {
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity   0.22s ease-out;
-}
-@media (max-width: 639px) {
-    .modal-container { align-items: flex-end; padding: 0; }
-    .modal-box {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-        max-height: 92vh;
-    }
-}
-
-/* ============================================================
-   DASHBOARD: Client Cards (mobile) & Table
-   ============================================================ */
-/* .client-card removido — não usado (mobile usa kanban-card) */
-
-/* Plan cards no modal */
-.plan-card {
-    cursor: pointer;
-    border-radius: 0;
-    border: 2px solid var(--dash-border);
-    background-color: var(--dash-surface);
-    box-sizing: border-box;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-.plan-card:hover { border-color: var(--dash-text-3); }
-.plan-card[aria-checked="true"] {
-    border-color: var(--dash-accent);
-    background-color: var(--dash-accent-light);
-    box-shadow: 3px 3px 0 var(--dash-accent);
-}
-.plan-check-icon {
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-.plan-section-open {
-    animation: planSectionOpen 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* ============================================================
-   KANBAN — Fase 1A
+   9. KANBAN
    ============================================================ */
 .kanban-column {
     min-width: 280px;
     max-width: 320px;
     flex: 1 0 280px;
-    background-color: var(--dash-surface-2);
-    border: 2px solid var(--dash-accent);
-    border-radius: 0;
+    background-color: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
     display: flex;
     flex-direction: column;
     max-height: calc(100vh - 280px);
 }
 .kanban-column-header {
     padding: 0.75rem 1rem;
-    border-bottom: 2px solid var(--dash-accent);
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    background-color: var(--dash-surface);
-    border-radius: 0;
+    background-color: var(--surface);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 .kanban-column-body {
     flex: 1;
@@ -409,52 +373,231 @@ body {
     min-height: 80px;
 }
 .kanban-card {
-    background-color: var(--dash-surface);
-    border: 2px solid var(--dash-border);
-    border-radius: 0;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     padding: 0.75rem;
     box-sizing: border-box;
     cursor: grab;
-    transition: border-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+    box-shadow: var(--shadow-sm);
+    transition: border-color var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out),
+                transform var(--dur-fast) var(--ease-out);
 }
-.kanban-card:hover {
-    border-color: var(--dash-accent);
-    box-shadow: 4px 4px 0 var(--dash-accent);
-    transform: translate(-1px, -1px);
+@media (hover: hover) and (pointer: fine) {
+    .kanban-card:hover {
+        border-color: var(--border-strong);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
 }
 .kanban-card:active { cursor: grabbing; }
 .sortable-ghost {
     opacity: 0.4;
-    background-color: var(--dash-accent-light) !important;
-    border: 2px dashed var(--dash-accent) !important;
+    background-color: var(--surface-2) !important;
+    border: 1px dashed var(--border-strong) !important;
 }
 .sortable-chosen {
-    box-shadow: 6px 6px 0 var(--dash-accent);
+    box-shadow: var(--shadow-xl) !important;
+    border-color: var(--border-strong) !important;
 }
 .kanban-empty {
     text-align: center;
     padding: 1.5rem 1rem;
-    color: var(--dash-text-3);
+    color: var(--text-3);
     font-size: 0.75rem;
-    border: 2px dashed var(--dash-border);
-    border-radius: 0;
-    background-color: var(--dash-surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    background-color: var(--surface);
 }
 
 /* ============================================================
-   DASHBOARD: Section colapsável (Contato, Endereço, etc.)
+   10. TOGGLES
    ============================================================ */
-.collapsible-chevron {
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+.toggle-track {
+    width: 2.75rem; height: 1.5rem;
+    background-color: var(--border-strong);
+    border: 1px solid var(--border-strong);
+    box-sizing: border-box;
+    border-radius: var(--radius-full);
+    position: relative;
+    transition: background-color var(--dur-base) var(--ease-out),
+                border-color var(--dur-base) var(--ease-out);
+    cursor: pointer;
+    display: inline-block;
+}
+.dark .toggle-track { background-color: #3F3F46; border-color: #3F3F46; }
+.peer:checked ~ .toggle-track { background-color: #000; border-color: #000; }
+.dark .peer:checked ~ .toggle-track { background-color: #fff; border-color: #fff; }
+.toggle-track::after {
+    content: ''; position: absolute;
+    top: 2px; left: 2px;
+    width: 1rem; height: 1rem;
+    background-color: #fff; border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--dur-base) var(--ease-drawer);
+}
+.dark .toggle-track::after { background-color: #09090B; }
+.peer:checked ~ .toggle-track::after { transform: translateX(1.25rem); }
+
+.plan-toggle-track {
+    width: 2.25rem; height: 1.125rem;
+    background-color: var(--border-strong);
+    border: 1px solid var(--border-strong);
+    box-sizing: border-box;
+    border-radius: var(--radius-full);
+    position: relative;
+    transition: background-color var(--dur-base) var(--ease-out),
+                border-color var(--dur-base) var(--ease-out);
+    cursor: pointer;
+    display: inline-block;
+}
+.dark .plan-toggle-track { background-color: #3F3F46; border-color: #3F3F46; }
+.peer:checked ~ .plan-toggle-track { background-color: #000; border-color: #000; }
+.dark .peer:checked ~ .plan-toggle-track { background-color: #fff; border-color: #fff; }
+.plan-toggle-track::after {
+    content: ''; position: absolute;
+    top: 1px; left: 1px;
+    width: 0.75rem; height: 0.75rem;
+    background-color: #fff; border-radius: var(--radius-full);
+    transition: transform var(--dur-base) var(--ease-drawer);
+}
+.dark .plan-toggle-track::after { background-color: #09090B; }
+.peer:checked ~ .plan-toggle-track::after { transform: translateX(1.125rem); }
+
+/* ============================================================
+   11. COLOR DOTS (planos)
+   ============================================================ */
+.color-dot {
+    width: 1.5rem; height: 1.5rem;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform var(--dur-base) var(--ease-out),
+                border-color var(--dur-base) var(--ease-out);
+    flex-shrink: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+    .color-dot:hover { transform: scale(1.15); }
+}
+.color-dot:active { transform: scale(0.95); }
+.color-dot.selected {
+    border-color: var(--text-1);
+    transform: scale(1.15);
+    box-shadow: 0 0 0 3px var(--surface);
 }
 
 /* ============================================================
-   ANIMATIONS (shared)
+   12. MODAIS
    ============================================================ */
+/* Dashboard: divs com .modal-box dentro de overlays */
+.modal-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    transition: transform var(--dur-slow) var(--ease-out),
+                opacity var(--dur-base) var(--ease-out);
+}
+/* Landing: <dialog> nativo */
+.modal {
+    border: none;
+    background: transparent;
+    padding: 0;
+    max-width: none;
+}
+.modal::backdrop {
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(8px);
+    animation: modalBackdropIn var(--dur-base) var(--ease-out) forwards;
+}
+@keyframes modalBackdropIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+dialog.modal .modal-box {
+    animation: modalBoxIn var(--dur-slow) var(--ease-out) forwards;
+}
+@keyframes modalBoxIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .modal::backdrop, dialog.modal .modal-box { animation: none; opacity: 1; transform: none; }
+}
+@media (max-width: 639px) {
+    .modal-container { align-items: flex-end; padding: 0; }
+    .modal-box {
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        max-height: 92vh;
+    }
+}
+
+/* ============================================================
+   13. PLAN CARDS (modal de criação)
+   ============================================================ */
+.plan-card {
+    cursor: pointer;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    box-sizing: border-box;
+    transition: border-color var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out),
+                background-color var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+    .plan-card:hover { border-color: var(--text-3); box-shadow: var(--shadow-md); }
+}
+.plan-card:active { transform: scale(0.98); }
+.plan-card[aria-checked="true"] {
+    border-color: var(--accent);
+    background-color: var(--surface-2);
+    box-shadow: var(--shadow-md);
+}
+.plan-check-icon {
+    transition: background-color var(--dur-base) var(--ease-out),
+                border-color var(--dur-base) var(--ease-out);
+}
+.plan-section-open {
+    animation: planSectionOpen 0.22s var(--ease-out) both;
+}
 @keyframes planSectionOpen {
     from { opacity: 0; transform: translateY(-6px); }
     to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ============================================================
+   14. SIDEBAR
+   ============================================================ */
+.sidebar-link, .sidebar-link-mobile {
+    transition: transform var(--dur-base) var(--ease-out),
+                background-color var(--dur-base) var(--ease-out),
+                color var(--dur-base) var(--ease-out),
+                border-color var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+    .sidebar-link:hover, .sidebar-link-mobile:hover { transform: translateX(2px); }
+}
+.sidebar-link:active, .sidebar-link-mobile:active { transform: scale(0.98); }
+
+/* ============================================================
+   15. TABELAS
+   ============================================================ */
+#tabela-clientes-body tr {
+    transition: background-color var(--dur-base) var(--ease-out);
+}
+#tabela-clientes-body tr:hover { background-color: var(--surface-2); }
+.table-row-hi {
+    transition: background-color var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+    .table-row-hi:hover { background-color: var(--surface-2); }
+}
+
+/* ============================================================
+   16. ANIMAÇÕES COMPARTILHADAS
+   ============================================================ */
 @keyframes toastProgress {
     from { width: 100%; }
     to   { width: 0%; }
@@ -467,96 +610,99 @@ body {
     80%      { transform: translateX(3px); }
 }
 .input-error-shake {
-    animation: fieldShake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-}
-
-/* ============================================================
-   LANDING PAGE: Animations & Effects
-   ============================================================ */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(28px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.12s; }
-.stagger-3 { animation-delay: 0.19s; }
-.stagger-4 { animation-delay: 0.26s; }
-.stagger-5 { animation-delay: 0.33s; }
-
-.reveal {
-    opacity: 0; transform: translateY(24px);
-    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.reveal.visible { opacity: 1; transform: translateY(0); }
-
-.feature-card {
-    transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
-}
-.feature-card:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 #000;
-}
-.dark .feature-card:hover {
-    box-shadow: 6px 6px 0 rgba(255, 255, 255, 0.25);
-}
-
-.navbar-scrolled {
-    background: #fafafa; /* zinc-50 — sólido, sem blur (neo-brutalista) */
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border-bottom: 2px solid #000;
-    box-shadow: none;
-}
-
-/* ============================================================
-   LANDING CLARA — Efeitos sutis profissionais
-   ============================================================ */
-@keyframes mockupRise {
-    from { opacity: 0; transform: translateY(32px) scale(0.98); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-.mockup-rise {
-    animation: mockupRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
-}
-.mockup-frame {
-    transition: box-shadow 0.15s ease, transform 0.15s ease;
-}
-.mockup-frame:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 12px 12px 0 #000;
-}
-.btn-lift {
-    transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-}
-.btn-lift:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0 #000;
-}
-.btn-lift:active { transform: translate(0, 0); box-shadow: none; }
-.step-num {
-    transition: transform 0.15s ease, background-color 0.15s ease;
-}
-.step-card:hover .step-num {
-    transform: translate(-2px, -2px);
-    box-shadow: 3px 3px 0 #71717a;
-}
-.table-row-hi {
-    transition: background-color 0.1s ease;
-}
-.table-row-hi:hover {
-    background-color: #f4f4f5; /* zinc-100 */
+    animation: fieldShake 0.35s var(--ease-in-out) both;
 }
 .pulse-dot {
-    animation: pulseDot 2s ease-in-out infinite;
+    animation: pulseDot 2s var(--ease-in-out) infinite;
 }
 @keyframes pulseDot {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.55; transform: scale(0.85); }
 }
+.collapsible-chevron {
+    transition: transform var(--dur-slow) var(--ease-out);
+}
+#api-status-dot { animation: pulseDot 2s var(--ease-in-out) infinite; }
+
+/* ============================================================
+   17. LANDING — ENTRY & SCROLL
+   ============================================================ */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fadeInUp 0.6s var(--ease-out) both; }
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.12s; }
+.stagger-3 { animation-delay: 0.19s; }
+.stagger-4 { animation-delay: 0.26s; }
+.stagger-5 { animation-delay: 0.33s; }
+.stagger-6 { animation-delay: 0.40s; }
+
+@keyframes mockupRise {
+    from { opacity: 0; transform: translateY(28px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.mockup-rise { animation: mockupRise 0.8s var(--ease-out) 0.25s both; }
+
+.reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity var(--dur-marketing) var(--ease-out),
+                transform var(--dur-marketing) var(--ease-out);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+.mockup-frame {
+    transition: transform var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+    .mockup-frame:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl);
+    }
+}
+
+/* Navbar scroll state */
+.navbar-scrolled {
+    background: rgba(250,250,250,0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Hero H1 — nunca vira parede de texto no mobile (máx. ~3 linhas) */
+@media (max-width: 639px) {
+    #hero-title {
+        font-size: 2rem;
+        line-height: 1.15;
+    }
+}
+
+/* Overview metric stagger */
+#secao-overview .metric-card {
+    animation: fadeInUp 0.5s var(--ease-out) both;
+}
+#secao-overview .metric-card:nth-child(2) { animation-delay: 0.05s; }
+#secao-overview .metric-card:nth-child(3) { animation-delay: 0.10s; }
+#secao-overview .metric-card:nth-child(4) { animation-delay: 0.15s; }
+#secao-overview .metric-card:nth-child(5) { animation-delay: 0.20s; }
+#secao-overview .metric-card:nth-child(6) { animation-delay: 0.25s; }
+#secao-overview .metric-card:nth-child(7) { animation-delay: 0.30s; }
+#secao-overview .metric-card:nth-child(8) { animation-delay: 0.35s; }
+
+/* Mobile menu */
+#mobile-menu { animation: slideDown var(--dur-base) var(--ease-out); }
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .mockup-rise, .animate-fade-in-up, .reveal {
+    .mockup-rise, .animate-fade-in-up, .reveal,
+    #secao-overview .metric-card, #mobile-menu,
+    .plan-section-open, .input-error-shake, .pulse-dot, .skeleton {
         animation: none;
         opacity: 1;
         transform: none;
@@ -565,50 +711,26 @@ body {
 }
 
 /* ============================================================
-   DASHBOARD — Mesmos efeitos da landing (hover/transição)
+   18. DARK MODE — surface overrides
    ============================================================ */
-.sidebar-link, .sidebar-link-mobile {
-    transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+.dark body { background-color: var(--bg); }
+.dark .metric-card,
+.dark .kanban-card,
+.dark .client-card {
+    background-color: var(--surface);
+    color: var(--text-1);
 }
-.sidebar-link:hover, .sidebar-link-mobile:hover {
-    transform: translateX(2px);
+.dark .bg-white {
+    background-color: var(--surface) !important;
+    color: var(--text-1);
 }
-#tabela-clientes-body tr {
-    transition: background-color 0.15s ease;
+.dark .bg-zinc-50,
+.dark .bg-zinc-100 {
+    background-color: var(--surface-2) !important;
 }
-#tabela-clientes-body tr:hover {
-    background-color: var(--dash-surface-2);
-}
-.dark #tabela-clientes-body tr:hover {
-    background-color: rgba(63, 63, 70, 0.5);
-}
-.kanban-card {
-    transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-.kanban-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--dash-shadow-md);
-}
-.modal-box {
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
-}
-#api-status-dot {
-    animation: pulseDot 2s ease-in-out infinite;
-}
-#secao-overview .metric-card {
-    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-#secao-overview .metric-card:nth-child(2) { animation-delay: 0.05s; }
-#secao-overview .metric-card:nth-child(3) { animation-delay: 0.1s; }
-#secao-overview .metric-card:nth-child(4) { animation-delay: 0.15s; }
-#secao-overview .metric-card:nth-child(5) { animation-delay: 0.2s; }
-#secao-overview .metric-card:nth-child(6) { animation-delay: 0.25s; }
-#secao-overview .metric-card:nth-child(7) { animation-delay: 0.3s; }
-#secao-overview .metric-card:nth-child(8) { animation-delay: 0.35s; }
 
 /* ============================================================
-   DASHBOARD copia a LANDING (modo claro): zinc monocromático.
-   Escopo html:not(.dark) preserva o dark mode e os dots de plano.
+   19. LIGHT MODE — indigo → mono overrides (dashboard legado)
    ============================================================ */
 html:not(.dark) .bg-indigo-600 { background-color: #000000 !important; }
 html:not(.dark) .hover\:bg-indigo-700:hover { background-color: #27272a !important; }
@@ -619,7 +741,7 @@ html:not(.dark) .text-indigo-600,
 html:not(.dark) .text-indigo-700 { color: #09090b !important; }
 html:not(.dark) .text-indigo-400 { color: #52525b !important; }
 html:not(.dark) .border-indigo-200,
-html:not(.dark) .border-indigo-100 { border-color: #000000 !important; }
+html:not(.dark) .border-indigo-100 { border-color: #e4e4e7 !important; }
 html:not(.dark) .bg-indigo-600\/15,
 html:not(.dark) .bg-indigo-500\/10,
 html:not(.dark) .bg-indigo-50\/40,
@@ -628,10 +750,19 @@ html:not(.dark) .bg-indigo-900\/20,
 html:not(.dark) .bg-indigo-900\/40,
 html:not(.dark) .bg-indigo-800\/40 { background-color: #f4f4f5 !important; }
 html:not(.dark) .border-indigo-500\/20,
-html:not(.dark) .border-indigo-200\/60 { border-color: #000000 !important; }
+html:not(.dark) .border-indigo-200\/60 { border-color: #e4e4e7 !important; }
 html:not(.dark) .border-indigo-500\/60,
 html:not(.dark) .border-indigo-400 { border-color: #52525b !important; }
-html:not(.dark) .ring-indigo-500\/30 { --tw-ring-color: rgb(0 0 0 / 0.25) !important; }
+html:not(.dark) .ring-indigo-500\/30 { --tw-ring-color: rgba(0,0,0,0.25) !important; }
 html:not(.dark) .hover\:bg-indigo-50:hover,
 html:not(.dark) .hover\:bg-indigo-100:hover { background-color: #f4f4f5 !important; }
 html:not(.dark) .focus\:border-indigo-500\/60:focus { border-color: #000000 !important; }
+
+/* ============================================================
+   20. UTILITIES
+   ============================================================ */
+.sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
