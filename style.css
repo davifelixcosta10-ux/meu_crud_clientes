@@ -61,6 +61,9 @@ html {
     --dash-shadow-sm:     3px 3px 0 #000000;  /* sombra dura pequena */
     --dash-shadow-md:     6px 6px 0 #000000;  /* sombra dura média */
     --dash-radius:        0px;     /* rounded-none */
+    --ease-out:           cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out:        cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer:        cubic-bezier(0.32, 0.72, 0, 1);
 }
 .dark {
     --dash-bg:            #09090b; /* zinc-950 */
@@ -244,15 +247,17 @@ body {
     border: 2px solid var(--dash-accent);
     box-sizing: border-box;
     box-shadow: none;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     min-height: 108px;
 }
-.metric-card:hover {
+@media (hover: hover) and (pointer: fine) {
+  .metric-card:hover {
     transform: translate(-2px, -2px);
     box-shadow: 5px 5px 0 var(--dash-accent);
+  }
 }
 
 .skeleton {
@@ -336,8 +341,8 @@ body {
    DASHBOARD: Modal
    ============================================================ */
 .modal-box {
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity   0.22s ease-out;
+    transition: transform 0.22s var(--ease-out),
+                opacity   0.22s var(--ease-out);
 }
 @media (max-width: 639px) {
     .modal-container { align-items: flex-end; padding: 0; }
@@ -415,12 +420,14 @@ body {
     padding: 0.75rem;
     box-sizing: border-box;
     cursor: grab;
-    transition: border-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+    transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out), transform 100ms var(--ease-out);
 }
-.kanban-card:hover {
+@media (hover: hover) and (pointer: fine) {
+  .kanban-card:hover {
     border-color: var(--dash-accent);
     box-shadow: 4px 4px 0 var(--dash-accent);
     transform: translate(-1px, -1px);
+  }
 }
 .kanban-card:active { cursor: grabbing; }
 .sortable-ghost {
@@ -488,7 +495,7 @@ body {
     from { opacity: 0; transform: translateY(28px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-fade-in-up { animation: fadeInUp 0.6s var(--ease-out) both; }
 .stagger-1 { animation-delay: 0.05s; }
 .stagger-2 { animation-delay: 0.12s; }
 .stagger-3 { animation-delay: 0.19s; }
@@ -497,20 +504,22 @@ body {
 
 .reveal {
     opacity: 0; transform: translateY(24px);
-    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.6s var(--ease-out),
+                transform 0.6s var(--ease-out);
 }
 .reveal.visible { opacity: 1; transform: translateY(0); }
 
 .feature-card {
-    transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+    transition: box-shadow 0.15s var(--ease-out), transform 0.15s var(--ease-out), border-color 0.15s var(--ease-out);
 }
-.feature-card:hover {
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover {
     transform: translate(-2px, -2px);
     box-shadow: 6px 6px 0 #000;
-}
-.dark .feature-card:hover {
+  }
+  .dark .feature-card:hover {
     box-shadow: 6px 6px 0 rgba(255, 255, 255, 0.25);
+  }
 }
 
 .navbar-scrolled {
@@ -529,35 +538,46 @@ body {
     to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 .mockup-rise {
-    animation: mockupRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+    animation: mockupRise 0.8s var(--ease-out) 0.25s both;
 }
 .mockup-frame {
-    transition: box-shadow 0.15s ease, transform 0.15s ease;
+    transition: box-shadow 0.15s var(--ease-out), transform 0.15s var(--ease-out);
 }
-.mockup-frame:hover {
+@media (hover: hover) and (pointer: fine) {
+  .mockup-frame:hover {
     transform: translate(-2px, -2px);
     box-shadow: 12px 12px 0 #000;
+  }
 }
 .btn-lift {
-    transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    transition: transform 0.1s var(--ease-out), box-shadow 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
 }
-.btn-lift:hover {
+@media (hover: hover) and (pointer: fine) {
+  .btn-lift:hover {
     transform: translate(-2px, -2px);
     box-shadow: 6px 6px 0 #000;
+  }
+  .btn-lift:active {
+    transform: scale(0.97);
+    box-shadow: none;
+  }
 }
-.btn-lift:active { transform: translate(0, 0); box-shadow: none; }
 .step-num {
-    transition: transform 0.15s ease, background-color 0.15s ease;
+    transition: transform 0.15s var(--ease-out), background-color 0.15s var(--ease-out);
 }
-.step-card:hover .step-num {
+@media (hover: hover) and (pointer: fine) {
+  .step-card:hover .step-num {
     transform: translate(-2px, -2px);
     box-shadow: 3px 3px 0 #71717a;
+  }
 }
 .table-row-hi {
-    transition: background-color 0.1s ease;
+    transition: background-color 0.1s var(--ease-out);
 }
-.table-row-hi:hover {
+@media (hover: hover) and (pointer: fine) {
+  .table-row-hi:hover {
     background-color: #f4f4f5; /* zinc-100 */
+  }
 }
 .pulse-dot {
     animation: pulseDot 2s ease-in-out infinite;
@@ -601,7 +621,7 @@ body {
     box-shadow: var(--dash-shadow-md);
 }
 .modal-box {
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out;
+    transition: transform 0.22s var(--ease-out), opacity 0.22s var(--ease-out);
 }
 #api-status-dot {
     animation: pulseDot 2s ease-in-out infinite;
