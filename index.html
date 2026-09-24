@@ -45,7 +45,7 @@
       </div>
       <div class="flex items-center gap-3">
         <button data-action="open-modal" data-modal="modal-login" class="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-[var(--text-1)] hover:text-[var(--accent)] transition-colors">Entrar</button>
-        <button data-action="open-modal" data-modal="modal-register" class="inline-flex px-5 py-2 text-sm font-semibold text-white bg-[var(--accent)] border-2 border-[var(--accent)] rounded-full shadow-[0_4px_0_0_var(--accent)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Criar conta</button>
+        <button data-action="open-modal" data-modal="modal-register" class="inline-flex px-5 py-2 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Criar conta</button>
         <button id="mobile-menu-btn" class="md:hidden p-2 text-[var(--text-1)]" aria-label="Menu" aria-expanded="false"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
       </div>
     </nav>
@@ -64,8 +64,8 @@
         <h1 id="hero-title" class="text-[clamp(2.5rem,5vw,4.5rem)] font-bold tracking-tight leading-tight text-[var(--text-1)] animate-fade-in-up stagger-2">Cadastre, cobre e acompanhe clientes em 1 painel.</h1>
         <p class="mt-5 text-lg text-[var(--text-2)] leading-relaxed max-w-2xl mx-auto animate-fade-in-up stagger-3">Cadastre clientes, defina planos e vencimentos, acompanhe quem pagou e receba lembretes de retorno. Leva 30 segundos para criar a conta.</p>
         <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up stagger-4">
-          <button data-action="open-modal" data-modal="modal-register" class="btn-primary px-7 py-3.5 text-sm font-semibold text-white bg-[var(--accent)] border-2 border-[var(--accent)] rounded-full shadow-[0_4px_0_0_var(--accent)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Criar conta em 30 segundos</button>
-          <a href="#how-it-works" class="btn-ghost inline-flex justify-center px-7 py-3.5 text-sm font-semibold text-[var(--text-1)] bg-transparent border-2 border-[var(--border)] rounded-full hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Ver em 60 segundos</a>
+          <button data-action="open-modal" data-modal="modal-register" class="btn-primary px-7 py-3.5 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Criar conta em 30 segundos</button>
+          <a href="#how-it-works" class="btn-ghost inline-flex justify-center px-7 py-3.5 text-sm font-semibold text-[var(--text-1)] bg-transparent border border-[var(--border)] rounded-full hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Ver em 60 segundos</a>
         </div>
         <div class="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[var(--text-3)] animate-fade-in-up stagger-5">
           <span>Sem cartão de crédito</span>
@@ -77,20 +77,20 @@
       <div class="mockup-frame relative mt-16 mx-auto max-w-5xl animate-fade-in-up stagger-6" role="img" aria-label="Dashboard mockup">
         <div class="absolute top-3 right-3 rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase text-white">30s para criar</div>
         <div class="absolute bottom-3 left-3 rounded-full bg-[var(--surface)]/90 backdrop-blur px-2.5 py-0.5 text-[10px] font-mono text-[var(--text-3)]">Dados de exemplo</div>
-        <div class="border-2 border-[var(--border)] rounded-[1.5rem] overflow-hidden bg-[var(--surface)] shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
-          <div class="flex items-center gap-2 px-4 py-3 border-b-2 border-[var(--border)] bg-[var(--surface-2)]">
+        <div class="border border-[var(--border)] rounded-[1.5rem] overflow-hidden bg-[var(--surface)] shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
+          <div class="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)] bg-[var(--surface-2)]">
             <span class="w-3 h-3 rounded-[0.5rem] bg-[var(--accent)]"></span><span class="w-3 h-3 rounded-[0.5rem] border border-[var(--border)] bg-transparent"></span><span class="w-3 h-3 rounded-[0.5rem] border border-[var(--border)] bg-transparent"></span>
             <span class="ml-3 text-xs text-[var(--text-3)] font-mono">dashboard.daviflow.com</span>
           </div>
           <div class="p-6 grid grid-cols-4 gap-4 text-center">
-            <div class="border-2 border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Total</div><div class="text-2xl font-bold font-mono text-[var(--text-1)] counter" data-target="48">0</div></div>
-            <div class="border-2 border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Ativos</div><div class="text-2xl font-bold font-mono text-[var(--text-1)] counter" data-target="36">0</div></div>
-            <div class="border-2 border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Inativos</div><div class="text-2xl font-bold font-mono text-[var(--text-1)] counter" data-target="12">0</div></div>
-            <div class="border-2 border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Planos</div><div class="text-sm font-mono mt-1 text-[var(--text-1)]">VIP 12 • Básico 20</div></div>
+            <div class="border border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Total</div><div class="text-2xl font-bold font-mono text-[var(--text-1)] counter" data-target="48">0</div></div>
+            <div class="border border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Ativos</div><div class="text-2xl font-bold font-mono text-[var(--text-1)] counter" data-target="36">0</div></div>
+            <div class="border border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Inativos</div><div class="text-2xl font-bold font-mono text-[var(--text-1)] counter" data-target="12">0</div></div>
+            <div class="border border-[var(--border)] rounded-[1rem] p-4 bg-[var(--surface)]"><div class="text-[10px] uppercase tracking-widest text-[var(--text-3)]">Planos</div><div class="text-sm font-mono mt-1 text-[var(--text-1)]">VIP 12 • Básico 20</div></div>
           </div>
           <div class="px-6 pb-6">
-            <div class="border-2 border-[var(--border)] rounded-[1rem] overflow-hidden bg-[var(--surface)]">
-              <div class="grid grid-cols-4 gap-4 px-4 py-3 border-b-2 border-[var(--border)] bg-[var(--surface-2)] text-[10px] font-mono font-semibold uppercase tracking-widest text-[var(--text-3)]"><span>Nome</span><span>Email</span><span>Plano</span><span>Status</span></div>
+            <div class="border border-[var(--border)] rounded-[1rem] overflow-hidden bg-[var(--surface)]">
+              <div class="grid grid-cols-4 gap-4 px-4 py-3 border-b border-[var(--border)] bg-[var(--surface-2)] text-[10px] font-mono font-semibold uppercase tracking-widest text-[var(--text-3)]"><span>Nome</span><span>Email</span><span>Plano</span><span>Status</span></div>
               <div class="divide-y divide-[var(--border)]">
                 <div class="grid grid-cols-4 gap-4 px-4 py-3 text-sm"><span>Ana Lima</span><span class="text-[var(--text-3)] font-mono">ana.exemplo@</span><span>Ouro</span><span class="font-mono bg-[var(--accent)] text-white px-2 rounded-[0.5rem] w-fit">Ativo</span></div>
                 <div class="grid grid-cols-4 gap-4 px-4 py-3 text-sm"><span>Carlos M.</span><span class="text-[var(--text-3)] font-mono">carlos.exemplo@</span><span>Prata</span><span class="font-mono bg-[var(--accent)] text-white px-2 rounded-[0.5rem] w-fit">Ativo</span></div>
@@ -109,18 +109,18 @@
           <p class="mt-3 text-[var(--text-2)]">Três recursos que cobrem a rotina: registrar clientes, controlar pagamentos e ver números.</p>
         </header>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 grid-auto-flow-dense">
-          <article class="feature-card reveal border-2 border-[var(--border)] rounded-[1.5rem] p-6 bg-[var(--surface)]">
-            <div class="w-10 h-10 rounded-[1rem] border-2 border-[var(--border)] flex items-center justify-center mb-4"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>
+          <article class="feature-card reveal border border-[var(--border)] rounded-[1.5rem] p-6 bg-[var(--surface)]">
+            <div class="w-10 h-10 rounded-[1rem] border border-[var(--border)] flex items-center justify-center mb-4"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>
             <h3 class="text-sm font-semibold text-[var(--text-1)]">Cadastro com filtros</h3>
             <p class="mt-2 text-sm text-[var(--text-2)] leading-relaxed">Registre nome, contato, plano e etapa. Filtre por status, plano, etapa ou tag.</p>
           </article>
-          <article class="feature-card reveal border-2 border-[var(--border)] rounded-[1.5rem] p-6 bg-[var(--accent)] text-white">
-            <div class="w-10 h-10 rounded-[1rem] border-2 border-white/20 flex items-center justify-center mb-4"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
+          <article class="feature-card reveal border border-[var(--border)] rounded-[1.5rem] p-6 bg-[var(--accent)] text-white">
+            <div class="w-10 h-10 rounded-[1rem] border border-white/20 flex items-center justify-center mb-4"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
             <h3 class="text-sm font-semibold">Cobrança e métricas</h3>
             <p class="mt-2 text-sm text-white/80 leading-relaxed">Defina valor e vencimento por cliente. Veja receita prevista, inadimplentes, churn e LTV.</p>
           </article>
-          <article class="feature-card reveal border-2 border-[var(--border)] rounded-[1.5rem] p-6 bg-[var(--surface)]">
-            <div class="w-10 h-10 rounded-[1rem] border-2 border-[var(--border)] flex items-center justify-center mb-4"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+          <article class="feature-card reveal border border-[var(--border)] rounded-[1.5rem] p-6 bg-[var(--surface)]">
+            <div class="w-10 h-10 rounded-[1rem] border border-[var(--border)] flex items-center justify-center mb-4"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
             <h3 class="text-sm font-semibold text-[var(--text-1)]">Equipe com permissões</h3>
             <p class="mt-2 text-sm text-[var(--text-2)] leading-relaxed">Convide membros por email. Administradores gerenciam tudo, membros operam o dia a dia.</p>
           </article>
@@ -135,21 +135,21 @@
         </header>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 grid-auto-flow-dense">
           <article class="step-card reveal flex gap-4">
-            <span class="step-num w-12 h-12 flex-shrink-0 rounded-full bg-[var(--accent)] text-white border-2 border-[var(--accent)] flex items-center justify-center text-base font-bold font-mono">01</span>
+            <span class="step-num w-12 h-12 flex-shrink-0 rounded-full bg-[var(--accent)] text-white border border-[var(--accent)] flex items-center justify-center text-base font-bold font-mono">01</span>
             <div>
               <h3 class="text-sm font-semibold text-[var(--text-1)]">Crie a conta</h3>
               <p class="text-sm text-[var(--text-2)] mt-1">30 segundos, sem cartão.</p>
             </div>
           </article>
           <article class="step-card reveal flex gap-4">
-            <span class="step-num w-12 h-12 flex-shrink-0 rounded-full bg-[var(--accent)] text-white border-2 border-[var(--accent)] flex items-center justify-center text-base font-bold font-mono">02</span>
+            <span class="step-num w-12 h-12 flex-shrink-0 rounded-full bg-[var(--accent)] text-white border border-[var(--accent)] flex items-center justify-center text-base font-bold font-mono">02</span>
             <div>
               <h3 class="text-sm font-semibold text-[var(--text-1)]">Cadastre clientes</h3>
               <p class="text-sm text-[var(--text-2)] mt-1">Nome, email, plano, etapa.</p>
             </div>
           </article>
           <article class="step-card reveal flex gap-4">
-            <span class="step-num w-12 h-12 flex-shrink-0 rounded-full bg-[var(--accent)] text-white border-2 border-[var(--accent)] flex items-center justify-center text-base font-bold font-mono">03</span>
+            <span class="step-num w-12 h-12 flex-shrink-0 rounded-full bg-[var(--accent)] text-white border border-[var(--accent)] flex items-center justify-center text-base font-bold font-mono">03</span>
             <div>
               <h3 class="text-sm font-semibold text-[var(--text-1)]">Acompanhe</h3>
               <p class="text-sm text-[var(--text-2)] mt-1">Kanban e relatórios com período.</p>
@@ -157,14 +157,14 @@
           </article>
         </div>
         <div class="mt-12 text-center reveal">
-          <button data-action="open-modal" data-modal="modal-register" class="btn-primary px-7 py-3.5 text-sm font-semibold text-white bg-[var(--accent)] border-2 border-[var(--accent)] rounded-full shadow-[0_4px_0_0_var(--accent)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Começar gratuitamente agora</button>
+          <button data-action="open-modal" data-modal="modal-register" class="btn-primary px-7 py-3.5 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Começar gratuitamente agora</button>
         </div>
       </div>
     </section>
 
     <section id="about" class="py-24 md:py-32 px-4 border-t border-[var(--border)]" aria-labelledby="about-title">
       <div class="max-w-6xl mx-auto">
-        <article class="reveal border-2 border-[var(--border)] rounded-[2rem] p-8 md:p-12 bg-[var(--surface)] shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
+        <article class="reveal border border-[var(--border)] rounded-[2rem] p-8 md:p-12 bg-[var(--surface)] shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
           <h2 id="about-title" class="text-[clamp(1.5rem,2.5vw,2rem)] font-bold text-[var(--text-1)]">Feito para quem atende cliente todo dia.</h2>
           <div class="mt-6 space-y-3 text-sm text-[var(--text-2)] leading-relaxed font-mono">
             <p>Clínica: retorno em 30 dias.</p>
@@ -172,9 +172,9 @@
             <p>Academia: mensalidade vencida.</p>
           </div>
           <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="border-2 border-[var(--border)] rounded-[1.5rem] p-5 bg-[var(--surface-2)]"><div class="font-semibold text-[var(--text-1)]">Acesso controlado</div><div class="text-[var(--text-2)] mt-2 text-sm">Cada conta vê só os próprios dados. Convites por email.</div></div>
-            <div class="border-2 border-[var(--border)] rounded-[1.5rem] p-5 bg-[var(--surface-2)]"><div class="font-semibold text-[var(--text-1)]">Lembretes automáticos</div><div class="text-[var(--text-2)] mt-2 text-sm">Avisos de vencimento e clientes sem retorno.</div></div>
-            <div class="border-2 border-[var(--border)] rounded-[1.5rem] p-5 bg-[var(--surface-2)]"><div class="font-semibold text-[var(--text-1)]">Funciona no celular</div><div class="text-[var(--text-2)] mt-2 text-sm">Painel adaptado para atender entre um cliente e outro.</div></div>
+            <div class="border border-[var(--border)] rounded-[1.5rem] p-5 bg-[var(--surface-2)]"><div class="font-semibold text-[var(--text-1)]">Acesso controlado</div><div class="text-[var(--text-2)] mt-2 text-sm">Cada conta vê só os próprios dados. Convites por email.</div></div>
+            <div class="border border-[var(--border)] rounded-[1.5rem] p-5 bg-[var(--surface-2)]"><div class="font-semibold text-[var(--text-1)]">Lembretes automáticos</div><div class="text-[var(--text-2)] mt-2 text-sm">Avisos de vencimento e clientes sem retorno.</div></div>
+            <div class="border border-[var(--border)] rounded-[1.5rem] p-5 bg-[var(--surface-2)]"><div class="font-semibold text-[var(--text-1)]">Funciona no celular</div><div class="text-[var(--text-2)] mt-2 text-sm">Painel adaptado para atender entre um cliente e outro.</div></div>
           </div>
         </article>
       </div>
@@ -198,7 +198,7 @@
 
   <div class="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[var(--surface)] border-t border-[var(--border)] px-4 py-3 flex items-center justify-between gap-3">
     <div><p class="text-xs font-semibold text-[var(--text-1)]">Pronto para começar?</p><p class="text-xs text-[var(--text-3)]">Sem cartão • Cancele quando quiser</p></div>
-    <button data-action="open-modal" data-modal="modal-register" class="px-5 py-2 text-sm font-semibold text-white bg-[var(--accent)] border-2 border-[var(--accent)] rounded-full active:scale-[0.97] transition-transform duration-160 ease-[var(--ease-out)]">Criar conta</button>
+    <button data-action="open-modal" data-modal="modal-register" class="px-5 py-2 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full active:scale-[0.97] transition-transform duration-160 ease-[var(--ease-out)]">Criar conta</button>
   </div>
 
   <dialog id="modal-login" class="modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
@@ -206,10 +206,10 @@
     <div class="modal-box rounded-[2rem] p-6 md:p-8 max-w-md w-full mx-4">
       <header class="flex items-start justify-between mb-6"><div><h2 id="login-title" class="text-lg font-bold text-[var(--text-1)]">Bem-vindo de volta</h2><p class="text-sm text-[var(--text-2)]">Entre na sua conta.</p></div><button data-action="close-modal" class="p-2 text-[var(--text-3)] hover:text-[var(--accent)] rounded-full transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></header>
       <form id="form-login" class="space-y-4" novalidate>
-        <div><label for="login-email" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">E-mail</label><input type="email" id="login-email" required autocomplete="email" placeholder="seu@email.com" class="input mt-1 w-full px-4 py-3 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
-        <div><div class="flex items-center justify-between"><label for="login-password" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Senha</label><a href="#" data-action="forgot-password" class="text-xs text-[var(--accent)] underline">Esqueci a senha</a></div><input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" class="input mt-1 w-full px-4 py-3 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
-        <div id="login-error" class="hidden px-4 py-3 rounded-full bg-[var(--surface-2)] border-2 border-[var(--border)] text-[var(--text-1)] text-sm items-center gap-2"><span id="login-error-text" class="font-mono text-xs"></span></div>
-        <button type="submit" class="btn-primary w-full py-3 text-sm font-semibold text-white bg-[var(--accent)] border-2 border-[var(--accent)] rounded-full shadow-[0_4px_0_0_var(--accent)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Entrar na minha conta</button>
+        <div><label for="login-email" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">E-mail</label><input type="email" id="login-email" required autocomplete="email" placeholder="seu@email.com" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <div><div class="flex items-center justify-between"><label for="login-password" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Senha</label><a href="#" data-action="forgot-password" class="text-xs text-[var(--accent)] underline">Esqueci a senha</a></div><input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <div id="login-error" class="hidden px-4 py-3 rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-1)] text-sm items-center gap-2"><span id="login-error-text" class="font-mono text-xs"></span></div>
+        <button type="submit" class="btn-primary w-full py-3 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Entrar na minha conta</button>
       </form>
       <p class="mt-5 text-center text-sm text-[var(--text-2)]">Não tem conta? <button data-action="switch-modal" data-target="modal-register" class="font-semibold text-[var(--accent)] underline">Criar conta grátis</button></p>
     </div>
@@ -220,12 +220,12 @@
     <div class="modal-box rounded-[2rem] p-6 md:p-8 max-w-md w-full mx-4">
       <header class="flex items-start justify-between mb-6"><div><h2 id="register-title" class="text-lg font-bold text-[var(--text-1)]">Crie sua conta grátis</h2><p class="text-sm text-[var(--text-2)]">Sem cartão. Cancele quando quiser.</p></div><button data-action="close-modal" class="p-2 text-[var(--text-3)] hover:text-[var(--accent)] rounded-full transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></header>
       <form id="form-register" class="space-y-3" novalidate>
-        <div><label for="signup-nome" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Nome</label><input type="text" id="signup-nome" required autocomplete="name" placeholder="Seu nome" class="input mt-1 w-full px-4 py-3 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
-        <div><label for="signup-email" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">E-mail</label><input type="email" id="signup-email" required autocomplete="email" placeholder="seu@email.com" class="input mt-1 w-full px-4 py-3 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
-        <div><label for="signup-senha" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Senha</label><input type="password" id="signup-senha" required autocomplete="new-password" placeholder="Mínimo 8 caracteres" class="input mt-1 w-full px-4 py-3 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
-        <div><label for="signup-confirm-senha" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Confirmar senha</label><input type="password" id="signup-confirm-senha" required autocomplete="new-password" placeholder="Repita a senha" class="input mt-1 w-full px-4 py-3 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <div><label for="signup-nome" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Nome</label><input type="text" id="signup-nome" required autocomplete="name" placeholder="Seu nome" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <div><label for="signup-email" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">E-mail</label><input type="email" id="signup-email" required autocomplete="email" placeholder="seu@email.com" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <div><label for="signup-senha" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Senha</label><input type="password" id="signup-senha" required autocomplete="new-password" placeholder="Mínimo 8 caracteres" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
+        <div><label for="signup-confirm-senha" class="text-xs font-semibold uppercase tracking-widest text-[var(--text-3)]">Confirmar senha</label><input type="password" id="signup-confirm-senha" required autocomplete="new-password" placeholder="Repita a senha" class="input mt-1 w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200"></div>
         <label class="flex items-start gap-2 text-xs text-[var(--text-3)]"><input type="checkbox" id="register-terms" required class="mt-1 w-4 h-4 accent-[var(--accent)]"> Concordo com <a href="/termos.html" class="underline hover:text-[var(--accent)]">Termos</a> e <a href="/privacidade.html" class="underline hover:text-[var(--accent)]">Privacidade</a></label>
-        <button type="submit" class="btn-primary w-full py-3 text-sm font-semibold text-white bg-[var(--accent)] border-2 border-[var(--accent)] rounded-full shadow-[0_4px_0_0_var(--accent)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Criar conta grátis</button>
+        <button type="submit" class="btn-primary w-full py-3 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Criar conta grátis</button>
       </form>
       <p class="mt-5 text-center text-sm text-[var(--text-2)]">Já tem conta? <button data-action="switch-modal" data-target="modal-login" class="font-semibold text-[var(--accent)] underline">Entrar</button></p>
     </div>
@@ -236,9 +236,9 @@
     <div class="modal-box rounded-[2rem] p-6 md:p-8 max-w-md w-full mx-4">
       <header class="mb-6"><h2 id="recovery-title" class="text-lg font-bold text-[var(--text-1)]">Definir nova senha</h2><p class="text-sm text-[var(--text-2)] mt-1">Token de recuperação detectado.</p></header>
       <form id="form-recovery" class="space-y-3" novalidate>
-        <input type="password" id="recovery-password" placeholder="Nova senha (mín 8)" required class="input w-full px-4 py-3 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200">
-        <input type="password" id="recovery-confirm" placeholder="Confirmar" required class="input w-full px-4 py-3 rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200">
-        <button type="submit" class="btn-primary w-full py-3 text-sm font-semibold text-white bg-[var(--accent)] border-2 border-[var(--accent)] rounded-full shadow-[0_4px_0_0_var(--accent)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Atualizar senha</button>
+        <input type="password" id="recovery-password" placeholder="Nova senha (mín 8)" required class="input w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200">
+        <input type="password" id="recovery-confirm" placeholder="Confirmar" required class="input w-full px-4 py-3 rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-1)] placeholder-[var(--text-3)] text-sm focus:border-[var(--accent)] focus:outline-none transition-colors duration-200">
+        <button type="submit" class="btn-primary w-full py-3 text-sm font-semibold text-white bg-[var(--accent)] border border-[var(--accent)] rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-[var(--accent)]/90 active:scale-[0.97] transition-all duration-160 ease-[var(--ease-out)]">Atualizar senha</button>
       </form>
     </div>
   </dialog>
