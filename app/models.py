@@ -1114,6 +1114,8 @@ class Automacao(BaseModel):
     tipo: str
     ativo: bool = True
     config: Optional[dict] = None
+    canal: Optional[str] = "interno"  # 'interno' | 'whatsapp'
+    template_id: Optional[Union[int, str]] = None
     created_at: Optional[str] = None
 
     class Config:
@@ -1123,6 +1125,36 @@ class Automacao(BaseModel):
 class AutomacaoUpdate(BaseModel):
     ativo: Optional[bool] = None
     config: Optional[dict] = None
+    canal: Optional[str] = None  # 'interno' | 'whatsapp'
+    template_id: Optional[Union[int, str]] = None
+
+    @validator("canal")
+    def canal_must_be_valid(cls, v):
+        if v is None:
+            return v
+        if v not in ("interno", "whatsapp"):
+            raise ValueError("canal deve ser 'interno' ou 'whatsapp'")
+        return v
+
+
+# ============================================================
+# MODELOS FASE 4 — WhatsApp automático
+# ============================================================
+
+class NotificacaoLog(BaseModel):
+    id: str
+    org_id: str
+    cliente_id: Union[int, str]
+    tipo: str
+    canal: str
+    status: str  # pendente | enviado | erro
+    mensagem: Optional[str] = None
+    erro: Optional[str] = None
+    created_at: Optional[str] = None
+    sent_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 # ============================================================

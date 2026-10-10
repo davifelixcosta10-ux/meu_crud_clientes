@@ -61,7 +61,7 @@ from app.models import (
     Vertical, VerticalCreate, VerticalUpdate,
     UsuarioMe, UsuarioUpdate, AlterarSenhaRequest,
     Template, TemplateCreate, TemplateUpdate,
-    Automacao, AutomacaoUpdate,
+    Automacao, AutomacaoUpdate, NotificacaoLog,
     WhatsAppEnvioRequest, WhatsAppEnvioResponse,
     CheckoutRequest,
 )
@@ -88,6 +88,7 @@ from app.storage import (
     get_usuario_me, update_usuario_me, alterar_senha_usuario,
     listar_templates, criar_template, atualizar_template, deletar_template,
     listar_automacoes, atualizar_automacao, run_automacoes_manual,
+    listar_notificacoes,
     registrar_pagamento, atualizar_pagamento_status_por_customer, get_billing_status,
 )
 
@@ -1520,6 +1521,24 @@ async def post_run_automacoes(user_id: str = Depends(obter_user_id)):
     except Exception as e:
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao executar automações")
+
+
+# ============================================================
+# NOTIFICAÇÕES — Fase 4 (WhatsApp automático)
+# ============================================================
+@app.get("/api/notificacoes", response_model=list[NotificacaoLog], tags=["Notificações"])
+async def get_notificacoes(org_id: str, limite: int = 100, user_id: str = Depends(obter_user_id)):
+    """Lista o log de notificações da org (qualquer membro pode ler), mais recentes primeiro."""
+    try:
+        return listar_notificacoes(user_id, org_id, limite)
+    except ValueError as e:
+        msg = str(e).lower()
+        if "negado" in msg or "inválido" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar notificações")
 
 
 

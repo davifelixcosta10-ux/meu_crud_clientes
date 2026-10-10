@@ -2481,10 +2481,14 @@ def listar_automacoes(user_id: str, org_id: str | None = None) -> list[dict]:
 
 def atualizar_automacao(automacao_id: str, dados: dict, user_id: str) -> dict | None:
     supabase = get_supabase_client()
+    org_id = None
     try:
         cur = supabase.table("automacoes").select("org_id").eq("id", automacao_id).execute()
         if cur.data and cur.data[0].get("org_id"):
             _verificar_admin(user_id, cur.data[0].get("org_id"))
+            org_id = cur.data[0].get("org_id")
+        else:
+            org_id = None
     except ValueError:
         raise
     except Exception:
@@ -2492,8 +2496,81 @@ def atualizar_automacao(automacao_id: str, dados: dict, user_id: str) -> dict | 
     dados_f = {k: v for k, v in dados.items() if v is not None}
     if not dados_f:
         return None
+    # Fase 4: template_id deve existir e pertencer à MESMA org da automação
+    if "template_id" in dados_f and org_id:
+        tpl = (
+            supabase.table("templates_whatsapp")
+            .select("id")
+            .eq("id", dados_f["template_id"])
+            .eq("org_id", org_id)
+            .limit(1)
+            .execute()
+        )
+        if not tpl.data:
+            raise ValueError("Template não encontrado na organização")
     res = supabase.table("automacoes").update(dados_f).eq("id", automacao_id).execute()
     return res.data[0] if res.data else None
+
+
+# ============================================================
+# FASE 4 — WhatsApp automático (notificacoes_log)
+# ============================================================
+
+def registrar_notificacao(org_id: str, cliente_id, tipo: str, canal: str,
+                          status: str, mensagem: str | None = None,
+                          erro: str | None = None) -> dict:
+    """Registra envio de notificação em notificacoes_log (org-scoped)."""
+    if not org_id or not _validar_uuid(org_id):
+        raise ValueError("org_id inválido")
+    supabase = get_supabase_client()
+    payload = {
+        "org_id": org_id,
+        "cliente_id": cliente_id,
+        "tipo": tipo,
+        "canal": canal,
+        "status": status,
+        "mensagem": mensagem,
+        "erro": erro,
+    }
+    r = supabase.table("notificacoes_log").insert(payload).execute()
+    return r.data[0] if r.data else {}
+
+
+def notificacao_recente_24h(org_id: str, cliente_id, tipo: str) -> bool:
+    """True se já houve notificação do mesmo tipo para o cliente nas últimas 24h."""
+    if not org_id or not _validar_uuid(org_id):
+        raise ValueError("org_id inválido")
+    supabase = get_supabase_client()
+    iso_24h_atras = (
+        __import__("datetime").datetime.utcnow() - __import__("datetime").timedelta(hours=24)
+    ).isoformat()
+    r = (
+        supabase.table("notificacoes_log")
+        .select("id")
+        .eq("org_id", org_id)
+        .eq("cliente_id", cliente_id)
+        .eq("tipo", tipo)
+        .gte("created_at", iso_24h_atras)
+        .limit(1)
+        .execute()
+    )
+    return bool(r.data)
+
+
+def listar_notificacoes(user_id: str, org_id: str, limite: int = 100) -> list[dict]:
+    """Lista notificações da org (qualquer membro pode ler), mais recentes primeiro."""
+    _verificar_membro(user_id, org_id)
+    limite = max(1, min(200, int(limite)))
+    supabase = get_supabase_client()
+    r = (
+        supabase.table("notificacoes_log")
+        .select("*")
+        .eq("org_id", org_id)
+        .order("created_at", desc=True)
+        .limit(limite)
+        .execute()
+    )
+    return r.data or []
 
 def run_automacoes_manual() -> dict:
     """Dispara run_automacoes() manualmente (para teste/preview sem esperar cron)."""
