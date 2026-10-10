@@ -25,6 +25,7 @@ Tabelas Supabase:
 import os
 import re
 import logging
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
@@ -2541,9 +2542,7 @@ def notificacao_recente_24h(org_id: str, cliente_id, tipo: str) -> bool:
     if not org_id or not _validar_uuid(org_id):
         raise ValueError("org_id inválido")
     supabase = get_supabase_client()
-    iso_24h_atras = (
-        __import__("datetime").datetime.utcnow() - __import__("datetime").timedelta(hours=24)
-    ).isoformat()
+    iso_24h_atras = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
     r = (
         supabase.table("notificacoes_log")
         .select("id")
