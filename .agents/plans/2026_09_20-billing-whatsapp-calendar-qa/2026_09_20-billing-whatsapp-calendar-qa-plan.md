@@ -112,11 +112,11 @@ Description: org configures Evolution/Meta credentials and can send a test messa
 
 Description: `run_automacoes()` and manual "Rodar agora" dispatch WhatsApp messages with templates, with dedupe log.
 
-- [ ] Migration `009_fase_whatsapp_automacoes.sql`: `automacoes.canal` + `automacoes.template_id` + `notificacoes_log` table + RLS.
-- [ ] Backend: when `canal='whatsapp'`, resolve org `templates_whatsapp` (fallback default per tipo), interpolate `{{nome}}/{{placa}}/{{valor}}/{{vencimento}}`, call `enviar_whatsapp`, insert `notificacoes_log` row (status sent/erro), skip if log entry <24h for same cliente+tipo.
-- [ ] `Config -> Notificacoes`: per-automation channel select (`Interno` / `Interno + WhatsApp`) + template picker (filtered by vertical).
-- [ ] Tests: run automations with mocked sender -> log rows created, no duplicates within 24h, missing WhatsApp config falls back to internal-only.
-- [ ] Verify the changes (per verification command). Fix issues if any.
+- [x] Migration `009_fase_whatsapp_automacoes.sql`: `automacoes.canal` + `automacoes.template_id` + `notificacoes_log` table + RLS.
+- [x] Backend: when `canal='whatsapp'`, resolve org `templates_whatsapp` (fallback default per tipo), interpolate `{{nome}}/{{placa}}/{{valor}}/{{vencimento}}`, call `enviar_whatsapp`, insert `notificacoes_log` row (status sent/erro), skip if log entry <24h for same cliente+tipo.
+- [x] `Config -> Notificacoes`: per-automation channel select (`Interno` / `Interno + WhatsApp`) + template picker (filtered by vertical).
+- [x] Tests: run automations with mocked sender -> log rows created, no duplicates within 24h, missing WhatsApp config falls back to internal-only.
+- [x] Verify the changes (per verification command). Fix issues if any.
 - [ ] STOP. Present the changes to the user for review and suggest commit messages. Do NOT proceed to the next phase until the user explicitly asks.
 
 ### Phase 5: Real Google Calendar
@@ -147,6 +147,6 @@ Description: harden tests and docs; no new features.
 
 ## Next step
 
-Implement Phase 1 (Stripe foundation: schema + webhook + status), pending Stripe account/env vars from the user.
+Phase 4 (WhatsApp automatic dispatch) implemented on branch `feat/whatsapp-fase4` — awaiting Preview approval before `merge --no-ff` into `main`. Next up: Phase 5 (Real Google Calendar).
 
 Plan created by 🐢 💨 (Turbotuga™, [Codely](https://codely.com)'s mascot).

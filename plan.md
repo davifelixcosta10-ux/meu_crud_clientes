@@ -1,6 +1,6 @@
 # DaviFlow — Plano de Evolução Atualizado (2026-09-20)
 
-> **Status `main@9ad5981`: Fase 1 ✅, 2A ✅, 2B ✅, 2C ✅, 3A-3C ✅, 4A-4C ✅. Neo-Brutalista monocromático ✅ (landing + dashboard + legais). 3D pausado (Stripe). Próximo: Consolidação QA ou 2B refinamento.**
+> **Status `main@9ad5981`: Fase 1 ✅, 2A ✅, 2B ✅, 2C ✅, 3A-3C ✅, 4A-4C ✅. Neo-Brutalista monocromático ✅ (landing + dashboard + legais). 3D pausado (Stripe). WhatsApp automático ✅ implementado na branch `feat/whatsapp-fase4` (aguardando Preview). Próximo: Consolidação QA ou Fase 5 Calendar.**
 
 ## Resumo Fase Atual (15 merges, 55+ rotas)
 
@@ -20,6 +20,7 @@
 | Org | ✅ 2026-09-02 | direto → `f267a98` | `supabase/migrations 001-007` + `README` |
 | Neo-Brutalista | ✅ 2026-09-20 | `feat/landing-neo-brutalista` → `9ad5981` | Tema monocromático 60-30-10 (zinc-50/zinc-800/preto) em `index/404/privacidade/termos/dashboard.html` + `app.js` + `style.css` |
 | 3D-1 Stripe fundação | 🟡 Preview | `feat/fase3d-billing-fundacao` | `pagamentos` + RLS, `POST /api/billing/webhook` (assinatura verificada, idempotente, 503 sem env), `GET /api/billing/status`, 6 testes |
+| WhatsApp automático | ✅ Preview | `feat/whatsapp-fase4` | Migration `009` (`automacoes.canal`/`template_id`, `notificacoes_log`), motor de dispatch com dedupe 24h, `GET /api/notificacoes`, UI `Config → Notificações` — implementada na branch `feat/whatsapp-fase4`, aguardando Preview |
 
 ## Próximo Plano — Consolidação (1-2 dias) + 3D Backlog
 

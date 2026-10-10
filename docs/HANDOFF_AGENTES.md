@@ -25,8 +25,8 @@ CRM multi-tenant open-source para freelancers, clínicas, oficinas, dentistas e 
 | 3D-1 Stripe fundação (migration 008, webhook, `/api/billing/status`) | ✅ mergeado | `feat/fase3d-billing-fundacao` |
 | 3D-2 Checkout + UI Conta (Assinatura em Config→Conta) | ✅ mergeado | `feat/fase2-checkout-conta-ui` |
 | Fase 3 WhatsApp config + envio manual (`/api/whatsapp/enviar`) | ✅ mergeado | `feat/fase3-whatsapp-config` |
-| **Fase 4 — WhatsApp automático** (`notificacoes_log`, templates, dedupe 24h, migration 009) | ⬜ **próxima** | — |
-| Fase 5 — Google Calendar OAuth real | ⬜ | — |
+| **Fase 4 — WhatsApp automático** (`notificacoes_log`, templates, dedupe 24h, migration 009) | ✅ implementada — `feat/whatsapp-fase4` (aguardando Preview) | `feat/whatsapp-fase4` |
+| Fase 5 — Google Calendar OAuth real | ⬜ **próxima** | — |
 | Fase 6 — Consolidação QA | ⬜ | — |
 
 Plano detalhado (fonte da verdade das próximas fases): `.agents/plans/2026_09_20-billing-whatsapp-calendar-qa/2026_09_20-billing-whatsapp-calendar-qa-plan.md`.
