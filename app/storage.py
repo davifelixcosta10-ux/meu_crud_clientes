@@ -1570,6 +1570,19 @@ def criar_organizacao(user_id: str, nome: str) -> dict:
                         break
                     last_err = e2
                     continue
+            # seed best-effort das automações padrão (inativo_30d / vence_3d).
+            # Nunca pode derrubar o signup — fallback para admin client (RLS no signup sem JWT).
+            try:
+                seed = [
+                    {"org_id": org["id"], "tipo": "inativo_30d", "ativo": True},
+                    {"org_id": org["id"], "tipo": "vence_3d", "ativo": True},
+                ]
+                try:
+                    supabase.table("automacoes").upsert(seed, on_conflict="org_id,tipo").execute()
+                except Exception:
+                    get_supabase_admin_client().table("automacoes").upsert(seed, on_conflict="org_id,tipo").execute()
+            except Exception:
+                pass
             org["papel"] = "admin"
             return org
         except Exception as e:
@@ -1946,8 +1959,8 @@ def criar_integracao(dados: dict, user_id: str, org_id: str | None = None) -> di
     if oid:
         payload["org_id"] = oid
     # valida tipo
-    if payload["tipo"] not in ("calendar","zapier","contaazul","webhook"):
-        raise ValueError("tipo deve ser calendar, zapier, contaazul ou webhook")
+    if payload["tipo"] not in ("calendar","zapier","contaazul","webhook","whatsapp"):
+        raise ValueError("tipo deve ser calendar, zapier, contaazul, webhook ou whatsapp")
     res = supabase.table("integracoes").insert(payload).execute()
     if not res.data:
         raise ValueError("Falha ao criar integração")

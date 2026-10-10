@@ -1621,15 +1621,16 @@ async function salvarConfigWhatsApp() {
         return;
     }
     
+    
     const config = {
         provider: provedor,
         base_url: baseUrl,
-        ...(provedor === 'evolution' ? { instancia: instancia } : { phone_number_id: phoneNumberId }),
+        ...(provedor === 'evolution' ? { instance: instancia } : { phone_number_id: phoneNumberId }),
         token: token
     };
     
     try {
-        const payload = { config: JSON.stringify(config) };
+        const payload = { config: config };
         const resp = await fetchAuth(`${API_BASE_URL}/integracoes/whatsapp`, { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
@@ -5450,7 +5451,7 @@ async function atualizarAssinaturaUI() {
     if (!statusEl) return;
     
     try {
-        const response = await fetchAuth(`${API_BASE_URL}/api/billing/status?org_id=${currentOrgId}`, {
+        const response = await fetchAuth(`${API_BASE_URL}/billing/status?org_id=${currentOrgId}`, {
             method: 'GET'
         });
         
