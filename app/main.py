@@ -88,7 +88,7 @@ from app.storage import (
     get_usuario_me, update_usuario_me, alterar_senha_usuario,
     listar_templates, criar_template, atualizar_template, deletar_template,
     listar_automacoes, atualizar_automacao, run_automacoes_manual,
-    listar_notificacoes,
+    listar_notificacoes, processar_notificacoes_pendentes,
     registrar_pagamento, atualizar_pagamento_status_por_customer, get_billing_status,
 )
 
@@ -1505,14 +1505,29 @@ async def patch_automacao(automacao_id: str, dados: AutomacaoUpdate, user_id: st
 
 @app.post("/api/automacoes/run", tags=["Automações"])
 async def post_run_automacoes(user_id: str = Depends(obter_user_id)):
-    """Dispara automações manualmente (para teste, sem esperar cron). Apenas admin."""
+    """Dispara automações manualmente (para teste, sem esperar cron). Apenas admin.
+
+    Pipeline completo: run_automacoes() insere pendentes (canal whatsapp) e
+    o motor de dispatch envia via Evolution/Meta na sequência.
+    """
     try:
         # verifica se user é admin de alguma org (ou da default)
-        from app.storage import _get_default_org_id, _verificar_admin
+        from app.storage import _get_default_org_id, _verificar_admin, processar_notificacoes_pendentes
         oid = _get_default_org_id(user_id)
         if oid:
             _verificar_admin(user_id, oid)
-        return run_automacoes_manual()
+        resultado = {"status": "ok"}
+        run_automacoes_manual()
+        # Limitação conhecida: o pg_cron diário só insere pendentes; o envio
+        # efetivo acontece aqui ou via /api/notificacoes/processar (serverless
+        # Vercel não tem worker de fundo — aceito nesta fase).
+        try:
+            resultado["notificacoes"] = processar_notificacoes_pendentes(oid)
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            # Erro no dispatch não derruba a run — pendentes ficam para retry manual
+            resultado["notificacoes"] = {"processadas": 0, "enviadas": 0, "erros": 0}
+        return resultado
     except ValueError as e:
         msg = str(e).lower()
         if "admin" in msg or "permiss" in msg:
@@ -1521,6 +1536,31 @@ async def post_run_automacoes(user_id: str = Depends(obter_user_id)):
     except Exception as e:
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao executar automações")
+
+
+@app.post("/api/notificacoes/processar", tags=["Notificações"])
+@limiter.limit("5/minute")
+async def post_processar_notificacoes(request: Request, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Processa notificações pendentes da org (motor de dispatch WhatsApp). Apenas admin.
+
+    O pg_cron diário (migration 009) apenas insere rows 'pendente' — o envio
+    efetivo acontece nesta rota (serverless Vercel não tem worker de fundo).
+    """
+    try:
+        from app.storage import _get_default_org_id, _verificar_admin
+        oid = org_id or _get_default_org_id(user_id)
+        if oid:
+            _verificar_admin(user_id, oid)
+        resultado = processar_notificacoes_pendentes(oid)
+        return {"status": "ok", "notificacoes": resultado}
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg or "negado" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao processar notificações")
 
 
 # ============================================================

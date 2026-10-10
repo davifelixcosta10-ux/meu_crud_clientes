@@ -151,6 +151,7 @@ let viewMode = localStorage.getItem('daviflow_view') || 'tabela';
 let clienteParaDeletarId = null;
 let modoDemo = false;
 let orgsCache = [];
+let automacoesCache = [];
 let currentOrgId = localStorage.getItem('daviflow_org_id') || null;
 function getOrgQS(qs = '') {
     if (!currentOrgId) return qs;
@@ -1532,6 +1533,7 @@ function trocarAbaConfig(aba) {
     if (aba === 'etapas') renderizarConfigEtapas();
     if (aba === 'tags') renderizarConfigTags();
     if (aba === 'notif') {
+        if (!templatesCache.length) carregarTemplates().then(renderizarAutomacoesCards).catch(()=>{});
         carregarAutomacoes();
     }
     if (aba === 'conta') atualizarAssinaturaUI();
@@ -1907,37 +1909,135 @@ async function salvarNotificacoes() {
     exibirToast('Notificações salvas!', 'sucesso');
 }
 async function carregarAutomacoes() {
+    let autos = [];
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/automacoes${getOrgQuery()}`, { method: 'GET' });
+        if (resp && resp.ok) autos = await resp.json();
+    } catch(e) { autos = []; }
+    automacoesCache = autos;
+    const inativo = autos.find(a=> a.tipo==='inativo_30d');
+    const vence = autos.find(a=> a.tipo==='vence_3d');
+    const el1 = document.getElementById('notif-email-atrasado');
+    const el2 = document.getElementById('notif-push-vence');
+    if (el1 && inativo) el1.checked = !!inativo.ativo;
+    if (el2 && vence) el2.checked = !!vence.ativo;
+    // Se não houver no backend, fallback localStorage
+    if (el1 && !inativo) el1.checked = localStorage.getItem('daviflow_notif_email_atrasado') === '1';
+    if (el2 && !vence) el2.checked = localStorage.getItem('daviflow_notif_push_vence') === '1';
+    renderizarAutomacoesCards();
+    carregarNotificacoesRecentes();
+}
+
+function renderizarAutomacoesCards() {
+    const cont = document.getElementById('config-automacoes-cards');
+    if (!cont) return;
+    const isAdmin = isCurrentOrgAdmin();
+    if (!automacoesCache.length) { cont.innerHTML=''; return; }
+    // templates filtrados pela vertical atual (sem vertical = compatível com todas)
+    const templatesCompativeis = (templatesCache || []).filter(tp => !tp.vertical || tp.vertical === currentVertical);
+    const rotuloTipo = { inativo_30d: 'Inativo 30d', vence_3d: 'Vence em 3d', sem_atividade_7d: 'Sem atividade 7d' };
+    cont.innerHTML = automacoesCache.map(a => {
+        const canal = a.canal || 'interno';
+        const tplId = a.template_id != null ? String(a.template_id) : '';
+        const opcoesCanal = `<option value="interno"${canal==='interno'?' selected':''}>Interno</option><option value="whatsapp"${canal==='whatsapp'?' selected':''}>WhatsApp</option>`;
+        const opcoesTemplate = ['<option value="">Padrão do sistema</option>']
+            .concat((templatesCompativeis||[]).map(tp => `<option value="${escaparHTML(String(tp.id))}"${tplId===String(tp.id)?' selected':''}>${escaparHTML(tp.nome)}</option>`))
+            .join('');
+        const chip = a.ativo
+            ? '<span class="px-2 py-0.5 text-[10px] font-bold bg-black text-white rounded-none">Ativo</span>'
+            : '<span class="px-2 py-0.5 text-[10px] font-bold border-2 border-black text-zinc-600 rounded-none">Inativo</span>';
+        const selects = isAdmin ? `
+            <div class="flex flex-col gap-2">
+                <label class="text-[11px] font-semibold text-zinc-500">Canal
+                    <select data-automacao-canal="${escaparHTML(String(a.id))}" class="mt-1 w-full px-2 py-1.5 text-xs border-2 border-black rounded-none bg-white dark:bg-zinc-900">${opcoesCanal}</select>
+                </label>
+                <label class="text-[11px] font-semibold text-zinc-500">Template
+                    <select data-automacao-template="${escaparHTML(String(a.id))}" class="mt-1 w-full px-2 py-1.5 text-xs border-2 border-black rounded-none bg-white dark:bg-zinc-900">${opcoesTemplate}</select>
+                </label>
+            </div>` : '';
+        return `<div class="p-3 border-2 border-black rounded-none shadow-[4px_4px_0_0_#000] bg-white dark:bg-zinc-900 space-y-2" data-automacao-card="${escaparHTML(String(a.id))}">
+            <div class="flex items-center justify-between"><span class="text-xs font-bold">${escaparHTML(rotuloTipo[a.tipo] || a.tipo)}</span>${chip}</div>
+            ${selects}
+        </div>`;
+    }).join('');
+    // handlers
+    cont.querySelectorAll('[data-automacao-canal]').forEach(sel => sel.addEventListener('change', async (ev) => {
+        const id = ev.target.getAttribute('data-automacao-canal');
+        try {
+            const resp = await fetchAuth(`${API_BASE_URL}/automacoes/${id}`, { method: 'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ canal: ev.target.value }) });
+            if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro ao atualizar canal','erro'); return; }
+            exibirToast('Canal atualizado!','sucesso');
+        } catch(e) { exibirToast('Erro','erro'); }
+    }));
+    cont.querySelectorAll('[data-automacao-template]').forEach(sel => sel.addEventListener('change', async (ev) => {
+        const id = ev.target.getAttribute('data-automacao-template');
+        // valor vazio = "Padrão do sistema" -> backend converte sentinela "" em template_id null
+        const body = ev.target.value ? { template_id: ev.target.value } : { template_id: "" };
+        try {
+            const resp = await fetchAuth(`${API_BASE_URL}/automacoes/${id}`, { method: 'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+            if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro ao atualizar template','erro'); return; }
+            exibirToast('Template atualizado!','sucesso');
+        } catch(e) { exibirToast('Erro','erro'); }
+    }));
+    if (window.lucide) lucide.createIcons();
+}
+
+async function processarNotificacoesPendentes() {
+    if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode processar notificações','erro'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/notificacoes/processar${getOrgQuery()}`, { method: 'POST' });
+        if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro ao processar','erro'); return; }
+        const data = await resp.json();
+        const n = data.notificacoes || {};
+        exibirToast(`Processadas: ${n.processadas||0} • Enviadas: ${n.enviadas||0} • Erros: ${n.erros||0}`, 'info');
+        carregarNotificacoesRecentes();
+    } catch(e) { exibirToast('Erro','erro'); }
+}
+
+async function carregarNotificacoesRecentes() {
+    const wrap = document.getElementById('config-notif-recentes');
+    const lista = document.getElementById('config-notif-recentes-lista');
+    if (!wrap || !lista) return;
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/notificacoes?org_id=${currentOrgId}&limite=20`, { method: 'GET' });
+        // 4xx silencioso: org sem migration aplicada não deve quebrar a UI
         if (!resp || !resp.ok) return;
-        const autos = await resp.json();
-        const inativo = autos.find(a=> a.tipo==='inativo_30d');
-        const vence = autos.find(a=> a.tipo==='vence_3d');
-        const el1 = document.getElementById('notif-email-atrasado');
-        const el2 = document.getElementById('notif-push-vence');
-        if (el1 && inativo) el1.checked = !!inativo.ativo;
-        if (el2 && vence) el2.checked = !!vence.ativo;
-        // Se não houver no backend, fallback localStorage
-        if (el1 && !inativo) el1.checked = localStorage.getItem('daviflow_notif_email_atrasado') === '1';
-        if (el2 && !vence) el2.checked = localStorage.getItem('daviflow_notif_push_vence') === '1';
-    } catch(e) {
-        // fallback localStorage
-        const el1 = document.getElementById('notif-email-atrasado');
-        const el2 = document.getElementById('notif-push-vence');
-        if (el1) el1.checked = localStorage.getItem('daviflow_notif_email_atrasado') === '1';
-        if (el2) el2.checked = localStorage.getItem('daviflow_notif_push_vence') === '1';
-    }
+        const notifs = await resp.json();
+        wrap.classList.remove('hidden');
+        if (!notifs.length) { lista.innerHTML = '<p class="text-xs text-zinc-400">Nenhuma notificação ainda.</p>'; return; }
+        lista.innerHTML = notifs.map(n => {
+            const cli = (clientesCache||[]).find(c => String(c.id) === String(n.cliente_id));
+            const nome = cli ? cli.nome : `Cliente #${escaparHTML(String(n.cliente_id))}`;
+            let chip;
+            if (n.status === 'enviado') chip = '<span class="px-2 py-0.5 text-[10px] font-bold bg-black text-white rounded-none">enviado</span>';
+            else if (n.status === 'erro') chip = `<span class="px-2 py-0.5 text-[10px] font-bold border-2 border-black text-zinc-800 dark:text-zinc-200 rounded-none" title="${escaparHTML(n.erro||'')}">erro: ${escaparHTML((n.erro||'').slice(0,40))}${(n.erro||'').length>40?'…':''}</span>`;
+            else chip = '<span class="px-2 py-0.5 text-[10px] font-bold border-2 border-zinc-400 text-zinc-500 rounded-none">pendente</span>';
+            const data = (n.created_at||'').replace('T',' ').slice(0,16);
+            return `<div class="flex items-center justify-between gap-2 p-2 border-2 border-black rounded-none bg-white dark:bg-zinc-900">
+                <span class="text-xs font-semibold truncate">${escaparHTML(nome)}</span>
+                <span class="text-[10px] font-mono text-zinc-500">${escaparHTML(n.tipo||'')}</span>
+                ${chip}
+                <span class="text-[10px] font-mono text-zinc-400">${escaparHTML(data)}</span>
+            </div>`;
+        }).join('');
+        if (window.lucide) lucide.createIcons();
+    } catch(e) { /* silencioso: sem migration, sem UI */ }
 }
 async function rodarAutomacoesManual() {
     if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode rodar automações','erro'); return; }
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/automacoes/run`, { method: 'POST' });
         if (!resp || !resp.ok) { const err=await resp.json().catch(()=>({})); exibirToast(err.detail||'Erro ao rodar','erro'); return; }
-        exibirToast('Automações rodaram! Verifique Agenda.','sucesso');
+        const data = await resp.json();
+        const n = data.notificacoes;
+        if (n) exibirToast(`Automações rodaram! Enviadas: ${n.enviadas||0} • Erros: ${n.erros||0}`, 'info');
+        else exibirToast('Automações rodaram! Verifique Agenda.','sucesso');
         carregarAtividadesAgenda();
         carregarAtividades();
+        carregarNotificacoesRecentes();
     } catch(e) { exibirToast('Erro','erro'); }
 }
+
 
 async function alterarSenhaConfig() {
     const nova = document.getElementById('config-nova-senha')?.value;

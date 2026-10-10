@@ -2494,11 +2494,16 @@ def atualizar_automacao(automacao_id: str, dados: dict, user_id: str) -> dict | 
         raise
     except Exception:
         pass
-    dados_f = {k: v for k, v in dados.items() if v is not None}
+    # Fase 4: permitir limpar template_id explicitamente — o frontend envia
+    # sentinela "" (AutomacaoUpdate não propaga None pelo filtro abaixo),
+    # aqui convertemos "" -> None para o update real
+    if "template_id" in dados and dados["template_id"] == "":
+        dados["template_id"] = None
+    dados_f = {k: v for k, v in dados.items() if v is not None or k == "template_id"}
     if not dados_f:
         return None
     # Fase 4: template_id deve existir e pertencer à MESMA org da automação
-    if "template_id" in dados_f and org_id:
+    if "template_id" in dados_f and dados_f["template_id"] is not None and org_id:
         tpl = (
             supabase.table("templates_whatsapp")
             .select("id")
@@ -2511,6 +2516,205 @@ def atualizar_automacao(automacao_id: str, dados: dict, user_id: str) -> dict | 
             raise ValueError("Template não encontrado na organização")
     res = supabase.table("automacoes").update(dados_f).eq("id", automacao_id).execute()
     return res.data[0] if res.data else None
+
+# ============================================================
+# FASE 4 — Motor de dispatch WhatsApp (notificacoes_log pendentes)
+# ============================================================
+
+# Templates padrão do sistema por tipo (usados quando a automação
+# não tem template_id vinculado ou o template foi removido)
+_TEMPLATES_DEFAULT = {
+    "inativo_30d": "Olá {{nome}}! Sentimos sua falta no {{empresa}}. Podemos conversar?",
+    "vence_3d": "Olá {{nome}}, sua mensalidade vence no dia {{vencimento}} ({{valor}}). Podemos ajudar?",
+    "sem_atividade_7d": "Olá {{nome}}! Tudo certo? Faz um tempo que não conversamos.",
+}
+
+
+def _formatar_brl(valor) -> str:
+    """Formata número como moeda BRL: 1500 -> 'R$ 1.500,00'."""
+    try:
+        v = float(valor)
+    except (TypeError, ValueError):
+        return ""
+    partes = f"{v:.2f}".split(".")
+    reais, centavos = partes[0], partes[1]
+    negativo = reais.startswith("-")
+    if negativo:
+        reais = reais[1:]
+    grupos = []
+    while len(reais) > 3:
+        grupos.insert(0, reais[-3:])
+        reais = reais[:-3]
+    grupos.insert(0, reais)
+    txt = "R$ " + ".".join(grupos) + "," + centavos
+    return ("-" + txt) if negativo else txt
+
+
+def _interpolarmensagem(template: str, cliente: dict) -> str:
+    """Interpola placeholders {{chave}} (case-insensitive) no template.
+
+    Placeholders suportados: nome, placa (campos_custom.carros[0].placa),
+    valor (valor_plano em BRL), vencimento (vencimento_dia), empresa
+    (nome do cliente é o fallback de nome; sem valor -> string vazia).
+    Placeholders desconhecidos são preservados como estão.
+    """
+    if not template:
+        return ""
+    campos = cliente.get("campos_custom") or {}
+    carros = campos.get("carros") if isinstance(campos, dict) else None
+    placa = ""
+    if isinstance(carros, list) and carros and isinstance(carros[0], dict):
+        placa = str(carros[0].get("placa") or "")
+    valores = {
+        "nome": str(cliente.get("nome") or ""),
+        "placa": placa,
+        "valor": _formatar_brl(cliente.get("valor_plano")),
+        "vencimento": str(cliente.get("vencimento_dia") or ""),
+    }
+    def _sub(m):
+        chave = m.group(1).lower()
+        if chave in valores:
+            return valores[chave]
+        return m.group(0)  # desconhecido: preserva original
+    return re.sub(r"\{\{\s*(\w+)\s*\}\}", _sub, template, flags=re.IGNORECASE)
+
+
+def _telefone_para_e164(telefone: str) -> str | None:
+    """Converte telefone DDD+numero (Brasil) para E.164. None se inválido."""
+    if not telefone:
+        return None
+    digitos = re.sub(r"\D", "", str(telefone))
+    if digitos.startswith("55"):
+        digitos = digitos[2:]
+    e164 = "55" + digitos
+    if re.match(r"^55\d{10,11}$", e164):
+        return e164
+    return None
+
+
+def _resolver_template_mensagem(supabase, org_id: str, tipo: str, template_id) -> str | None:
+    """Busca a mensagem do template da automação; fallback para o padrão do sistema."""
+    mensagem = None
+    try:
+        if template_id:
+            tpl = (
+                supabase.table("templates_whatsapp")
+                .select("mensagem")
+                .eq("id", template_id)
+                .eq("org_id", org_id)
+                .limit(1)
+                .execute()
+            )
+            if tpl.data:
+                mensagem = tpl.data[0].get("mensagem")
+    except Exception:
+        mensagem = None
+    if not mensagem:
+        mensagem = _TEMPLATES_DEFAULT.get(tipo)
+    return mensagem
+
+
+def processar_notificacoes_pendentes(org_id: str | None = None, limite: int = 50) -> dict:
+    """Motor de dispatch WhatsApp: processa rows de notificacoes_log pendentes.
+
+    O pg_cron diário (migration 009) apenas INSERE rows com status='pendente'
+    (mensagem=NULL); este motor interpola o template com dados do cliente,
+    envia via enviar_whatsapp() e atualiza a row para 'enviado'/'erro'.
+
+    Limitação conhecida: serverless Vercel não tem worker de fundo — o envio
+    efetivo acontece quando um admin usa "Rodar agora" ou "Processar agora"
+    (POST /api/automacoes/run ou /api/notificacoes/processar).
+
+    Cada row é tratada de forma independente: erro em uma não derruba as demais.
+    Erros de DB ao atualizar a row são engolidos (row fica 'pendente' para retry).
+    """
+    supabase = get_supabase_client()
+    q = supabase.table("notificacoes_log").select("*").eq("status", "pendente")
+    if org_id and _validar_uuid(org_id):
+        q = q.eq("org_id", org_id)
+    rows = q.order("created_at", desc=False).limit(max(1, int(limite))).execute()
+    rows = rows.data or []
+
+    processadas = enviadas = erros = 0
+    for row in rows:
+        processadas += 1
+        row_id = row.get("id")
+        row_org = row.get("org_id")
+        tipo = row.get("tipo")
+        try:
+            # 1. Busca cliente
+            cli = (
+                supabase.table("clientes")
+                .select("nome, telefone, valor_plano, vencimento_dia, campos_custom, org_id")
+                .eq("id", row.get("cliente_id"))
+                .limit(1)
+                .execute()
+            )
+            if not cli.data:
+                supabase.table("notificacoes_log").update({
+                    "status": "erro", "erro": "Cliente não encontrado"
+                }).eq("id", row_id).execute()
+                erros += 1
+                continue
+            cliente = cli.data[0]
+
+            # 2. Resolve template (automação da org com mesmo tipo -> template_id -> fallback)
+            mensagem_template = None
+            try:
+                auto = (
+                    supabase.table("automacoes")
+                    .select("template_id")
+                    .eq("org_id", row_org)
+                    .eq("tipo", tipo)
+                    .limit(1)
+                    .execute()
+                )
+                if auto.data:
+                    mensagem_template = _resolver_template_mensagem(
+                        supabase, row_org, tipo, auto.data[0].get("template_id")
+                    )
+            except Exception:
+                mensagem_template = None
+            if not mensagem_template:
+                mensagem_template = _TEMPLATES_DEFAULT.get(tipo)
+
+            # 3. Interpola placeholders
+            mensagem = _interpolarmensagem(mensagem_template, cliente)
+
+            # 4. Telefone -> E.164
+            tel_e164 = _telefone_para_e164(cliente.get("telefone"))
+            if not tel_e164:
+                supabase.table("notificacoes_log").update({
+                    "status": "erro", "erro": "Telefone inválido para WhatsApp"
+                }).eq("id", row_id).execute()
+                erros += 1
+                continue
+
+            # 5. Envia (enviar_whatsapp já retorna erro amigável se org sem integração)
+            resultado = enviar_whatsapp(row_org, tel_e164, mensagem)
+            if resultado.get("success"):
+                supabase.table("notificacoes_log").update({
+                    "status": "enviado",
+                    "sent_at": datetime.now(timezone.utc).isoformat(),
+                    "mensagem": mensagem,
+                    "erro": None,
+                }).eq("id", row_id).execute()
+                enviadas += 1
+            else:
+                supabase.table("notificacoes_log").update({
+                    "status": "erro", "erro": resultado.get("erro") or "Erro ao enviar WhatsApp"
+                }).eq("id", row_id).execute()
+                erros += 1
+        except Exception:
+            # Erro inesperado nesta row: marca erro sem derrubar as demais
+            try:
+                supabase.table("notificacoes_log").update({
+                    "status": "erro", "erro": "Erro inesperado ao processar notificação"
+                }).eq("id", row_id).execute()
+            except Exception:
+                pass
+            erros += 1
+    return {"processadas": processadas, "enviadas": enviadas, "erros": erros}
 
 
 # ============================================================
