@@ -57,11 +57,12 @@ from app.models import (
     RelatorioLtvResponse,
     Organizacao, OrganizacaoCreate, ConviteCreate,
     Integracao, IntegracaoCreate, IntegracaoUpdate, WebhookZapierPayload,
+    WhatsAppConfigRequest,
     Anexo, AnexoCreate, ApiKey, ApiKeyCreate,
     Vertical, VerticalCreate, VerticalUpdate,
     UsuarioMe, UsuarioUpdate, AlterarSenhaRequest,
     Template, TemplateCreate, TemplateUpdate,
-    Automacao, AutomacaoUpdate,
+    Automacao, AutomacaoUpdate, NotificacaoLog,
     WhatsAppEnvioRequest, WhatsAppEnvioResponse,
     CheckoutRequest,
 )
@@ -88,6 +89,7 @@ from app.storage import (
     get_usuario_me, update_usuario_me, alterar_senha_usuario,
     listar_templates, criar_template, atualizar_template, deletar_template,
     listar_automacoes, atualizar_automacao, run_automacoes_manual,
+    listar_notificacoes, processar_notificacoes_pendentes,
     registrar_pagamento, atualizar_pagamento_status_por_customer, get_billing_status,
 )
 
@@ -988,6 +990,105 @@ async def delete_integracao(integracao_id: str, user_id: str = Depends(obter_use
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao remover integração.")
 
+def _validar_config_whatsapp(config: dict) -> None:
+    """Validação mínima do config WhatsApp (evolution|meta). Levanta ValueError com mensagem amigável."""
+    if not isinstance(config, dict):
+        raise ValueError("config deve ser um objeto")
+    provider = config.get("provider")
+    if provider not in ("evolution", "meta"):
+        raise ValueError("provider deve ser 'evolution' ou 'meta'")
+    if not config.get("token"):
+        raise ValueError("token é obrigatório")
+    if not config.get("base_url"):
+        raise ValueError("base_url é obrigatória")
+    if provider == "evolution" and not config.get("instance"):
+        raise ValueError("instance é obrigatória para Evolution API")
+    if provider == "meta" and not config.get("phone_number_id"):
+        raise ValueError("phone_number_id é obrigatório para Meta Cloud API")
+
+
+@app.post("/api/integracoes/whatsapp", tags=["Integrações"])
+async def post_whatsapp_config(dados: WhatsAppConfigRequest, user_id: str = Depends(obter_user_id)):
+    """Salva/atualiza a configuração WhatsApp da org (upsert por org, apenas admin).
+
+    Nunca cria uma segunda row whatsapp para a mesma org (quebra o .single() de enviar_whatsapp).
+    Nunca retorna o config no response (contém token).
+    """
+    from app.storage import _get_default_org_id, _verificar_admin, criar_integracao, get_supabase_client
+
+    try:
+        config = dados.config or {}
+        _validar_config_whatsapp(config)
+        org_id = dados.org_id
+        if not org_id:
+            org_id = _get_default_org_id(user_id)
+        _verificar_admin(user_id, org_id)
+        supabase = get_supabase_client()
+        existente = (
+            supabase.table("integracoes")
+            .select("id")
+            .eq("org_id", org_id)
+            .eq("tipo", "whatsapp")
+            .limit(1)
+            .execute()
+        )
+        if existente.data:
+            # update na mesma row — nunca criar segunda row whatsapp para a org
+            supabase.table("integracoes").update({"config": config, "ativo": True}).eq("id", existente.data[0]["id"]).execute()
+        else:
+            criar_integracao(
+                {"tipo": "whatsapp", "nome": "WhatsApp", "config": config, "ativo": True},
+                user_id,
+                org_id,
+            )
+        return {"status": "ok"}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao salvar configuração WhatsApp")
+
+
+@app.post("/api/integracoes/whatsapp/test", tags=["Integrações"])
+async def post_whatsapp_test(user_id: str = Depends(obter_user_id)):
+    """Valida a configuração WhatsApp salva da org (apenas admin). Não envia mensagem real."""
+    from app.storage import _get_default_org_id, _verificar_admin, get_supabase_client
+
+    try:
+        org_id = _get_default_org_id(user_id)
+        _verificar_admin(user_id, org_id)
+        supabase = get_supabase_client()
+        res = (
+            supabase.table("integracoes")
+            .select("config")
+            .eq("org_id", org_id)
+            .eq("tipo", "whatsapp")
+            .limit(1)
+            .execute()
+        )
+        if not res.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Configuração WhatsApp não encontrada")
+        try:
+            _validar_config_whatsapp(res.data[0].get("config") or {})
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        return {"status": "ok", "mensagem": "Configuração válida"}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao validar configuração WhatsApp")
+
 # Webhook público (sem JWT) para Zapier/Make - usa integracao_id como secret
 @app.post("/api/webhooks/zapier", tags=["Webhooks"])
 @limiter.limit("10/minute")
@@ -1504,14 +1605,29 @@ async def patch_automacao(automacao_id: str, dados: AutomacaoUpdate, user_id: st
 
 @app.post("/api/automacoes/run", tags=["Automações"])
 async def post_run_automacoes(user_id: str = Depends(obter_user_id)):
-    """Dispara automações manualmente (para teste, sem esperar cron). Apenas admin."""
+    """Dispara automações manualmente (para teste, sem esperar cron). Apenas admin.
+
+    Pipeline completo: run_automacoes() insere pendentes (canal whatsapp) e
+    o motor de dispatch envia via Evolution/Meta na sequência.
+    """
     try:
         # verifica se user é admin de alguma org (ou da default)
-        from app.storage import _get_default_org_id, _verificar_admin
+        from app.storage import _get_default_org_id, _verificar_admin, processar_notificacoes_pendentes
         oid = _get_default_org_id(user_id)
         if oid:
             _verificar_admin(user_id, oid)
-        return run_automacoes_manual()
+        resultado = {"status": "ok"}
+        run_automacoes_manual()
+        # Limitação conhecida: o pg_cron diário só insere pendentes; o envio
+        # efetivo acontece aqui ou via /api/notificacoes/processar (serverless
+        # Vercel não tem worker de fundo — aceito nesta fase).
+        try:
+            resultado["notificacoes"] = processar_notificacoes_pendentes(oid)
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            # Erro no dispatch não derruba a run — pendentes ficam para retry manual
+            resultado["notificacoes"] = {"processadas": 0, "enviadas": 0, "erros": 0}
+        return resultado
     except ValueError as e:
         msg = str(e).lower()
         if "admin" in msg or "permiss" in msg:
@@ -1520,6 +1636,49 @@ async def post_run_automacoes(user_id: str = Depends(obter_user_id)):
     except Exception as e:
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao executar automações")
+
+
+@app.post("/api/notificacoes/processar", tags=["Notificações"])
+@limiter.limit("5/minute")
+async def post_processar_notificacoes(request: Request, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Processa notificações pendentes da org (motor de dispatch WhatsApp). Apenas admin.
+
+    O pg_cron diário (migration 009) apenas insere rows 'pendente' — o envio
+    efetivo acontece nesta rota (serverless Vercel não tem worker de fundo).
+    """
+    try:
+        from app.storage import _get_default_org_id, _verificar_admin
+        oid = org_id or _get_default_org_id(user_id)
+        if oid:
+            _verificar_admin(user_id, oid)
+        resultado = processar_notificacoes_pendentes(oid)
+        return {"status": "ok", "notificacoes": resultado}
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg or "negado" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao processar notificações")
+
+
+# ============================================================
+# NOTIFICAÇÕES — Fase 4 (WhatsApp automático)
+# ============================================================
+@app.get("/api/notificacoes", response_model=list[NotificacaoLog], tags=["Notificações"])
+async def get_notificacoes(org_id: str, limite: int = 100, user_id: str = Depends(obter_user_id)):
+    """Lista o log de notificações da org (qualquer membro pode ler), mais recentes primeiro."""
+    try:
+        return listar_notificacoes(user_id, org_id, limite)
+    except ValueError as e:
+        msg = str(e).lower()
+        if "negado" in msg or "inválido" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao listar notificações")
 
 
 

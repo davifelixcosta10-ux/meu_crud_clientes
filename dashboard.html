@@ -762,14 +762,24 @@
                     <div id="config-tags-lista" class="space-y-2 text-xs"></div>
                     <button onclick="abrirModalTags()" class="btn-ghost w-full">+ Nova Tag</button>
                 </div>
-                <!-- Notificações / Automações 2C -->
+                <!-- Notificações / Automações 2C + Fase 4 WhatsApp -->
                 <div id="config-conteudo-notif" class="hidden space-y-3">
                     <h3 class="text-xs font-bold uppercase tracking-widest text-zinc-500">Automações & Notificações</h3>
                     <p class="text-[11px] text-zinc-400">1 tipo por org (vertical fixa). Roda todo dia 06:00 America/Sao_Paulo via pg_cron.</p>
                     <label class="flex items-center justify-between p-3 rounded-xl border"><div><span class="text-xs font-semibold">Inativo 30d → tarefa automática</span><br><span class="text-[11px] text-zinc-400">Academia usa 14d. Cria tarefa na Agenda se sem follow-up</span></div><input type="checkbox" id="notif-email-atrasado" class="rounded"></label>
                     <label class="flex items-center justify-between p-3 rounded-xl border"><div><span class="text-xs font-semibold">Vence em 3d → alerta automático</span><br><span class="text-[11px] text-zinc-400">Cria tarefa para cobrar antes do vencimento</span></div><input type="checkbox" id="notif-push-vence" class="rounded"></label>
-                    <div class="flex gap-2"><button onclick="salvarNotificacoes()" class="btn-primary flex-1">Salvar</button><button onclick="rodarAutomacoesManual()" class="btn-ghost flex-1">Rodar agora (teste)</button></div>
+                    <!-- Fase 4: cards por automação (canal + template) -->
+                    <div id="config-automacoes-cards" class="space-y-3"></div>
+                    <div class="flex gap-2"><button onclick="salvarNotificacoes()" class="btn-primary flex-1">Salvar</button><button onclick="rodarAutomacoesManual()" class="btn-ghost flex-1">Rodar agora (teste)</button><button onclick="processarNotificacoesPendentes()" id="btn-processar-pendentes" class="btn-ghost flex-1">Processar pendentes</button></div>
                     <p class="text-[11px] text-zinc-400">Supabase: habilitar <code>pg_cron</code> em Database → Extensions, depois rodar <code>supabase_fase2c.sql</code> como service_role. Cron 09:00 UTC.</p>
+                    <!-- Fase 4: notificações recentes -->
+                    <div id="config-notif-recentes" class="hidden space-y-2">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs font-bold uppercase tracking-widest text-zinc-500">Notificações recentes</h4>
+                            <button onclick="carregarNotificacoesRecentes()" id="btn-refresh-notificacoes" class="p-1.5 border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label="Atualizar notificações"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                        <div id="config-notif-recentes-lista" class="space-y-2"></div>
+                    </div>
                 </div>
                 <!-- Conta -->
                 <div id="config-conteudo-conta" class="hidden space-y-4">

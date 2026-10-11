@@ -111,10 +111,19 @@ supabase/archive/     # fix_*.sql já aplicados (recursion, planos_org, security
 - `005_fase3b_integracoes.sql` — integracoes
 - `006_fase3c_anexos.sql` — bucket `anexos` private + anexos + api_keys (HMAC)
 - `007_fase4a_verticals.sql` — verticais (5 presets) + organizacoes.vertical + clientes.campos_custom jsonb
+- `009_fase_whatsapp_automacoes.sql` — `automacoes.canal`/`template_id` + `notificacoes_log` (Fase 4, aplicada e mergeada na main)
 - `supabase_all.sql` — cat 001-007 para fresh install
 - `archive/` — 8 fixes já aplicados (`fix_recursion`, `fix_2c_data_cast`, `fix_security_anon` revoke `anon` em `is_org_member`)
 
-## Histórico de Sessões (2026-08-30 → 2026-09-20)
+## Histórico de Sessões (2026-08-30 → 2026-10-10)
+
+### Fase 4 — WhatsApp automático (2026-10-10) — mergeada na main via merge --no-ff
+- Migration `009_fase_whatsapp_automacoes.sql`: `automacoes.canal` (`interno|whatsapp`) + `automacoes.template_id` + tabela `notificacoes_log` (RLS por org)
+- Models: `Automacao`/`AutomacaoUpdate` com `canal`/`template_id`, `NotificacaoLog`
+- Storage: `registrar_notificacao`, `notificacao_recente_24h` (dedupe 24h por cliente+tipo), `listar_notificacoes` (membro, clamp 1..200); `atualizar_automacao` valida template na mesma org
+- Motor de dispatch: `run_automacoes()` com `canal='whatsapp'` resolve template da org, interpola variáveis e registra log (status enviado/erro)
+- `GET /api/notificacoes` (auth, lista por org) + UI `Config → Notificações` (canal por automação + template picker)
+- Testes: `tests/test_notificacoes.py` (7 casos) — bateria 30 passed
 
 ### Fase 3D-1 Stripe fundação feat/fase3d-billing-fundacao (2026-09-20)
 - `pagamentos` (RLS `is_org_member`, `stripe_session_id` único idempotente), `POST /api/billing/webhook` (verificação via lib `stripe`, 503 se sem env), `GET /api/billing/status`, models `Pagamento/BillingStatusResponse/CheckoutRequest`, storage `registrar_pagamento`/`atualizar_pagamento_status_por_customer`/`get_billing_status`, `tests/test_billing.py` (6 casos), `requirements.txt + stripe`, `.env.example` + README com `STRIPE_*`
