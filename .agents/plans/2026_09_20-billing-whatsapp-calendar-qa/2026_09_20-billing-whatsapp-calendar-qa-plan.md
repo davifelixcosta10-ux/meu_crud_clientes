@@ -147,6 +147,6 @@ Description: harden tests and docs; no new features.
 
 ## Next step
 
-Phase 4 (WhatsApp automatic dispatch) implemented on branch `feat/whatsapp-fase4` — awaiting Preview approval before `merge --no-ff` into `main`. Next up: Phase 5 (Real Google Calendar).
+Phase 4 merged to main. Next up: Phase 5 (Real Google Calendar).
 
 Plan created by 🐢 💨 (Turbotuga™, [Codely](https://codely.com)'s mascot).

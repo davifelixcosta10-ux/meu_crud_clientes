@@ -25,7 +25,7 @@ CRM multi-tenant open-source para freelancers, clínicas, oficinas, dentistas e 
 | 3D-1 Stripe fundação (migration 008, webhook, `/api/billing/status`) | ✅ mergeado | `feat/fase3d-billing-fundacao` |
 | 3D-2 Checkout + UI Conta (Assinatura em Config→Conta) | ✅ mergeado | `feat/fase2-checkout-conta-ui` |
 | Fase 3 WhatsApp config + envio manual (`/api/whatsapp/enviar`) | ✅ mergeado | `feat/fase3-whatsapp-config` |
-| **Fase 4 — WhatsApp automático** (`notificacoes_log`, templates, dedupe 24h, migration 009) | ✅ implementada — `feat/whatsapp-fase4` (aguardando Preview) | `feat/whatsapp-fase4` |
+| **Fase 4 — WhatsApp automático** (`notificacoes_log`, templates, dedupe 24h, migration 009) | ✅ mergeado | `main` |
 | Fase 5 — Google Calendar OAuth real | ⬜ **próxima** | — |
 | Fase 6 — Consolidação QA | ⬜ | — |
 
@@ -34,6 +34,7 @@ Plano detalhado (fonte da verdade das próximas fases): `.agents/plans/2026_09_2
 ## 3. O que SERÁ feito
 
 ### Fase 4 — Automações → WhatsApp automático
+✅ Entregue (2026-10-10)
 - Migration `009_fase_whatsapp_automacoes.sql`: `automacoes.canal` (`interno|whatsapp`), `automacoes.template_id`, tabela `notificacoes_log` (RLS por org).
 - `run_automacoes()`: quando `canal='whatsapp'`, resolve template da org, interpola `{{nome}}/{{placa}}/{{valor}}/{{vencimento}}`, envia e registra em `notificacoes_log`; **dedupe de 24h** por cliente+tipo.
 - `Config → Notificações`: seletor de canal + template por automação.
