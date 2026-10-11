@@ -476,6 +476,9 @@ def salvar_novo_cliente(cliente_dados: dict, user_id: str) -> Cliente:
     # Garante valor padrão de ativo
     if payload_banco.get("ativo") is None:
         payload_banco["ativo"] = True
+    # campos_custom é NOT NULL sem default no banco; omitir quando não enviado
+    if payload_banco.get("campos_custom") is None:
+        payload_banco.pop("campos_custom", None)
     payload_banco = _ensure_org_id(payload_banco, user_id)
 
     response = supabase.table("clientes").insert(payload_banco).execute()
