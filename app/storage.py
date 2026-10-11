@@ -31,6 +31,14 @@ from dotenv import load_dotenv
 logger = logging.getLogger(__name__)
 from supabase import create_client, Client
 import httpx
+
+# FASE 5 — GOOGLE CALENDAR (OAuth real + sync atividade→evento)
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_EVENTS_URL = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events"
+# Keys de config de integração que NUNCA podem voltar em GET (tokens/secrets)
+CONFIG_SENSITIVE_KEYS = ("token", "access_token", "refresh_token")
 from app.models import Cliente, ClienteCreate, Plano, UserLogin, UserSignUp, Etapa, Atividade, Tag, FiltroSalvo
 
 
@@ -1928,15 +1936,24 @@ def listar_integracoes(user_id: str, org_id: str | None = None) -> list[dict]:
             if org_ids:
                 res = supabase.table("integracoes").select("*").in_("org_id", org_ids).execute()
                 if res.data is not None:
-                    return res.data
+                    return _sanitizar_integracoes(res.data)
         except Exception:
             pass
         q = q.eq("user_id", user_id)
     try:
         res = q.order("created_at", desc=True).execute()
-        return res.data or []
+        return _sanitizar_integracoes(res.data or [])
     except Exception:
         return []
+
+
+def _sanitizar_integracoes(rows: list[dict]) -> list[dict]:
+    """Remove segredos do config antes de retornar em GET (tokens Google/WhatsApp nunca vazam)."""
+    for row in rows or []:
+        cfg = row.get("config")
+        if isinstance(cfg, dict):
+            row["config"] = {k: v for k, v in cfg.items() if k not in CONFIG_SENSITIVE_KEYS}
+    return rows
 
 def criar_integracao(dados: dict, user_id: str, org_id: str | None = None) -> dict:
     """Cria integração (apenas admin). Requer tipo válido."""
@@ -2895,6 +2912,314 @@ def _ensure_org_id(payload: dict, user_id: str):
     if oid:
         payload["org_id"] = oid
     return payload
+
+
+# ============================================================
+# FASE 5 — GOOGLE CALENDAR (OAuth real + sync atividade→evento)
+# ============================================================
+import hmac as _hmac
+import time as _time
+from datetime import date as _date
+
+
+def _calendar_redirect_uri() -> str:
+    """redirect_uri registrado no Google Cloud. GOOGLE_REDIRECT_URI tem precedência;
+    senão deriva de SITE_URL → ALLOWED_ORIGINS[0] → domínio de produção."""
+    explicit = os.environ.get("GOOGLE_REDIRECT_URI")
+    if explicit:
+        return explicit.rstrip("/")
+    site_url = os.environ.get("SITE_URL") or os.environ.get("ALLOWED_ORIGINS", "").split(",")[0].strip() or "https://daviflow.vercel.app"
+    site_url = site_url.strip().rstrip("/")
+    if not site_url.startswith("http"):
+        site_url = "https://" + site_url
+    return f"{site_url}/api/integracoes/calendar/callback"
+
+
+def _calendar_state_secret() -> str:
+    """Segredo HMAC do state OAuth (mesmo pepper das api_keys; fallbacks sempre presentes em prod)."""
+    return (
+        os.environ.get("API_KEY_PEPPER")
+        or os.environ.get("SUPABASE_KEY")
+        or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        or ""
+    )
+
+
+def _calendar_sign_state(org_id: str, user_id: str, exp: int) -> str:
+    secret = _calendar_state_secret()
+    msg = f"{org_id}.{user_id}.{exp}".encode()
+    sig = _hmac.new(secret.encode(), msg, hashlib.sha256).hexdigest()
+    return f"v1.{org_id}.{user_id}.{exp}.{sig}"
+
+
+def _calendar_verify_state(state: str) -> tuple[str, str] | None:
+    """Valida state assinado. Retorna (org_id, user_id) ou None se inválido/expirado."""
+    if not state:
+        return None
+    parts = state.split(".")
+    if len(parts) != 5 or parts[0] != "v1":
+        return None
+    _, org_id, user_id, exp_str, sig = parts
+    try:
+        exp = int(exp_str)
+    except ValueError:
+        return None
+    if exp < int(_time.time()):
+        return None
+    expected = _calendar_sign_state(org_id, user_id, exp).split(".")[-1]
+    if not _hmac.compare_digest(sig, expected):
+        return None
+    return (org_id, user_id)
+
+
+def _calendar_env_ok() -> bool:
+    return bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET"))
+
+
+def _calendar_env_erro() -> str:
+    return "Google Calendar não configurado (env GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET ausentes)"
+
+
+def calendar_auth_url(user_id: str, org_id: str | None) -> dict:
+    """Monta URL de consentimento OAuth Google Calendar (com state assinado HMAC)."""
+    if not _calendar_env_ok():
+        return {"erro": _calendar_env_erro()}
+    if not org_id:
+        org_id = _get_default_org_id(user_id)
+    if not org_id:
+        return {"erro": "Organização não encontrada"}
+    exp = int(_time.time()) + 600
+    state = _calendar_sign_state(org_id, user_id, exp)
+    from urllib.parse import urlencode
+
+    params = {
+        "client_id": os.environ.get("GOOGLE_CLIENT_ID"),
+        "redirect_uri": _calendar_redirect_uri(),
+        "response_type": "code",
+        "scope": CALENDAR_SCOPE,
+        "access_type": "offline",
+        "prompt": "consent",
+        "state": state,
+    }
+    return {"auth_url": f"{GOOGLE_AUTH_URL}?{urlencode(params)}", "mock": False}
+
+
+def calendar_callback(code: str | None, state: str | None) -> tuple[bool, str]:
+    """Troca code por tokens e salva integração calendar da org (upsert, uma row por org).
+    Retorna (ok, mensagem) — mensagem vira redirect ?calendar=ok|erro."""
+    ident = _calendar_verify_state(state or "")
+    if not ident:
+        return (False, "state inválido ou expirado")
+    org_id, user_id = ident
+    if not code:
+        return (False, "Código de autorização ausente")
+    if not _calendar_env_ok():
+        return (False, _calendar_env_erro())
+    supabase = get_supabase_client()
+    try:
+        resp = httpx.post(
+            GOOGLE_TOKEN_URL,
+            data={
+                "code": code,
+                "client_id": os.environ.get("GOOGLE_CLIENT_ID"),
+                "client_secret": os.environ.get("GOOGLE_CLIENT_SECRET"),
+                "redirect_uri": _calendar_redirect_uri(),
+                "grant_type": "authorization_code",
+            },
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            return (False, "Falha ao trocar código por tokens")
+        tokens = resp.json()
+    except Exception:
+        return (False, "Falha ao trocar código por tokens")
+    from datetime import datetime as _dt
+
+    now_iso = _dt.now(timezone.utc).isoformat()
+    config = {
+        "access_token": tokens.get("access_token"),
+        "refresh_token": tokens.get("refresh_token"),
+        "expiry": tokens.get("expires_in") and (_dt.now(timezone.utc) + timedelta(seconds=int(tokens["expires_in"]))).isoformat(),
+        "connected_at": now_iso,
+    }
+    config = {k: v for k, v in config.items() if v}
+    try:
+        existente = (
+            supabase.table("integracoes")
+            .select("id")
+            .eq("org_id", org_id)
+            .eq("tipo", "calendar")
+            .limit(1)
+            .execute()
+        )
+        if existente.data:
+            # update na mesma row — nunca criar segunda row calendar para a org
+            supabase.table("integracoes").update({"config": config, "ativo": True}).eq("id", existente.data[0]["id"]).execute()
+        else:
+            criar_integracao(
+                {"tipo": "calendar", "nome": "Google Calendar", "config": config, "ativo": True},
+                user_id,
+                org_id,
+            )
+    except Exception:
+        return (False, "Falha ao salvar integração Calendar")
+    return (True, org_id)
+
+
+def calendar_get_access_token(org_id: str) -> str | None:
+    """Access token válido da integração calendar da org; renova via refresh_token se expirado. None se indisponível."""
+    supabase = get_supabase_client()
+    try:
+        res = (
+            supabase.table("integracoes")
+            .select("config")
+            .eq("org_id", org_id)
+            .eq("tipo", "calendar")
+            .eq("ativo", True)
+            .limit(1)
+            .execute()
+        )
+    except Exception:
+        return None
+    if not res.data:
+        return None
+    config = res.data[0].get("config") or {}
+    access_token = config.get("access_token")
+    if not access_token:
+        return None
+    expiry = config.get("expiry")
+    if expiry:
+        try:
+            from datetime import datetime as _dt
+
+            exp_dt = _dt.fromisoformat(expiry)
+            if exp_dt.tzinfo is None:
+                exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+            if exp_dt.timestamp() > _time.time() + 60:
+                return access_token
+        except Exception:
+            return access_token
+    else:
+        return access_token
+    refresh_token = config.get("refresh_token")
+    if not refresh_token:
+        return None
+    try:
+        resp = httpx.post(
+            GOOGLE_TOKEN_URL,
+            data={
+                "client_id": os.environ.get("GOOGLE_CLIENT_ID"),
+                "client_secret": os.environ.get("GOOGLE_CLIENT_SECRET"),
+                "refresh_token": refresh_token,
+                "grant_type": "refresh_token",
+            },
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            return None
+        tokens = resp.json()
+        novo_token = tokens.get("access_token")
+        if not novo_token:
+            return None
+        from datetime import datetime as _dt, timedelta as _td
+
+        nova_config = dict(config)
+        nova_config["access_token"] = novo_token
+        nova_config["expiry"] = (_dt.now(timezone.utc) + _td(seconds=int(tokens.get("expires_in", 3600)))).isoformat()
+        supabase.table("integracoes").update({"config": nova_config}).eq("org_id", org_id).eq("tipo", "calendar").execute()
+        return novo_token
+    except Exception:
+        return None
+
+
+def calendar_criar_evento(org_id: str, atividade: dict, cliente_nome: str | None) -> str | None:
+    """Cria evento no Google Calendar primary para a atividade. Silencioso: falha NUNCA propaga.
+    Retorna google_event_id ou None. Atualiza atividades.google_event_id em caso de sucesso."""
+    try:
+        token = calendar_get_access_token(org_id)
+        if not token:
+            return None
+        from datetime import datetime as _dt, timedelta as _td
+
+        tipo = str(atividade.get("tipo") or "Atividade")
+        base_nome = cliente_nome or atividade.get("nota") or "Atividade"
+        summary = f"{tipo}: {base_nome}"[:100]
+        nota = atividade.get("nota")
+        data = str(atividade.get("data") or "")
+        body: dict
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", data):
+            d = _dt.strptime(data, "%Y-%m-%d").date()
+            d_next = d + _td(days=1)
+            body = {
+                "summary": summary,
+                "description": nota,
+                "start": {"date": d.isoformat()},
+                "end": {"date": d_next.isoformat()},
+            }
+        else:
+            dt = _dt.fromisoformat(data)
+            start = dt.strftime("%Y-%m-%dT%H:%M:00-03:00")
+            end = (dt + _td(hours=1)).strftime("%Y-%m-%dT%H:%M:00-03:00")
+            body = {
+                "summary": summary,
+                "description": nota,
+                "start": {"dateTime": start},
+                "end": {"dateTime": end},
+            }
+        resp = httpx.post(
+            GOOGLE_EVENTS_URL,
+            json=body,
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            timeout=15,
+        )
+        if resp.status_code not in (200, 201):
+            return None
+        event_id = resp.json().get("id")
+        if not event_id:
+            return None
+        try:
+            get_supabase_client().table("atividades").update({"google_event_id": event_id}).eq("id", atividade.get("id")).execute()
+        except Exception:
+            pass
+        return event_id
+    except Exception:
+        return None
+
+
+def calendar_sync_pendentes(user_id: str, org_id: str) -> dict:
+    """Admin sincroniza atividades sem google_event_id dos últimos 30 dias (limite 200)."""
+    _verificar_admin(user_id, org_id)
+    supabase = get_supabase_client()
+    clientes = {}
+    try:
+        cresp = supabase.table("clientes").select("id, nome").eq("org_id", org_id).execute()
+        clientes = {c["id"]: c.get("nome") for c in (cresp.data or [])}
+    except Exception:
+        pass
+    cutoff = (_date.today() - timedelta(days=30)).isoformat()
+    try:
+        aresp = (
+            supabase.table("atividades")
+            .select("*")
+            .eq("org_id", org_id)
+            .is_("google_event_id", "null")
+            .gte("data", cutoff)
+            .order("data", desc=False)
+            .limit(200)
+            .execute()
+        )
+    except Exception:
+        return {"sincronizadas": 0, "falhas": 0, "total": 0}
+    atividades = aresp.data or []
+    sincronizadas = 0
+    falhas = 0
+    for atv in atividades:
+        evento = calendar_criar_evento(org_id, atv, clientes.get(atv.get("cliente_id")))
+        if evento:
+            sincronizadas += 1
+        else:
+            falhas += 1
+    return {"sincronizadas": sincronizadas, "falhas": falhas, "total": len(atividades)}
 
 
 # ============================================================

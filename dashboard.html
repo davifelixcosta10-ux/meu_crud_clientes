@@ -2219,10 +2219,9 @@
                     <div class="flex items-center gap-2 mb-2">
                         <div class="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-black flex items-center justify-center"><i data-lucide="calendar" class="w-4 h-4 text-zinc-900"></i></div>
                         <h4 class="text-sm font-bold text-zinc-900 dark:text-white">Google Calendar</h4>
-                        <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-800">em breve</span>
                     </div>
-                    <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-3">Conecte sua agenda para criar eventos a partir de atividades (follow-up → evento). OAuth mock na Fase 3B.</p>
-                    <button onclick="conectarCalendar()" class="px-4 py-2 text-xs font-bold rounded-xl bg-black text-white border border-zinc-200 dark:border-zinc-800 box-border hover:bg-zinc-800">Conectar Calendar</button>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-3">Atividades criadas viram eventos no Google. Admin pode sincronizar pendentes.</p>
+                    <button onclick="conectarCalendar()" class="px-4 py-2 text-xs font-bold rounded-xl bg-black text-white border border-zinc-200 dark:border-zinc-800 box-border hover:bg-zinc-800">Conectar Google Calendar</button><button id="btn-calendar-sync" onclick="sincronizarCalendar()" class="px-4 py-2 text-xs font-bold rounded-none bg-white text-black border-2 border-black box-border hover:bg-zinc-100 ml-2">Sincronizar agora</button>
                     <span id="calendar-status" class="text-[11px] text-zinc-400 ml-2"></span>
                 </div>
                 <!-- Zapier -->
