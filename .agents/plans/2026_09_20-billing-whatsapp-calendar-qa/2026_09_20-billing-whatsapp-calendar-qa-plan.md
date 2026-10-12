@@ -147,6 +147,6 @@ Description: harden tests and docs; no new features.
 
 ## Next step
 
-Phase 5 implemented on `feat/fase5-calendar` (awaiting Preview approval before merge). Next up: Phase 6 (QA consolidation).
+Phase 5 merged to main. Next up: Phase 6 (QA consolidation).
 
 Plan created by 🐢 💨 (Turbotuga™, [Codely](https://codely.com)'s mascot).

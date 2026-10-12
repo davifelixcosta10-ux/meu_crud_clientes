@@ -26,7 +26,7 @@ CRM multi-tenant open-source para freelancers, clínicas, oficinas, dentistas e 
 | 3D-2 Checkout + UI Conta (Assinatura em Config→Conta) | ✅ mergeado | `feat/fase2-checkout-conta-ui` |
 | Fase 3 WhatsApp config + envio manual (`/api/whatsapp/enviar`) | ✅ mergeado | `feat/fase3-whatsapp-config` |
 | **Fase 4 — WhatsApp automático** (`notificacoes_log`, templates, dedupe 24h, migration 009) | ✅ mergeado | `main` |
-| Fase 5 — Google Calendar OAuth real | ✅ implementada | `feat/fase5-calendar` (aguardando Preview) |
+| Fase 5 — Google Calendar OAuth real | ✅ mergeado | `main` |
 | Fase 6 — Consolidação QA | ⬜ **próxima** | — |
 
 Plano detalhado (fonte da verdade das próximas fases): `.agents/plans/2026_09_20-billing-whatsapp-calendar-qa/2026_09_20-billing-whatsapp-calendar-qa-plan.md`.

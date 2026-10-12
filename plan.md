@@ -1,6 +1,6 @@
 # DaviFlow — Plano de Evolução Atualizado (2026-09-20)
 
-> **Status `main@9ad5981`: Fase 1 ✅, 2A ✅, 2B ✅, 2C ✅, 3A-3C ✅, 4A-4C ✅. Neo-Brutalista monocromático ✅ (landing + dashboard + legais). 3D pausado (Stripe). WhatsApp automático ✅ mergeado na `main` (merge --no-ff, 2026-10-10). Fase 5 Calendar ✅ implementada (`feat/fase5-calendar`, aguardando Preview). Próximo: Fase 6 Consolidação QA.**
+> **Status `main@9ad5981`: Fase 1 ✅, 2A ✅, 2B ✅, 2C ✅, 3A-3C ✅, 4A-4C ✅. Neo-Brutalista monocromático ✅ (landing + dashboard + legais). 3D pausado (Stripe). WhatsApp automático ✅ mergeado na `main` (merge --no-ff, 2026-10-10). Fase 5 Calendar ✅ mergeada na `main` (merge --no-ff, 2026-10-11). Próximo: Fase 6 Consolidação QA.**
 
 ## Resumo Fase Atual (15 merges, 55+ rotas)
 
@@ -21,7 +21,7 @@
 | Neo-Brutalista | ✅ 2026-09-20 | `feat/landing-neo-brutalista` → `9ad5981` | Tema monocromático 60-30-10 (zinc-50/zinc-800/preto) em `index/404/privacidade/termos/dashboard.html` + `app.js` + `style.css` |
 | 3D-1 Stripe fundação | 🟡 Preview | `feat/fase3d-billing-fundacao` | `pagamentos` + RLS, `POST /api/billing/webhook` (assinatura verificada, idempotente, 503 sem env), `GET /api/billing/status`, 6 testes |
 | WhatsApp automático | ✅ mergeado | `main` | Migration `009` (`automacoes.canal`/`template_id`, `notificacoes_log`), motor de dispatch com dedupe 24h, `GET /api/notificacoes`, UI `Config → Notificações` |
-| Fase 5 Google Calendar | ✅ implementada | `feat/fase5-calendar` (aguardando Preview) | Migration `010` (`atividades.google_event_id`), OAuth real (state HMAC, tokens em `integracoes.config` nunca retornados), evento best-effort no `POST /api/atividades`, sync admin 30 dias/limite 200, sanitização de tokens em `listar_integracoes`, UI com "Sincronizar agora", 10 testes |
+| Fase 5 Google Calendar | ✅ mergeado | `main` | Migration `010` (`atividades.google_event_id`), OAuth real (state HMAC, tokens em `integracoes.config` nunca retornados), evento best-effort no `POST /api/atividades`, sync admin 30 dias/limite 200, sanitização de tokens em `listar_integracoes`, UI com "Sincronizar agora", 10 testes |
 
 ## Próximo Plano — Consolidação (1-2 dias) + 3D Backlog
 
