@@ -123,14 +123,14 @@ Description: `run_automacoes()` and manual "Rodar agora" dispatch WhatsApp messa
 
 Description: replace mock OAuth with real Google OAuth2 and activity->event sync.
 
-- [ ] `GET /api/integracoes/calendar/auth-url`: real Google consent URL (scope `calendar.events`, state signed with org_id).
-- [ ] `GET /api/integracoes/calendar/callback`: exchange code, store `access_token`/`refresh_token`/expiry in `integracoes.config` (never returned by GET endpoints).
-- [ ] Storage: `calendar_criar_evento(org_id, atividade)` called from `POST /api/atividades` when calendar integration active; failure must not block activity creation (log only).
-- [ ] `POST /api/integracoes/calendar/sync` (admin): push unsynced activities.
-- [ ] UI: Integracoes modal "Google Calendar" button becomes real connect/disconnect with status.
-- [ ] Tests `tests/test_calendar.py`: mocked Google token + events endpoints, failure tolerance, token refresh path.
-- [ ] Verify the changes (per verification command). Fix issues if any.
-- [ ] STOP. Present the changes to the user for review and suggest commit messages. Do NOT proceed to the next phase until the user explicitly asks.
+- [x] `GET /api/integracoes/calendar/auth-url`: real Google consent URL (scope `calendar.events`, state signed with org_id).
+- [x] `GET /api/integracoes/calendar/callback`: exchange code, store `access_token`/`refresh_token`/expiry in `integracoes.config` (never returned by GET endpoints).
+- [x] Storage: `calendar_criar_evento(org_id, atividade)` called from `POST /api/atividades` when calendar integration active; failure must not block activity creation (log only).
+- [x] `POST /api/integracoes/calendar/sync` (admin): push unsynced activities.
+- [x] UI: Integracoes modal "Google Calendar" button becomes real connect/disconnect with status.
+- [x] Tests `tests/test_calendar.py`: mocked Google token + events endpoints, failure tolerance, token refresh path.
+- [x] Verify the changes (per verification command). Fix issues if any.
+- [x] STOP. Present the changes to the user for review and suggest commit messages. Do NOT proceed to the next phase until the user explicitly asks.
 
 ### Phase 6: QA consolidation
 
@@ -147,6 +147,6 @@ Description: harden tests and docs; no new features.
 
 ## Next step
 
-Phase 4 merged to main. Next up: Phase 5 (Real Google Calendar).
+Phase 5 merged to main. Next up: Phase 6 (QA consolidation).
 
 Plan created by 🐢 💨 (Turbotuga™, [Codely](https://codely.com)'s mascot).

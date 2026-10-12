@@ -602,9 +602,20 @@ async def post_atividade(dados: AtividadeCreate, org_id: str | None = None, user
         payload = dados.model_dump(mode="json")
         if org_id:
             payload["org_id"] = org_id
-        return criar_atividade(payload, user_id)
+        atividade = criar_atividade(payload, user_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao criar atividade.")
+    # Fase 5 — best-effort: cria evento no Google Calendar (nunca afeta o response)
+    try:
+        from app.storage import calendar_criar_evento, _get_default_org_id, get_supabase_client
+        atv_org = org_id or getattr(atividade, "org_id", None) or _get_default_org_id(user_id)
+        if atv_org:
+            cli = get_supabase_client().table("clientes").select("nome").eq("id", str(atividade.cliente_id)).limit(1).execute()
+            nome_cliente = cli.data[0]["nome"] if cli.data else None
+            calendar_criar_evento(atv_org, atividade.model_dump(mode="json"), nome_cliente)
+    except Exception:
+        import traceback; traceback.print_exc()
+    return atividade
 
 
 @app.patch("/api/atividades/{atividade_id}", response_model=Atividade, tags=["Atividades"])
@@ -1258,18 +1269,50 @@ async def whatsapp_enviar(request: Request, dados: WhatsAppEnvioRequest, org_id:
         )
     return result
 
-# Placeholder OAuth Calendar - retorna URL para conectar (mock)
+# ============================================================
+# FASE 5 — GOOGLE CALENDAR (OAuth real + sync)
+# ============================================================
 @app.get("/api/integracoes/calendar/auth-url", tags=["Integrações"])
 async def get_calendar_auth_url(org_id: str | None = None, user_id: str = Depends(obter_user_id)):
-    """Retorna URL OAuth Google Calendar (placeholder para Fase 3B). Frontend abre popup."""
-    # Em prod real: gerar state, redirect para Google OAuth. Aqui mock.
-    base = os.environ.get("SITE_URL") or "https://daviflow.vercel.app"
-    return {"auth_url": f"{base}/api/integracoes/calendar/callback?org_id={org_id or ''}&state=mock_{user_id[:8]}", "mock": True}
+    """Retorna URL OAuth Google Calendar real (state assinado HMAC). Frontend abre popup."""
+    from app.storage import calendar_auth_url
+
+    result = calendar_auth_url(user_id, org_id)
+    if "erro" in result:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=result["erro"])
+    return result
 
 @app.get("/api/integracoes/calendar/callback", tags=["Integrações"])
-async def calendar_callback(code: str | None = None, state: str | None = None, org_id: str | None = None):
-    """Callback OAuth Calendar (mock) - armazena token fictício."""
-    return {"status": "conectado", "code": code, "state": state, "org_id": org_id, "mock": True}
+async def calendar_callback(code: str | None = None, state: str | None = None):
+    """Callback OAuth Calendar (redirect do Google). Sem Depends: identidade vem do state assinado."""
+    from fastapi.responses import RedirectResponse
+    from app.storage import calendar_callback as calendar_callback_storage
+
+    site_url = os.environ.get("SITE_URL") or "https://daviflow.vercel.app"
+    ok, _msg = calendar_callback_storage(code, state)
+    if ok:
+        return RedirectResponse(f"{site_url}/dashboard.html?calendar=ok", status_code=302)
+    return RedirectResponse(f"{site_url}/dashboard.html?calendar=erro", status_code=302)
+
+@app.post("/api/integracoes/calendar/sync", tags=["Integrações"])
+@limiter.limit("5/minute")
+async def calendar_sync(request: Request, org_id: str | None = None, user_id: str = Depends(obter_user_id)):
+    """Sincroniza atividades pendentes (sem google_event_id) para o Google Calendar (apenas admin)."""
+    from app.storage import _get_default_org_id, calendar_sync_pendentes
+
+    if not org_id:
+        org_id = _get_default_org_id(user_id)
+    if not org_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Organização não encontrada")
+    try:
+        return calendar_sync_pendentes(user_id, org_id)
+    except ValueError as e:
+        msg = str(e).lower()
+        if "admin" in msg or "permiss" in msg:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao sincronizar Calendar")
 
 
 # ============================================================

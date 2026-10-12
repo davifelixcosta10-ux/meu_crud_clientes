@@ -351,6 +351,15 @@ async function inicializarApp() {
     setViewMode(viewMode, true);
     restaurarEstadoRelatorios();
     await carregarRelatorios();
+    // Fase 5 — resultado do callback OAuth Google Calendar (?calendar=ok|erro)
+    const cal = new URLSearchParams(location.search).get('calendar');
+    if (cal === 'ok') {
+        exibirToast('Google Calendar conectado!', 'sucesso');
+        await carregarIntegracoes();
+    } else if (cal === 'erro') {
+        exibirToast('Falha ao conectar Google Calendar', 'erro');
+    }
+    if (cal) history.replaceState({}, '', location.pathname);
     if (window.lucide) lucide.createIcons();
 }
 
@@ -857,6 +866,7 @@ function renderizarIntegracoes() {
         const tipoLabel = i.tipo;
         return `<div class="flex items-center justify-between p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700/40"><div class="flex items-center gap-2"><i data-lucide="${tipoIcon}" class="w-3.5 h-3.5 text-zinc-500"></i><span class="font-semibold">${escaparHTML(i.nome || tipoLabel)}</span><span class="text-[10px] px-1.5 py-0.5 rounded-xl ${i.ativo ? 'bg-black text-white' : 'bg-zinc-100 text-zinc-500'}">${i.ativo ? 'ativa' : 'inativa'}</span><span class="text-[10px] text-zinc-400">${escaparHTML(i.tipo)}</span></div><button onclick="deletarIntegracao('${i.id}')" class="p-1 rounded-xl text-zinc-600 hover:bg-zinc-100" title="Remover (apenas admin)"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`;
     }).join('');
+    atualizarStatusCalendar();
     // atualiza webhook url se tiver zapier
     const zap = integracoesCache.find(x => x.tipo === 'zapier' || x.tipo === 'webhook');
     const input = document.getElementById('zapier-webhook-url');
@@ -927,17 +937,38 @@ async function testarWebhookZapier() {
 async function conectarCalendar() {
     try {
         const resp = await fetchAuth(`${API_BASE_URL}/integracoes/calendar/auth-url${getOrgQuery()}`, { method: 'GET' });
-        if (!resp || !resp.ok) { exibirToast('Erro ao conectar Calendar', 'erro'); return; }
-        const data = await resp.json();
-        const status = document.getElementById('calendar-status');
-        if (status) status.textContent = 'Mock conectado: ' + (data.auth_url || '');
-        exibirToast('Calendar conectado (mock)!', 'sucesso');
-        // cria integração calendar mock se não existe
-        if (!integracoesCache.find(x=>x.tipo==='calendar')) {
-            await fetchAuth(`${API_BASE_URL}/integracoes${getOrgQuery()}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: 'calendar', nome: 'Google Calendar', config: { mock: true }, ativo: true }) });
-            await carregarIntegracoes();
+        if (!resp || !resp.ok) {
+            const err = await resp.json().catch(()=>({}));
+            exibirToast(err.detail || 'Google Calendar não configurado', 'erro');
+            return;
         }
+        const data = await resp.json();
+        window.open(data.auth_url, 'calendar-oauth', 'width=600,height=700');
+        exibirToast('Complete o login no Google na janela aberta', 'info');
     } catch(e) { exibirToast('Erro Calendar', 'erro'); }
+}
+async function sincronizarCalendar() {
+    if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode sincronizar', 'erro'); return; }
+    try {
+        const resp = await fetchAuth(`${API_BASE_URL}/integracoes/calendar/sync${getOrgQuery()}`, { method: 'POST' });
+        if (!resp || !resp.ok) {
+            const err = await resp.json().catch(()=>({}));
+            exibirToast(err.detail || 'Erro ao sincronizar Calendar', 'erro');
+            return;
+        }
+        const data = await resp.json();
+        exibirToast(`Sincronizadas: ${data.sincronizadas ?? 0} • Falhas: ${data.falhas ?? 0}`, 'sucesso');
+    } catch(e) { exibirToast('Erro ao sincronizar Calendar', 'erro'); }
+}
+function atualizarStatusCalendar() {
+    const el = document.getElementById('calendar-status');
+    if (!el) return;
+    const cal = integracoesCache.find(x => x.tipo === 'calendar');
+    if (cal && cal.ativo) {
+        el.innerHTML = '<span class="px-1.5 py-0.5 bg-black text-white text-[10px] font-bold">Conectado</span>';
+    } else {
+        el.textContent = '—';
+    }
 }
 async function toggleContaAzul(ativo) {
     if (!isCurrentOrgAdmin()) { exibirToast('Apenas admin pode alterar', 'erro'); document.getElementById('contaazul-toggle').checked = !ativo; return; }

@@ -1,7 +1,7 @@
 # DaviFlow — Project Summary
 
 ## Overview
-Full-stack CRM multi-tenant para freelancers, clínicas, oficinas, dentistas e academias. Em produção `daviflow.vercel.app` + `daviflowgestoes.vercel.app` (main@6e35f40) com Fase 1 ✅, 2A ✅, 2B ✅, 2C ✅, 3A-3C ✅, 4A-4C ✅. 8 fases incrementais (15 branches Preview) sem monolito.
+Full-stack CRM multi-tenant para freelancers, clínicas, oficinas, dentistas e academias. Em produção `daviflow.vercel.app` + `daviflowgestoes.vercel.app` (main@6e35f40) com Fase 1 ✅, 2A ✅, 2B ✅, 2C ✅, 3A-3C ✅, 4A-4C ✅, Fase 5 Calendar ✅ mergeada na main. 8 fases incrementais (15 branches Preview) sem monolito.
 
 **Tagline:** Gestão de clientes sem planilhas — organize cadastros, métricas, planos e vertical em um painel Vercel-style.
 
@@ -86,7 +86,7 @@ supabase/archive/     # fix_*.sql já aplicados (recursion, planos_org, security
 - **Multi-tenant 3A:** `org-select`, `modal-gerenciar-org` 3 abas, `membros` com `data-user-id` + `dataset` (F6 XSS), `isCurrentOrgAdmin()` → `opacity-50 disabled` para `Planos/Etapas/Tags/Integrações/Templates/Verticais/ApiKeys`
 - **Planos Org 4a57b3b:** `planos.org_id` + backfill/duplica por org + `listar_planos(org_id)`
 - **Permissões 3A-2 654ab67:** `planos/etapas/tags` `403` membro + frontend hide→disabled
-- **Integrações 3B f586f84:** `Calendar` mock OAuth, `Zapier` webhook `.../api/webhooks/zapier/{uuid}` `10/min`, `Conta Azul` toggle — `is_org_member` fix `42P17`
+- **Integrações 3B f586f84:** `Calendar` OAuth real (Fase 5: state HMAC `API_KEY_PEPPER`, tokens em `integracoes.config` sanitizados no GET, evento best-effort no `POST /api/atividades`, sync admin `POST /api/integracoes/calendar/sync` 5/min, 503 amigável sem env Google), `Zapier` webhook `.../api/webhooks/zapier/{uuid}` `10/min`, `Conta Azul` toggle — `is_org_member` fix `42P17`
 - **Anexos 3C 9257c23:** `bucket anexos` private, `listar_anexos` por `cliente_id`, `criar_anexo` `base64` 10MB `mime` allowlist, `api_keys` HMAC, `modal-apikeys` (`davi_...` só uma vez), `detalhes-anexos` drag&drop
 - **Verticals 4A e0c2960:** 5 presets `geral/hospital/oficina/dentista/academia` → `organizacoes.vertical` + `clientes.campos_custom` (`carros[]` multi-veículo, `convenio/leito`, `dente`, `plano_mensal`), `aplicarVertical()` renomeia labels + `adicionarCarro()` + `coletar/preencherCamposCustom`, `vertical-select` header + `modal-vertical`
 - **Sidebar 4B 6888f8f:** `setSecao(secao)` com `localStorage daviflow_secao` + `#hash` + `history.pushState`, `toggleSidebarMobile`, `agenda-lista` timeline `carregarAtividadesAgenda()`, `breadcrumb`, `footer-api-url` hostname
@@ -112,10 +112,18 @@ supabase/archive/     # fix_*.sql já aplicados (recursion, planos_org, security
 - `006_fase3c_anexos.sql` — bucket `anexos` private + anexos + api_keys (HMAC)
 - `007_fase4a_verticals.sql` — verticais (5 presets) + organizacoes.vertical + clientes.campos_custom jsonb
 - `009_fase_whatsapp_automacoes.sql` — `automacoes.canal`/`template_id` + `notificacoes_log` (Fase 4, aplicada e mergeada na main)
+- `010_fase5_calendar.sql` — `atividades.google_event_id` + índice por org (Fase 5, aplicada e mergeada na main)
 - `supabase_all.sql` — cat 001-007 para fresh install
 - `archive/` — 8 fixes já aplicados (`fix_recursion`, `fix_2c_data_cast`, `fix_security_anon` revoke `anon` em `is_org_member`)
 
-## Histórico de Sessões (2026-08-30 → 2026-10-10)
+## Histórico de Sessões (2026-08-30 → 2026-10-11)
+
+### Fase 5 — Google Calendar OAuth real (2026-10-11) — mergeada na main via merge --no-ff
+- Migration `010_fase5_calendar.sql`: `atividades.google_event_id` (text) + índice por org
+- OAuth real: state assinado HMAC (`API_KEY_PEPPER`), tokens em `integracoes.config` (nunca retornados nos GET), renovação via refresh_token
+- Evento best-effort no `POST /api/atividades` (falha não bloqueia criação) + sync admin 30 dias/limite 200
+- UI: card Google Calendar ativo, "Sincronizar agora", status "Conectado"
+- Testes: `tests/test_calendar.py` (10 casos)
 
 ### Fase 4 — WhatsApp automático (2026-10-10) — mergeada na main via merge --no-ff
 - Migration `009_fase_whatsapp_automacoes.sql`: `automacoes.canal` (`interno|whatsapp`) + `automacoes.template_id` + tabela `notificacoes_log` (RLS por org)

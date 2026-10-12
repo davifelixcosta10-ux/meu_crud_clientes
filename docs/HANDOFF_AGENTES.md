@@ -26,8 +26,8 @@ CRM multi-tenant open-source para freelancers, clínicas, oficinas, dentistas e 
 | 3D-2 Checkout + UI Conta (Assinatura em Config→Conta) | ✅ mergeado | `feat/fase2-checkout-conta-ui` |
 | Fase 3 WhatsApp config + envio manual (`/api/whatsapp/enviar`) | ✅ mergeado | `feat/fase3-whatsapp-config` |
 | **Fase 4 — WhatsApp automático** (`notificacoes_log`, templates, dedupe 24h, migration 009) | ✅ mergeado | `main` |
-| Fase 5 — Google Calendar OAuth real | ⬜ **próxima** | — |
-| Fase 6 — Consolidação QA | ⬜ | — |
+| Fase 5 — Google Calendar OAuth real | ✅ mergeado | `main` |
+| Fase 6 — Consolidação QA | ⬜ **próxima** | — |
 
 Plano detalhado (fonte da verdade das próximas fases): `.agents/plans/2026_09_20-billing-whatsapp-calendar-qa/2026_09_20-billing-whatsapp-calendar-qa-plan.md`.
 
@@ -42,10 +42,14 @@ Plano detalhado (fonte da verdade das próximas fases): `.agents/plans/2026_09_2
 - **Depende de:** Fase 3 mergeada ✅; credenciais Evolution/Meta salvas na org.
 
 ### Fase 5 — Google Calendar real
-- OAuth real: `GET /api/integracoes/calendar/auth-url` (consent URL com state assinado) + `GET /api/integracoes/calendar/callback` (troca code, salva tokens em `integracoes.config` — nunca retornados em GET).
-- Sync: `POST /api/atividades` → se integração ativa, cria evento no Google (falha não bloqueia criação). `POST /api/integracoes/calendar/sync` manual (admin).
-- Env: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`.
-- Testes: `tests/test_calendar.py` (mocks Google).
+✅ Implementada (`feat/fase5-calendar`, aguardando Preview)
+- Migration `010_fase5_calendar.sql`: `atividades.google_event_id` (text) + índice por org.
+- `app/storage.py` (seção FASE 5): `calendar_auth_url` (consent URL com state assinado HMAC via `API_KEY_PEPPER`), `calendar_callback` (troca code→tokens, upsert uma row calendar por org em `integracoes.config`), `calendar_get_access_token` (renova via refresh_token), `calendar_criar_evento` (silencioso, all-day se data sem hora, fuso -03:00 fixo), `calendar_sync_pendentes` (30 dias, limite 200, admin only).
+- `app/main.py`: rotas reais no lugar dos mocks — `GET /api/integracoes/calendar/auth-url` (503 amigável sem env), `GET /api/integracoes/calendar/callback` (sem Depends; redirect `?calendar=ok|erro`), `POST /api/integracoes/calendar/sync` (5/min, admin). `POST /api/atividades` cria evento best-effort (nunca bloqueia 201).
+- `listar_integracoes` sanitiza config (`token`/`access_token`/`refresh_token` nunca voltam em GET — vale para WhatsApp também).
+- UI: card Google Calendar sem "em breve", botão "Sincronizar agora" (admin), status "Conectado" derivado de `integracoesCache`, toasts do callback.
+- Env: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (obrigatórias), `GOOGLE_REDIRECT_URI` (opcional; deriva de `SITE_URL`). Sem elas → 503 amigável.
+- Testes: `tests/test_calendar.py` (10 cenários: 503, auth-url real, state inválido, callback ok, tolerância a falha, sync admin/membro, sanitização, 401).
 
 ### Fase 6 — Consolidação QA
 - Ampliar `test_rbac.py` (membro 403 em todas rotas de escrita), `test_org_isolation.py` (cross-org), `test_vertical.py` (roundtrip `campos_custom`, placa Mercosul), smoke 401 auth-wall em todas as rotas protegidas.
