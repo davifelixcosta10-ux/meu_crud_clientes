@@ -1111,6 +1111,9 @@ async def webhook_zapier(request: Request, payload: dict, integracao_id: str | N
     import re
     if not re.match(r"^[0-9a-fA-F-]{36}$", integracao_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="integracao_id inválido")
+    # Guarda contra payloads abusivos (integração)
+    if isinstance(payload, dict) and len(payload) > 100:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="payload muito grande")
     try:
         res = processar_webhook_zapier(payload, integracao_id)
         return {"status": "ok", "cliente": res}
@@ -1126,6 +1129,8 @@ async def webhook_zapier_com_id(request: Request, integracao_id: str, payload: d
     import re
     if not re.match(r"^[0-9a-fA-F-]{36}$", integracao_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="integracao_id inválido")
+    if isinstance(payload, dict) and len(payload) > 100:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="payload muito grande")
     try:
         res = processar_webhook_zapier(payload, integracao_id)
         return {"status": "ok", "cliente": res}
