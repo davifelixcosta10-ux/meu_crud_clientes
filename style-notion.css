@@ -1,0 +1,382 @@
+/**
+ * ===================================================================
+ * DaviFlow — Camada de identidade visual (style-notion.css)
+ * ===================================================================
+ * Carregada DEPOIS de style.css. Não altera HTML estrutural, grid,
+ * posição da sidebar nem visibilidade de nada.
+ *
+ * Direção: Notion + Linear + Attio — papel neutro, tipografia do sistema,
+ * borda no lugar de sombra, raio curto (4–6px), acento azul com parcimônia.
+ *
+ * Estratégia de baixa briga:
+ *  - Todos os componentes novos usam custom properties --nf-*.
+ *  - Seletores ficam em :where(...) para especificidade ~0.
+ *  - Escopo `html:not(.dark)` quando é preciso vencer utilities do
+ *    Tailwind CDN (que é injetado no <head> DEPOIS deste arquivo):
+ *    `html:not(.dark) :where(x)` = (0,1,1), vence `.classe` (0,1,0)
+ *    sem usar !important, e nunca toca o dark mode existente.
+ *  - !important: nenhum. As únicas exceções herdadas vêm do style.css.
+ */
+
+/* ============================================================
+   1. TOKENS
+   ============================================================ */
+:root {
+    --nf-font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+               "Inter", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
+    --nf-bg:            #FFFFFF;
+    --nf-bg-subtle:     #F7F7F5;
+    --nf-text:          #37352F;
+    --nf-text-2:        #787774;
+    --nf-text-3:        #9B9A97;
+    --nf-border:        #E9E9E7;
+    --nf-border-strong: #DFDFDC;
+    --nf-hover:         #F1F1EF;
+    --nf-accent:        #2383E2;
+
+    --nf-r-sm: 4px;
+    --nf-r:    5px;
+    --nf-r-lg: 6px;
+
+    --nf-ease: cubic-bezier(0.2, 0, 0, 1);
+    --nf-ring: 0 0 0 3px rgba(35, 131, 226, 0.16);
+}
+
+/* Remapeia os tokens legados do style.css (só no tema claro).
+   Isso recolore .card/.metric-card/.form-input/.kanban-* de uma vez. */
+html:not(.dark) {
+    --bg:            var(--nf-bg-subtle);
+    --surface:       var(--nf-bg);
+    --surface-2:     var(--nf-hover);
+    --border:        var(--nf-border);
+    --border-strong: var(--nf-border-strong);
+    --text-1:        var(--nf-text);
+    --text-2:        #5C5B55;
+    --text-3:        var(--nf-text-2);
+    --accent:        #2F2E29;
+    --accent-hover:  #37352F;
+
+    --radius-sm: 4px;
+    --radius-md: 5px;
+    --radius-lg: 6px;
+    --radius-xl: 6px;
+
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: 0 2px 6px rgba(15, 15, 15, 0.04);
+    --shadow-xl: 0 6px 24px rgba(15, 15, 15, 0.08);
+}
+
+/* ============================================================
+   2. TIPOGRAFIA — pilha do sistema, offline, escala enxuta
+   ============================================================ */
+html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+html body,
+html body.font-sans {
+    font-family: var(--nf-font);
+    font-size: 14px;
+    line-height: 1.55;
+    letter-spacing: -0.006em;
+    font-feature-settings: "cv11", "ss01";
+}
+html:not(.dark) body { background-color: var(--nf-bg); color: var(--nf-text); }
+
+:where(h1, h2, h3, h4, h5, h6) {
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 1.3;
+}
+
+html:not(.dark) :where(small, .text-\[11px\], .text-\[10px\]) {
+    letter-spacing: 0;
+}
+
+::selection { background: rgba(35, 131, 226, 0.18); }
+
+/* Foco: anel suave e azul, discreto (substitui outline preto de 2px) */
+:focus-visible {
+    outline: 2px solid var(--nf-accent);
+    outline-offset: 2px;
+}
+html:not(.dark) :where(.sidebar-link, .sidebar-link-mobile, .btn-primary,
+    .btn-ghost, .btn-danger, #tabela-clientes-body tr, .client-card) {
+    transition-duration: 120ms;
+    transition-timing-function: var(--nf-ease);
+}
+html:not(.dark) ::-webkit-scrollbar-thumb { background: #D9D8D5; }
+
+/* ============================================================
+   3. RAIOS — normaliza os 12px do Tailwind para 6px (Notion)
+   ============================================================ */
+html:not(.dark) .rounded-xl { border-radius: var(--nf-r-lg); }
+html:not(.dark) .rounded-2xl { border-radius: var(--nf-r-lg); }
+html:not(.dark) .rounded-lg { border-radius: var(--nf-r); }
+
+/* ============================================================
+   4. SIDEBAR — item ativo em fundo suave, raio 4px, sem preto chapado
+   ============================================================ */
+html:not(.dark) :where(#sidebar, #sidebar-mobile) {
+    background-color: var(--nf-bg-subtle);
+    border-color: var(--nf-border);
+}
+html:not(.dark) :where(#sidebar, #sidebar-mobile) .sidebar-link,
+html:not(.dark) :where(#sidebar, #sidebar-mobile) .sidebar-link-mobile {
+    border-radius: var(--nf-r-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: #5C5B55;
+    padding: 7px 10px;
+}
+html:not(.dark) :where(#sidebar .sidebar-link.active,
+                       #sidebar-mobile .sidebar-link-mobile.bg-black) {
+    background-color: var(--nf-hover);
+    color: var(--nf-text);
+    border-color: var(--nf-border);
+    font-weight: 600;
+}
+@media (hover: hover) and (pointer: fine) {
+    html:not(.dark) :where(#sidebar, #sidebar-mobile) :where(.sidebar-link, .sidebar-link-mobile):hover {
+        background-color: var(--nf-hover);
+        color: var(--nf-text);
+        transform: none;
+    }
+}
+
+/* ============================================================
+   5. CARDS — borda de 1px, zero sombra, raio 6px
+   ============================================================ */
+html:not(.dark) :where(.card, .feature-card, .metric-card, .client-card,
+    .kanban-card, .kanban-column, .plan-card) {
+    background-color: var(--nf-bg);
+    border: 1px solid var(--nf-border);
+    border-radius: var(--nf-r-lg);
+    box-shadow: none;
+}
+html:not(.dark) :where(.metric-card) {
+    padding: 14px 16px 12px;
+    min-height: 96px;
+}
+html:not(.dark) :where(.client-card) { padding: 14px; }
+html:not(.dark) :where(.card, .feature-card, .metric-card, .client-card):hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--nf-border-strong);
+}
+html:not(.dark) :where(.kanban-column-header) {
+    background-color: var(--nf-bg-subtle);
+    border-color: var(--nf-border);
+}
+html:not(.dark) :where(.kanban-empty) {
+    background-color: var(--nf-bg-subtle);
+    border-color: var(--nf-border);
+    color: var(--nf-text-2);
+}
+
+/* Números das métricas: peso e corpo de dashboard, não de landing */
+html:not(.dark) #secao-overview :where(.font-black, .font-bold) { font-weight: 600; }
+html:not(.dark) #secao-overview .text-2xl,
+html:not(.dark) #secao-overview .text-3xl {
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+/* ============================================================
+   6. BOTÕES — primário grafite, secundário com borda, sem sombra
+   ============================================================ */
+html:not(.dark) :where(.btn-primary, .btn-ghost, .btn-danger) {
+    border-radius: var(--nf-r);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0;
+    box-shadow: none;
+    transform: none;
+    transition: background-color 120ms var(--nf-ease),
+                border-color 120ms var(--nf-ease),
+                color 120ms var(--nf-ease);
+}
+html:not(.dark) :where(.btn-primary) {
+    background-color: #37352F;
+    border-color: #37352F;
+    color: #FFFFFF;
+}
+html:not(.dark) :where(.btn-ghost) {
+    background-color: transparent;
+    border-color: var(--nf-border);
+    color: var(--nf-text);
+}
+html:not(.dark) :where(.btn-danger) {
+    background-color: transparent;
+    border-color: var(--nf-border);
+    color: #C0392B;
+}
+@media (hover: hover) and (pointer: fine) {
+    html:not(.dark) :where(.btn-primary):hover {
+        background-color: #2B2A26;
+        border-color: #2B2A26;
+        color: #FFFFFF;
+        transform: none;
+        box-shadow: none;
+    }
+    html:not(.dark) :where(.btn-ghost):hover {
+        background-color: var(--nf-hover);
+        border-color: var(--nf-border-strong);
+        color: var(--nf-text);
+        transform: none;
+        box-shadow: none;
+    }
+    html:not(.dark) :where(.btn-danger):hover {
+        background-color: #FBF1F0;
+        border-color: #E9C8C4;
+        color: #A93226;
+        box-shadow: none;
+    }
+}
+/* Botões sem padding utility no dashboard (style.css não define) */
+html:not(.dark) :where(#secao-clientes, #secao-view-toggle, #secao-config, .modal-box)
+    :where(.btn-primary, .btn-ghost, .btn-danger) {
+    padding: 7px 11px;
+}
+
+/* ============================================================
+   7. INPUTS / SELECTS — borda 1px, raio 5px, foco com ring suave
+   ============================================================ */
+html:not(.dark) :where(.form-input, input[type="text"], input[type="email"],
+    input[type="password"], input[type="number"], input[type="tel"],
+    input[type="date"], input[type="search"], select, textarea) {
+    border-radius: var(--nf-r);
+    border: 1px solid var(--nf-border-strong);
+    background-color: var(--nf-bg);
+    color: var(--nf-text);
+    box-shadow: none;
+}
+html:not(.dark) :where(.form-input, select, input, textarea)::placeholder {
+    color: var(--nf-text-3);
+}
+html:not(.dark) :where(.form-input, select, input, textarea):focus {
+    outline: none;
+    border-color: #C9C8C4;
+    box-shadow: var(--nf-ring);
+}
+html:not(.dark) :where(input[type="checkbox"], input[type="radio"]) {
+    accent-color: var(--nf-accent);
+}
+html:not(.dark) :where(.form-label) {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--nf-text-2);
+}
+
+/* ============================================================
+   8. BADGES — pílula cinza (pega tudo que usa py-0.5)
+   ============================================================ */
+html:not(.dark) :where([class*="py-0.5"]) { border-radius: 9999px; }
+html:not(.dark) :where(#tabela-clientes-body, #mobile-cards-container) .bg-black {
+    background-color: #37352F;
+}
+html:not(.dark) :where(#api-status-badge) {
+    background-color: var(--nf-bg-subtle);
+    border-color: var(--nf-border);
+    color: var(--nf-text-2);
+}
+
+/* ============================================================
+   9. TABELAS — separador de 1px, linha de ~36–40px, header discreto
+   ============================================================ */
+html:not(.dark) #secao-clientes-main :where(table) { font-size: 13px; }
+html:not(.dark) #secao-clientes-main thead tr {
+    background-color: var(--nf-bg-subtle);
+    border-bottom-color: var(--nf-border);
+}
+html:not(.dark) #secao-clientes-main thead th {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--nf-text-2);
+    padding-top: 9px;
+    padding-bottom: 9px;
+}
+html:not(.dark) #tabela-clientes-body tr { border-color: var(--nf-border); }
+html:not(.dark) #tabela-clientes-body td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    color: var(--nf-text);
+}
+html:not(.dark) #tabela-clientes-body tr:hover { background-color: var(--nf-hover); }
+html:not(.dark) #tabela-clientes-body :where(.text-sm, .text-xs) { font-size: 13px; }
+html:not(.dark) #tabela-clientes-body .font-bold { font-weight: 600; }
+
+/* ============================================================
+   10. MODAIS — borda, raio 6px, sombra mínima
+   ============================================================ */
+html:not(.dark) :where(.modal-box) {
+    border: 1px solid var(--nf-border);
+    border-radius: var(--nf-r-lg);
+    box-shadow: 0 6px 24px rgba(15, 15, 15, 0.08);
+}
+html:not(.dark) :where(.modal-box) :where(h2, h3) { letter-spacing: -0.014em; }
+html:not(.dark) :where(.modal-box) :where(.border-t, .border-b) {
+    border-color: var(--nf-border);
+}
+
+/* ============================================================
+   11. LANDING — mesma pele, sem o "lift" de marketing
+   ============================================================ */
+html:not(.dark) :where(.mockup-frame) {
+    box-shadow: 0 2px 8px rgba(15, 15, 15, 0.04);
+}
+html:not(.dark) :where(.mockup-frame):hover { transform: none; }
+html:not(.dark) :where(.navbar-scrolled) {
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: none;
+    border-color: var(--nf-border);
+}
+html:not(.dark) :where(.step-num) {
+    border-radius: var(--nf-r-sm);
+    font-weight: 600;
+}
+html:not(.dark) :where(.modal-box) .rounded-\[2rem\] { border-radius: var(--nf-r-lg); }
+
+/* ============================================================
+   12. 360px — nada de estouro horizontal
+   ============================================================ */
+@media (max-width: 400px) {
+    html body { font-size: 14px; }
+    html:not(.dark) :where(#sidebar-mobile) { width: 84vw; }
+    html:not(.dark) :where(#secao-clientes, #secao-config, #relatorios-section,
+        #secao-view-toggle) { padding-left: 12px; padding-right: 12px; }
+    html:not(.dark) :where(.metric-card) { padding: 12px; }
+    html:not(.dark) #secao-overview .text-2xl,
+    html:not(.dark) #secao-overview .text-3xl { font-size: 20px; }
+    html:not(.dark) :where(.btn-primary, .btn-ghost, .btn-danger) {
+        padding: 8px 10px;
+    }
+}
+
+/* ============================================================
+   13. IMPRESSÃO — papel branco, sidebar no fluxo, linhas inteiras
+   ============================================================ */
+@media print {
+    html body { background: #FFFFFF; color: #000000; font-size: 12px; }
+    :where(#sidebar, #sidebar-mobile) {
+        position: static;
+        height: auto;
+        border: 0;
+        background: #FFFFFF;
+    }
+    :where(#sidebar-overlay) { position: static; }
+    :where(.metric-card, .card, .client-card, .kanban-card, .modal-box) {
+        box-shadow: none;
+        border: 1px solid #DFDFDC;
+    }
+    #secao-clientes-main { overflow: visible; }
+    :where(tr, .client-card, .metric-card) { break-inside: avoid; }
+    :where(thead) { display: table-header-group; }
+    a[href]::after { content: ""; }
+}
