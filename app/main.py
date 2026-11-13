@@ -151,6 +151,14 @@ app.add_middleware(
     expose_headers=["Content-Disposition"],
 )
 
+# --- COMPRESSÃO ---
+# Listagens (clientes com 30+ colunas, atividades, dashboard) passam de 100 KB
+# de JSON; gzip corta 70–85% disso no 3G/4G do celular do cliente.
+# Só comprime acima de 1 KB para não gastar CPU com resposta pequena.
+from starlette.middleware.gzip import GZipMiddleware  # noqa: E402
+
+app.add_middleware(GZipMiddleware, minimum_size=1024)
+
 
 # ============================================================
 # DEPENDÊNCIA DE AUTENTICAÇÃO — Valida JWT com Supabase (assinatura verificada)

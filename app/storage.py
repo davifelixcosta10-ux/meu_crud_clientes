@@ -25,6 +25,7 @@ Tabelas Supabase:
 import os
 import re
 import logging
+import time
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
@@ -53,6 +54,66 @@ _supabase_client: Client | None = None
 
 
 _supabase_admin_client: Client | None = None
+
+
+# --- CACHE CURTO (por processo) de organizações/membership ---
+# Espelha o resultado de listar_organizacoes() por alguns segundos para não
+# repetir 2 round-trips em cada endpoint (a checagem de acesso está em quase
+# todos). TTL curto e explícito: ver comentário em listar_organizacoes().
+_ORGS_CACHE_TTL = float(os.environ.get("ORGS_CACHE_TTL", "5"))
+_orgs_cache: dict[str, tuple[float, list[dict]]] = {}
+
+
+def invalidar_cache_orgs() -> None:
+    """Zera o cache de organizações. Chamar após qualquer escrita em org/membro."""
+    _orgs_cache.clear()
+
+
+def _cache_orgs_obter(user_id: str) -> list[dict] | None:
+    item = _orgs_cache.get(user_id)
+    if not item:
+        return None
+    expira_em, dados = item
+    if time.monotonic() > expira_em:
+        _orgs_cache.pop(user_id, None)
+        return None
+    return [dict(o) for o in dados]
+
+
+def _cache_orgs_guardar(user_id: str, dados: list[dict]) -> None:
+    if _ORGS_CACHE_TTL > 0:
+        _orgs_cache[user_id] = (time.monotonic() + _ORGS_CACHE_TTL, [dict(o) for o in dados])
+
+
+# --- HTTP de integrações: timeout único + retry ---
+# Antes cada chamada (WhatsApp, Google Calendar) não tinha retry: um 429 ou 503
+# passageiro do provider virava "integração quebrada" para o cliente. Aqui a
+# chamada é repetida com backoff curto. Segue usando httpx.post (sem pool
+# próprio) porque em serverless cada invocação é curta e o pool não sobrevive.
+_HTTP_TIMEOUT = httpx.Timeout(connect=5.0, read=20.0, write=10.0, pool=5.0)
+
+
+def _http_post(url: str, *, tentativas: int = 3, **kwargs) -> httpx.Response:
+    """POST com até 3 tentativas para 429/5xx e backoff curto (0,4s; 1,2s).
+
+    Não repete em 4xx: erro de payload/credencial não melhora repetindo.
+    """
+    kwargs.setdefault("timeout", _HTTP_TIMEOUT)
+    ultima: Exception | None = None
+    for tentativa in range(tentativas):
+        try:
+            resp = httpx.post(url, **kwargs)
+            if resp.status_code < 500 and resp.status_code != 429:
+                return resp
+            ultima = httpx.HTTPStatusError(
+                f"HTTP {resp.status_code}", request=resp.request, response=resp
+            )
+        except (httpx.ConnectError, httpx.ReadTimeout, httpx.RemoteProtocolError) as exc:
+            ultima = exc
+        if tentativa < tentativas - 1:
+            time.sleep(0.4 * (3 ** tentativa))
+    raise ultima if ultima else RuntimeError("falha ao chamar integração")
+
 
 def get_supabase_client() -> Client:
     """
@@ -1505,9 +1566,22 @@ def _get_default_org_id(user_id: str) -> str | None:
 
 
 def listar_organizacoes(user_id: str) -> list[dict]:
-    """Lista orgs onde usuário é owner ou membro."""
+    """Lista orgs onde usuário é owner ou membro.
+
+    PERFORMANCE: esta função é chamada em quase todo endpoint (direto ou via
+    _verificar_membro/_verificar_admin) e cada chamada custa 2 idas ao banco.
+    Resultado memoizado por ORGS_CACHE_TTL segundos (default 5) para não repetir
+    a mesma consulta na mesma tela. Escritas de org/membro chamam
+    invalidar_cache_orgs(); revogação de acesso pode demorar até TTL para valer
+    em outro worker — por isso o TTL é curto e configurável.
+    """
+    em_cache = _cache_orgs_obter(user_id)
+    if em_cache is not None:
+        return em_cache
+
     supabase = get_supabase_client()
     orgs: dict[str, dict] = {}
+    membros: list[dict] = []
     try:
         # owner
         r1 = supabase.table("organizacoes").select("*").eq("owner_id", user_id).execute()
@@ -1517,21 +1591,34 @@ def listar_organizacoes(user_id: str) -> list[dict]:
         pass
     try:
         r2 = supabase.table("membros").select("org_id, papel, organizacoes(id, nome, owner_id, created_at)").eq("user_id", user_id).execute()
-        for m in (r2.data or []):
+        membros = r2.data or []
+        for m in membros:
             org = m.get("organizacoes")
             if org and org.get("id"):
                 orgs[org["id"]] = {**org, "papel": m.get("papel", "membro")}
-            elif m.get("org_id"):
-                # fallback buscar org
-                try:
-                    ro = supabase.table("organizacoes").select("*").eq("id", m["org_id"]).execute()
-                    if ro.data:
-                        orgs[ro.data[0]["id"]] = {**ro.data[0], "papel": m.get("papel")}
-                except Exception:
-                    pass
     except Exception:
         pass
-    return list(orgs.values())
+
+    # Fallback: se o join não veio (RLS/versão do PostgREST), busca as orgs
+    # faltantes em UMA query com .in_() em vez de N queries dentro do loop.
+    faltantes = [
+        m["org_id"]
+        for m in membros
+        if m.get("org_id") and not (m.get("organizacoes") or {}).get("id")
+        and m["org_id"] not in orgs
+    ]
+    if faltantes:
+        try:
+            ro = supabase.table("organizacoes").select("*").in_("id", faltantes).execute()
+            papel_por_org = {m["org_id"]: m.get("papel") for m in membros if m.get("org_id")}
+            for o in (ro.data or []):
+                orgs[o["id"]] = {**o, "papel": papel_por_org.get(o["id"], "membro")}
+        except Exception:
+            pass
+
+    resultado = list(orgs.values())
+    _cache_orgs_guardar(user_id, resultado)
+    return resultado
 
 
 def _verificar_admin(user_id: str, org_id: str | None) -> bool:
@@ -1595,6 +1682,8 @@ def criar_organizacao(user_id: str, nome: str) -> dict:
             except Exception:
                 pass
             org["papel"] = "admin"
+            # cache de membership: a org nova precisa aparecer já no próximo read
+            invalidar_cache_orgs()
             return org
         except Exception as e:
             last_err = e
@@ -1860,6 +1949,7 @@ def deletar_organizacao(org_id: str, user_id: str) -> bool:
         raise ValueError("Você precisa de pelo menos uma organização. Crie outra antes de excluir esta.")
     # deleta org (cascata membros)
     supabase.table("organizacoes").delete().eq("id", org_id).execute()
+    invalidar_cache_orgs()
     # limpa org_id órfão em tabelas que ficaram (etapas etc com set null já, mas agora são not null então deletamos)
     # não precisa, pois já bloqueamos com clientes; etapas/tags vazias podem ser deletadas em cascata? Mantém.
     return True
@@ -1884,6 +1974,7 @@ def atualizar_organizacao(org_id: str, nome: str, user_id: str) -> dict:
     res = supabase.table("organizacoes").update({"nome": nome}).eq("id", org_id).execute()
     if not res.data:
         raise ValueError("Falha ao renomear")
+    invalidar_cache_orgs()
     return res.data[0]
 
 def remover_membro_org(org_id: str, target_user_id: str, requester_id: str) -> bool:
@@ -1917,6 +2008,7 @@ def remover_membro_org(org_id: str, target_user_id: str, requester_id: str) -> b
     if not rm_target.data:
         raise ValueError("Membro não encontrado nesta organização")
     supabase.table("membros").delete().eq("org_id", org_id).eq("user_id", target_user_id).execute()
+    invalidar_cache_orgs()
     return True
 
 # ============================================================
@@ -2366,6 +2458,7 @@ def set_org_vertical(org_id: str, vertical: str, user_id: str) -> dict:
     res = supabase.table("organizacoes").update({"vertical": vertical}).eq("id", org_id).execute()
     if not res.data:
         raise ValueError("Falha ao atualizar vertical")
+    invalidar_cache_orgs()
     return res.data[0]
 
 def get_vertical_config(slug: str) -> dict | None:
@@ -3020,7 +3113,7 @@ def calendar_callback(code: str | None, state: str | None) -> tuple[bool, str]:
         return (False, _calendar_env_erro())
     supabase = get_supabase_client()
     try:
-        resp = httpx.post(
+        resp = _http_post(
             GOOGLE_TOKEN_URL,
             data={
                 "code": code,
@@ -3108,7 +3201,7 @@ def calendar_get_access_token(org_id: str) -> str | None:
     if not refresh_token:
         return None
     try:
-        resp = httpx.post(
+        resp = _http_post(
             GOOGLE_TOKEN_URL,
             data={
                 "client_id": os.environ.get("GOOGLE_CLIENT_ID"),
@@ -3169,7 +3262,7 @@ def calendar_criar_evento(org_id: str, atividade: dict, cliente_nome: str | None
                 "start": {"dateTime": start},
                 "end": {"dateTime": end},
             }
-        resp = httpx.post(
+        resp = _http_post(
             GOOGLE_EVENTS_URL,
             json=body,
             headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
@@ -3356,7 +3449,7 @@ def enviar_whatsapp(org_id: str, telefone_e164: str, mensagem: str) -> dict:
         return {"success": False, "erro": f"Provider WhatsApp não suportado: {provider}"}
     
     try:
-        response = httpx.post(url, json=payload, headers=headers, timeout=10.0)
+        response = _http_post(url, json=payload, headers=headers, timeout=10.0)
         response.raise_for_status()
         result = response.json()
         
