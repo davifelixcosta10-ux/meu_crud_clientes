@@ -1,26 +1,17 @@
 /**
- * ===================================================================
- * DaviFlow — Camada de identidade visual (style-notion.css)
- * ===================================================================
+ * DaviFlow — camada de identidade visual (style-notion.css)
  * Carregada DEPOIS de style.css. Não altera HTML estrutural, grid,
  * posição da sidebar nem visibilidade de nada.
  *
  * Direção: Notion + Linear + Attio — papel neutro, tipografia do sistema,
  * borda no lugar de sombra, raio curto (4–6px), acento azul com parcimônia.
- *
- * Estratégia de baixa briga:
- *  - Todos os componentes novos usam custom properties --nf-*.
- *  - Seletores ficam em :where(...) para especificidade ~0.
- *  - Escopo `html:not(.dark)` quando é preciso vencer utilities do
- *    Tailwind CDN (que é injetado no <head> DEPOIS deste arquivo):
- *    `html:not(.dark) :where(x)` = (0,1,1), vence `.classe` (0,1,0)
- *    sem usar !important, e nunca toca o dark mode existente.
- *  - !important: nenhum. As únicas exceções herdadas vêm do style.css.
+ * !important: nenhum.
+ * Escopo `html:not(.dark)` quando é preciso vencer utilities do Tailwind CDN
+ * (injetado no <head> DEPOIS deste arquivo): `html:not(.dark) :where(x)` =
+ * (0,1,1) vence `.classe` (0,1,0) sem briga e nunca toca o dark mode.
  */
 
-/* ============================================================
-   1. TOKENS
-   ============================================================ */
+/* 1. TOKENS */
 :root {
     --nf-font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
                "Inter", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
@@ -43,8 +34,8 @@
     --nf-ring: 0 0 0 3px rgba(35, 131, 226, 0.16);
 }
 
-/* Remapeia os tokens legados do style.css (só no tema claro).
-   Isso recolore .card/.metric-card/.form-input/.kanban-* de uma vez. */
+/* Remapeia os tokens legados do style.css (só no tema claro): recolore
+   .card/.metric-card/.form-input/.kanban-* de uma vez. */
 html:not(.dark) {
     --bg:            var(--nf-bg-subtle);
     --surface:       var(--nf-bg);
@@ -68,9 +59,7 @@ html:not(.dark) {
     --shadow-xl: 0 6px 24px rgba(15, 15, 15, 0.08);
 }
 
-/* ============================================================
-   2. TIPOGRAFIA — pilha do sistema, offline, escala enxuta
-   ============================================================ */
+/* 2. TIPOGRAFIA — pilha do sistema, offline, escala enxuta */
 html {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -81,23 +70,18 @@ html body.font-sans {
     font-size: 14px;
     line-height: 1.55;
     letter-spacing: -0.006em;
-    font-feature-settings: "cv11", "ss01";
 }
 html:not(.dark) body { background-color: var(--nf-bg); color: var(--nf-text); }
-
 :where(h1, h2, h3, h4, h5, h6) {
     font-weight: 600;
     letter-spacing: -0.012em;
     line-height: 1.3;
 }
-
-html:not(.dark) :where(small, .text-\[11px\], .text-\[10px\]) {
-    letter-spacing: 0;
-}
-
+html:not(.dark) :where(h1, h2, h3, h4, h5, h6) { font-weight: 600; }
+html:not(.dark) :where(small, .text-\[11px\], .text-\[10px\]) { letter-spacing: 0; }
 ::selection { background: rgba(35, 131, 226, 0.18); }
 
-/* Foco: anel suave e azul, discreto (substitui outline preto de 2px) */
+/* Foco: anel azul suave, no lugar do outline preto de 2px */
 :focus-visible {
     outline: 2px solid var(--nf-accent);
     outline-offset: 2px;
@@ -109,16 +93,17 @@ html:not(.dark) :where(.sidebar-link, .sidebar-link-mobile, .btn-primary,
 }
 html:not(.dark) ::-webkit-scrollbar-thumb { background: #D9D8D5; }
 
-/* ============================================================
-   3. RAIOS — normaliza os 12px do Tailwind para 6px (Notion)
-   ============================================================ */
+/* 3. RAIOS — normaliza o 12px do Tailwind para 4–6px (Notion) */
 html:not(.dark) .rounded-xl { border-radius: var(--nf-r-lg); }
 html:not(.dark) .rounded-2xl { border-radius: var(--nf-r-lg); }
 html:not(.dark) .rounded-lg { border-radius: var(--nf-r); }
+html:not(.dark) .rounded-\[1rem\],
+html:not(.dark) .rounded-\[1\.5rem\],
+html:not(.dark) .rounded-\[2rem\] { border-radius: var(--nf-r-lg); }
+/* Pílulas viram retângulo discreto, menos avatares/dots/badges */
+html:not(.dark) :where(a, button).rounded-full { border-radius: var(--nf-r); }
 
-/* ============================================================
-   4. SIDEBAR — item ativo em fundo suave, raio 4px, sem preto chapado
-   ============================================================ */
+/* 4. SIDEBAR — item ativo em fundo suave, raio 4px, sem preto chapado */
 html:not(.dark) :where(#sidebar, #sidebar-mobile) {
     background-color: var(--nf-bg-subtle);
     border-color: var(--nf-border);
@@ -131,11 +116,23 @@ html:not(.dark) :where(#sidebar, #sidebar-mobile) .sidebar-link-mobile {
     color: #5C5B55;
     padding: 7px 10px;
 }
-html:not(.dark) :where(#sidebar .sidebar-link.active,
-                       #sidebar-mobile .sidebar-link-mobile.bg-black) {
+/* .active do HTML inicial não é usado pelo app.js: neutraliza (senão
+   mantém o pill preto antigo). Ativo real = bg-zinc-100/border-black
+   que setSecao() aplica. */
+html:not(.dark) :where(#sidebar, #sidebar-mobile) .sidebar-link.active,
+html:not(.dark) :where(#sidebar, #sidebar-mobile) .sidebar-link-mobile.active {
+    background-color: transparent;
+    color: #5C5B55;
+    border-color: transparent;
+    font-weight: 500;
+}
+html:not(.dark) :where(#sidebar, #sidebar-mobile) .sidebar-link.bg-zinc-100,
+html:not(.dark) :where(#sidebar, #sidebar-mobile) .sidebar-link.border-black,
+html:not(.dark) :where(#sidebar, #sidebar-mobile) .sidebar-link-mobile.bg-zinc-100,
+html:not(.dark) :where(#sidebar, #sidebar-mobile) .sidebar-link-mobile.bg-black {
     background-color: var(--nf-hover);
     color: var(--nf-text);
-    border-color: var(--nf-border);
+    border-color: transparent;
     font-weight: 600;
 }
 @media (hover: hover) and (pointer: fine) {
@@ -146,20 +143,20 @@ html:not(.dark) :where(#sidebar .sidebar-link.active,
     }
 }
 
-/* ============================================================
-   5. CARDS — borda de 1px, zero sombra, raio 6px
-   ============================================================ */
-html:not(.dark) :where(.card, .feature-card, .metric-card, .client-card,
+/* 5. CARDS — borda de 1px, zero sombra, raio 6px */
+html:not(.dark) :where(.card, .metric-card, .client-card,
     .kanban-card, .kanban-column, .plan-card) {
     background-color: var(--nf-bg);
+}
+/* Só forma: .feature-card da landing pode ter fundo próprio (card escuro) */
+html:not(.dark) :where(.card, .feature-card, .metric-card, .client-card,
+    .kanban-card, .kanban-column, .plan-card) {
     border: 1px solid var(--nf-border);
     border-radius: var(--nf-r-lg);
     box-shadow: none;
 }
-html:not(.dark) :where(.metric-card) {
-    padding: 14px 16px 12px;
-    min-height: 96px;
-}
+html:not(.dark) [class*="shadow-["] { box-shadow: none; }
+html:not(.dark) :where(.metric-card) { padding: 14px 16px 12px; min-height: 96px; }
 html:not(.dark) :where(.client-card) { padding: 14px; }
 html:not(.dark) :where(.card, .feature-card, .metric-card, .client-card):hover {
     transform: none;
@@ -175,7 +172,6 @@ html:not(.dark) :where(.kanban-empty) {
     border-color: var(--nf-border);
     color: var(--nf-text-2);
 }
-
 /* Números das métricas: peso e corpo de dashboard, não de landing */
 html:not(.dark) #secao-overview :where(.font-black, .font-bold) { font-weight: 600; }
 html:not(.dark) #secao-overview .text-2xl,
@@ -185,9 +181,7 @@ html:not(.dark) #secao-overview .text-3xl {
     line-height: 1.2;
 }
 
-/* ============================================================
-   6. BOTÕES — primário grafite, secundário com borda, sem sombra
-   ============================================================ */
+/* 6. BOTÕES — primário grafite, secundário com borda, sem sombra */
 html:not(.dark) :where(.btn-primary, .btn-ghost, .btn-danger) {
     border-radius: var(--nf-r);
     font-size: 13px;
@@ -236,18 +230,17 @@ html:not(.dark) :where(.btn-danger) {
         box-shadow: none;
     }
 }
-/* Botões sem padding utility no dashboard (style.css não define) */
+/* O style.css não dá padding a esses botões no dashboard */
 html:not(.dark) :where(#secao-clientes, #secao-view-toggle, #secao-config, .modal-box)
     :where(.btn-primary, .btn-ghost, .btn-danger) {
     padding: 7px 11px;
 }
 
-/* ============================================================
-   7. INPUTS / SELECTS — borda 1px, raio 5px, foco com ring suave
-   ============================================================ */
-html:not(.dark) :where(.form-input, input[type="text"], input[type="email"],
-    input[type="password"], input[type="number"], input[type="tel"],
-    input[type="date"], input[type="search"], select, textarea) {
+/* 7. INPUTS / SELECTS — borda 1px, raio 5px, foco com ring suave */
+html:not(.dark) .form-input,
+html:not(.dark) input[class],
+html:not(.dark) select[class],
+html:not(.dark) textarea[class] {
     border-radius: var(--nf-r);
     border: 1px solid var(--nf-border-strong);
     background-color: var(--nf-bg);
@@ -257,7 +250,10 @@ html:not(.dark) :where(.form-input, input[type="text"], input[type="email"],
 html:not(.dark) :where(.form-input, select, input, textarea)::placeholder {
     color: var(--nf-text-3);
 }
-html:not(.dark) :where(.form-input, select, input, textarea):focus {
+html:not(.dark) .form-input:focus,
+html:not(.dark) input[class]:focus,
+html:not(.dark) select[class]:focus,
+html:not(.dark) textarea[class]:focus {
     outline: none;
     border-color: #C9C8C4;
     box-shadow: var(--nf-ring);
@@ -273,10 +269,8 @@ html:not(.dark) :where(.form-label) {
     color: var(--nf-text-2);
 }
 
-/* ============================================================
-   8. BADGES — pílula cinza (pega tudo que usa py-0.5)
-   ============================================================ */
-html:not(.dark) :where([class*="py-0.5"]) { border-radius: 9999px; }
+/* 8. BADGES — pílula cinza (pega tudo que usa py-0.5) */
+html:not(.dark) [class*="py-0.5"]:not(code) { border-radius: 9999px; }
 html:not(.dark) :where(#tabela-clientes-body, #mobile-cards-container) .bg-black {
     background-color: #37352F;
 }
@@ -286,9 +280,7 @@ html:not(.dark) :where(#api-status-badge) {
     color: var(--nf-text-2);
 }
 
-/* ============================================================
-   9. TABELAS — separador de 1px, linha de ~36–40px, header discreto
-   ============================================================ */
+/* 9. TABELAS — separador de 1px, linha de ~36–40px, header discreto */
 html:not(.dark) #secao-clientes-main :where(table) { font-size: 13px; }
 html:not(.dark) #secao-clientes-main thead tr {
     background-color: var(--nf-bg-subtle);
@@ -312,9 +304,7 @@ html:not(.dark) #tabela-clientes-body tr:hover { background-color: var(--nf-hove
 html:not(.dark) #tabela-clientes-body :where(.text-sm, .text-xs) { font-size: 13px; }
 html:not(.dark) #tabela-clientes-body .font-bold { font-weight: 600; }
 
-/* ============================================================
-   10. MODAIS — borda, raio 6px, sombra mínima
-   ============================================================ */
+/* 10. MODAIS — borda, raio 6px, sombra mínima */
 html:not(.dark) :where(.modal-box) {
     border: 1px solid var(--nf-border);
     border-radius: var(--nf-r-lg);
@@ -325,12 +315,8 @@ html:not(.dark) :where(.modal-box) :where(.border-t, .border-b) {
     border-color: var(--nf-border);
 }
 
-/* ============================================================
-   11. LANDING — mesma pele, sem o "lift" de marketing
-   ============================================================ */
-html:not(.dark) :where(.mockup-frame) {
-    box-shadow: 0 2px 8px rgba(15, 15, 15, 0.04);
-}
+/* 11. LANDING — mesma pele, sem o "lift" de marketing */
+html:not(.dark) :where(.mockup-frame) { box-shadow: 0 2px 8px rgba(15, 15, 15, 0.04); }
 html:not(.dark) :where(.mockup-frame):hover { transform: none; }
 html:not(.dark) :where(.navbar-scrolled) {
     background: rgba(255, 255, 255, 0.88);
@@ -343,9 +329,7 @@ html:not(.dark) :where(.step-num) {
 }
 html:not(.dark) :where(.modal-box) .rounded-\[2rem\] { border-radius: var(--nf-r-lg); }
 
-/* ============================================================
-   12. 360px — nada de estouro horizontal
-   ============================================================ */
+/* 12. 360px — nada de estouro horizontal */
 @media (max-width: 400px) {
     html body { font-size: 14px; }
     html:not(.dark) :where(#sidebar-mobile) { width: 84vw; }
@@ -354,16 +338,18 @@ html:not(.dark) :where(.modal-box) .rounded-\[2rem\] { border-radius: var(--nf-r
     html:not(.dark) :where(.metric-card) { padding: 12px; }
     html:not(.dark) #secao-overview .text-2xl,
     html:not(.dark) #secao-overview .text-3xl { font-size: 20px; }
-    html:not(.dark) :where(.btn-primary, .btn-ghost, .btn-danger) {
-        padding: 8px 10px;
-    }
+    html:not(.dark) :where(.btn-primary, .btn-ghost, .btn-danger) { padding: 8px 10px; }
 }
 
-/* ============================================================
-   13. IMPRESSÃO — papel branco, sidebar no fluxo, linhas inteiras
-   ============================================================ */
+/* 13. IMPRESSÃO — papel branco, sidebar no fluxo, linhas inteiras */
 @media print {
     html body { background: #FFFFFF; color: #000000; font-size: 12px; }
+    /* navbar é fixed: em impressão repete em toda página e cobre o conteúdo */
+    html #navbar {
+        position: static;
+        transform: none;
+        margin: 0 auto 16px;
+    }
     :where(#sidebar, #sidebar-mobile) {
         position: static;
         height: auto;
@@ -376,7 +362,12 @@ html:not(.dark) :where(.modal-box) .rounded-\[2rem\] { border-radius: var(--nf-r
         border: 1px solid #DFDFDC;
     }
     #secao-clientes-main { overflow: visible; }
+    #secao-clientes-main .overflow-x-auto { overflow: visible; }
+    #secao-clientes-main :where(table) { width: 100%; font-size: 11px; }
+    #secao-clientes-main :where(th, td) { padding-left: 6px; padding-right: 6px; }
+    /* .reveal só aparece via IntersectionObserver (JS): no papel, sempre */
+    html .reveal { opacity: 1; transform: none; }
     :where(tr, .client-card, .metric-card) { break-inside: avoid; }
+    :where(.mockup-frame, .feature-card, #about article) { break-inside: avoid; }
     :where(thead) { display: table-header-group; }
-    a[href]::after { content: ""; }
 }
